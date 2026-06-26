@@ -11,7 +11,7 @@
 
 **Status:** Canonical · Launch Version
 **Owner:** Heath (founder, SCR!PTS)
-**Last meaningful update:** 2026-06-25
+**Last meaningful update:** 2026-06-25 (reconciled with locked UX decisions)
 
 ---
 
@@ -35,15 +35,24 @@ The world should feel: nostalgic, mysterious, creative, music-driven, fashion-fo
 
 > **Final philosophy:** The player enters a game → explores a world → discovers a brand → and *only then* realizes they can buy something.
 
+### The game / commerce boundary (read this)
+
+The world is a **game**, but commerce runs on **normal ecommerce pages**. The two layers are deliberately separated:
+
+- **Game layer (Phaser):** the Lobby and the Basement. Movement, NPCs, dialogue, props, lounge, music, mobile controls, discovery. This is where the *feeling* lives.
+- **Web layer (Next.js pages):** product pages, cart, checkout, and the Lobby's rack inventory page. Standard ecommerce — fast, familiar, conversion-friendly.
+
+The handoff: the player **discovers** products inside the game, then **interacting drops them onto a normal web product page** to actually buy. The game sells the brand; the web layer closes the sale. We do not rebuild checkout inside Phaser.
+
 ---
 
 ## Experience Flow
 
 ### 1. Loading sequence
-- Opens to a **black screen** — no nav, no menus, no loading bars, no modern web elements.
-- Small pixel fragments appear and slowly assemble an image, like an old Game Boy booting up.
-- A night city emerges piece by piece: windows illuminate, streetlights flicker, neon signs glow, rain reflections appear, traffic begins moving.
+- Opens to a **loading screen** leading into an **"Enter to play"** prompt — kept simple, not a complex cinematic boot.
+- Tone is still game-like (black screen, pixel aesthetic, music fading in), but the goal is a clean, fast entry, not a long sequence.
 - Music slowly fades in. The user immediately understands: *"I'm entering a game."*
+- *Open:* exact framing of the prompt / how much pre-game animation we keep is still being decided. Default to minimal for launch.
 
 ### 2. Title screen
 - Inspired by Pokémon FireRed. **Side-view, full-body, cinematic** camera (emotional energy of the Gojo/Geto walking scene).
@@ -96,7 +105,9 @@ The SCR!PTS store is the main hub; the player can freely explore.
 **Layout:** Entrance · Display Tables · Clothing Racks · Poster Wall · Lounge Area · Checkout Desk · Back Hallway · Hidden Basement Stairs
 
 ### Clothing racks
-Racks represent product collections. Interacting opens a **Pokémon-style inventory menu** ("A rack full of pieces.") where users can: view products, view images, read descriptions, view pricing, select size, select color, check stock, add to cart. Products feel **integrated into the world, not separated from it**.
+Racks represent product collections and live in the Lobby. Walking up and interacting (A / Z / Space) transitions the player out of the game and onto a **normal ecommerce inventory page** — a standard white, 12-column-grid product listing. From there the player opens a **normal ecommerce product page** to view images, descriptions, pricing, select size/color, check stock, and add to bag.
+
+The *discovery* is in-world; the *transaction* is standard web. Cart and checkout are reachable from both the inventory page and the product page. A top-left back button returns the player to the Lobby.
 
 ### Display tables
 Showcase featured pieces, best sellers, hero products, seasonal highlights. Interaction reveals additional information.
@@ -114,22 +125,24 @@ NPCs bring the store to life; dialogue updates with future collections. Examples
 - **Loyal Customer** — *"Been here since Drop 01."*
 - **Creative Friend** — *"You ever get an idea so good you can't sleep?"*
 
-### Lounge area (optional hidden experience)
-Player interacts with the couch → *"Sit down?"* (Yes / No).
-- **Yes:** Scribbs sits, vinyl starts playing, additional dialogue appears, lore becomes available, hidden stories emerge.
-- **No:** nothing happens. The lounge is completely optional.
+### Lounge area (interactive lore zone)
+The Lounge is an **interactive lure environment** — not an optional/hidden afterthought. It's where the SCR!PTS universe deepens and where the brand's external channels live.
+
+- **Lore & atmosphere:** interactable props and dialogue surface hidden stories, references, and world-building. This is the emotional heart of the Lobby.
+- **Music:** a speaker prop in the lounge is interactable (on/off toggle + volume slider). Multiple tracks play across the Lobby rather than one global track.
+- **Social links:** screens/props in the lounge open SCR!PTS social channels (Instagram, TikTok) in a new tab on interact.
+- **Vinyl:** decoration only — sets the mood, no interaction required.
 
 ### Checkout desk
-A pixel version of **Heath** stands behind the desk:
-> *"Yooo. My name is Heath. I'm the founder of SCR!PTS. You ready to check out?"* (Yes / No)
-- **Yes:** cart opens, checkout begins.
-- **No:** *"No stress. Keep looking around."*
+A pixel desk in the Lobby. Walking up and interacting (A / Z) takes the player straight to the **normal ecommerce cart / checkout page** — no scripted gate, no Yes/No dialogue required to proceed. The desk is simply an in-world entry point to the standard cart.
+
+*Optional flavor:* a pixel version of **Heath** can stand behind the desk for personality, but interacting routes to the real ecommerce cart rather than a game menu.
 
 ---
 
 ## The Basement
 
-The **most important location** in SCR!PTS. Designed to create **mythology, not sales**.
+The **most important location** in SCR!PTS — and the **main game experience**. The Lobby introduces the world; the Basement is where the actual game-feeling payoff happens. It is designed to create **mythology *and* a moment**: the player has to *find* the products, then *choose* one.
 
 ### The Basement Philosophy
 The Basement is not a collection, not a category, not accessible through navigation, not advertised — **it is discovered**. Only users who physically find the hidden staircase gain access.
@@ -137,17 +150,47 @@ The Basement is not a collection, not a category, not accessible through navigat
 The goal is to make users feel like they **found something they were never supposed to find** — driving exclusivity, mystery, community discussion ("Yo, did you know there's a hidden room?"), organic discovery, and increased exploration.
 
 ### Discovery & transition
-- Staircase is hidden: no signs, no navigation, no prompts. Found only through exploration.
+- Entry is via **normal in-shop staircases on the sides of the Lobby** — discrete and unmarked. No signs, no nav, no prompts. Found only through exploration.
+- Two staircases, both on the sides of the room, both unmarked.
 - On entering: screen fades, music changes, lights flicker, environment darkens. Player should feel *"I wasn't supposed to find this."*
 
+### The Basement experience (core mechanic)
+This is the signature interaction of the whole project — a **Pokémon "choose your starter" moment**, reskinned as fashion.
+
+1. The player explores the Basement and **finds the products** in the world (they are not handed over on entry).
+2. A **Basement NPC** gates the moment, telling the player to interact with the pieces — e.g. *"...You found them. Go on — take a look at what's down here."*
+3. Interacting opens a **special in-game clothing rack** the player can **swipe through** — the equivalent of choosing from three Poké Balls, but as a rack of pieces. This stays inside the game layer and *feels* like part of the world.
+4. **Selecting a specific piece** drops the player onto a **normal ecommerce product page** (same structure as the Lobby's product pages) to actually buy.
+
+So: discovery + NPC + swipeable rack = game layer. Product selection onward = normal web.
+
 ### Basement NPC
-> *"...Wait. How did you find this place? Most people never make it down here. Since you're already here... you might as well take a look."*
+> *"...Wait. How did you find this place? Most people never make it down here. Since you're already here... go on — take a look at the pieces."*
+
+The NPC's job is to frame the choose-your-piece moment, not to deliver a wall of lore.
 
 ### Basement rules (hard requirement)
-Basement products **cannot** be searched, recommended, appear in navigation, appear in collections, or appear on the homepage. **They only exist inside the Basement.**
+Basement products **cannot** be searched, recommended, appear in navigation, appear in collections, or appear on the homepage. **They only exist inside the Basement.** The basement product pages are **`noindex, nofollow`** with no nav link anywhere.
 
 ### Basement contents
-Hidden drops, limited products, rare collectibles, experimental pieces, concept items, unreleased designs.
+A small, curated set of hidden pieces (launch: ~2–3) — limited products, rare collectibles, experimental pieces, concept items, unreleased designs.
+
+---
+
+## Layer & Page Summary
+
+| Zone | Layer | What happens | Cart access | Back |
+|---|---|---|---|---|
+| Loading / Enter to play | Game | Simple entry into the world | — | — |
+| Lobby | Game (Phaser) | Explore, NPCs, lounge, music, social links, racks, checkout desk | Via checkout desk → cart | N/A |
+| Lounge | Game (Phaser) | Interactive lore, music toggle, social links (new tab) | — | N/A |
+| Rack inventory | Web page | Normal ecommerce listing (white, 12-col grid) | Visible on page | Top-left button → Lobby |
+| Product page | Web page | Normal ecommerce product page | Visible on page | Top-left → inventory/basement |
+| Basement | Game (Phaser) | Find products, NPC, swipeable special rack | Via product selection | Standard back |
+| Basement product | Web page | Normal ecommerce product page (`noindex,nofollow`) | Visible on page | Top-left → Basement |
+| Cart / checkout | Web page | Normal ecommerce + Stripe | — | Top-left button |
+
+**Rule of thumb:** Lobby and Basement are the game. The moment a product listing or product page opens, the player is on a normal web page.
 
 ---
 
@@ -231,3 +274,4 @@ Collection Archive Room · Music Room · rooftop access · additional city areas
 Record meaningful changes to this playbook here so the project's direction has a history.
 
 - **2026-06-25** — Adopted Heath's fully-custom flagship-game blueprint as the canonical PRD. Replaced the earlier Shopify-handoff "vibe layer beside the store" proposal; commerce is now fully in-house (Next.js + Supabase + Stripe + custom `/admin`), and the game *is* the store.
+- **2026-06-25** — **Reconciled with locked UX decisions.** Defined the game-layer / web-layer boundary: Lobby + Basement are Phaser game; product listings, product pages, cart and checkout are normal ecommerce. Clothing racks now route to a normal ecommerce inventory/product page (not an in-game menu). Loading simplified to a loading screen + "Enter to play" prompt. Lounge upgraded from optional/hidden to an **interactive lure zone** with lore, music toggle, and social links. Checkout desk now routes straight to the normal ecommerce cart (Heath dialogue optional flavor only). **Basement promoted to the main game experience**: discover products by exploring → Basement NPC → swipeable "choose your piece" special rack (Pokémon starter-ball moment) → selecting a piece opens a normal ecommerce product page. Added a Layer & Page Summary table.
