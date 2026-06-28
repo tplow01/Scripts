@@ -1,7 +1,14 @@
+"use client";
+
+import dynamic from "next/dynamic";
+
+// Phaser is client-only — never server-rendered.
+const PhaserGame = dynamic(() => import("@/game/PhaserGame"), { ssr: false });
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <p className="font-game text-pink">SCR!PTS — booting…</p>
+    <main className="h-screen w-screen overflow-hidden bg-ink">
+      <PhaserGame />
     </main>
   );
 }
