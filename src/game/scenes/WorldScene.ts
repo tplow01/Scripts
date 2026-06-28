@@ -6,6 +6,10 @@ import { resolveArt } from "@/game/art/registry";
  * Renders the current room from world data + the art registry, and drives
  * Scribbs around a tile grid with the camera following.
  *
+ * Movement is event-driven (one step per keydown; holding a key relies on the
+ * OS key-repeat firing more keydowns) — classic grid movement, and robust to
+ * brief key taps. A short cooldown keeps held movement from being too fast.
+ *
  * Note the separation: this scene knows tile positions and walkability (world
  * data) and pulls every visual from `resolveArt` (art registry). Swapping the
  * registry to real sprites later requires no change here beyond how a
@@ -15,8 +19,6 @@ export class WorldScene extends Phaser.Scene {
   private scribbs!: Phaser.GameObjects.Rectangle;
   private tileX = mainRoom.spawn.tileX;
   private tileY = mainRoom.spawn.tileY;
-  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  private wasd!: Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>;
   private moveLockedUntil = 0;
   private lastInteractionId: string | null = null;
 
@@ -50,38 +52,53 @@ export class WorldScene extends Phaser.Scene {
       .rectangle(this.tileX * ts + ts / 2, this.tileY * ts + ts / 2, sArt.width, sArt.height, sArt.color)
       .setDepth(10);
 
-    // Camera: follow Scribbs at a moderate zoom (locked design decision).
+    // Camera: bound to the room and follow Scribbs. For this single v0 room the
+    // viewport equals the room, so the whole room stays framed; follow + bounds
+    // start mattering (panning) once the map grows beyond one screen.
     this.cameras.main.setBounds(0, 0, mainRoom.width * ts, mainRoom.height * ts);
     this.cameras.main.startFollow(this.scribbs, true);
-    this.cameras.main.setZoom(2);
 
-    // Input: arrow keys + WASD.
+    // Input: one step per keydown (arrows + WASD). Capture arrows so the page
+    // doesn't scroll.
     const kb = this.input.keyboard!;
-    this.cursors = kb.createCursorKeys();
-    this.wasd = {
-      up: kb.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-      down: kb.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-      left: kb.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-      right: kb.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    };
+    kb.addCapture(["UP", "DOWN", "LEFT", "RIGHT", "W", "A", "S", "D"]);
+    kb.on("keydown", (event: KeyboardEvent) => this.onKey(event));
   }
 
-  update(time: number) {
-    if (time < this.moveLockedUntil) return;
-
+  private onKey(event: KeyboardEvent) {
     let dx = 0;
     let dy = 0;
-    if (this.cursors.left.isDown || this.wasd.left.isDown) dx = -1;
-    else if (this.cursors.right.isDown || this.wasd.right.isDown) dx = 1;
-    else if (this.cursors.up.isDown || this.wasd.up.isDown) dy = -1;
-    else if (this.cursors.down.isDown || this.wasd.down.isDown) dy = 1;
+    switch (event.code) {
+      case "ArrowLeft":
+      case "KeyA":
+        dx = -1;
+        break;
+      case "ArrowRight":
+      case "KeyD":
+        dx = 1;
+        break;
+      case "ArrowUp":
+      case "KeyW":
+        dy = -1;
+        break;
+      case "ArrowDown":
+      case "KeyS":
+        dy = 1;
+        break;
+      default:
+        return;
+    }
+    this.tryMove(dx, dy);
+  }
 
-    if (dx === 0 && dy === 0) return;
+  private tryMove(dx: number, dy: number) {
+    const now = this.time.now;
+    if (now < this.moveLockedUntil) return;
 
     const nx = this.tileX + dx;
     const ny = this.tileY + dy;
     if (!isWalkable(mainRoom, nx, ny)) {
-      this.moveLockedUntil = time + 120;
+      this.moveLockedUntil = now + 100;
       return;
     }
 
@@ -89,7 +106,7 @@ export class WorldScene extends Phaser.Scene {
     this.tileY = ny;
     const ts = mainRoom.tileSize;
     this.scribbs.setPosition(nx * ts + ts / 2, ny * ts + ts / 2);
-    this.moveLockedUntil = time + 140;
+    this.moveLockedUntil = now + 120;
 
     this.checkInteraction();
   }
