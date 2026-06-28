@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Brand tokens (mirror src/theme/tokens.ts / BRAND.md) as CSS variables. */
+:root {
+  --ink: #0d0d0d;
+  --paper: #f7f7f5;
+  --pink: #ff8ac7;
+  --pink-deep: #ff4fa3;
+  --grey: #6f6f73;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
