@@ -6,7 +6,8 @@ import ProductDetail from './ProductDetail'
 const ALL_PRODUCTS = [...CYBER_LOVE_PRODUCTS, ...BASEMENT_PRODUCTS]
 
 interface Props {
-  params: { slug: string }
+  // Next 15: dynamic route params are async.
+  params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
@@ -14,14 +15,16 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const product = ALL_PRODUCTS.find((p) => p.slug === params.slug)
+  const { slug } = await params
+  const product = ALL_PRODUCTS.find((p) => p.slug === slug)
   if (!product) return {}
   return { title: `${product.name} — SCR!PTS` }
 }
 
-export default function ProductPage({ params }: Props) {
-  const product = ALL_PRODUCTS.find((p) => p.slug === params.slug)
+export default async function ProductPage({ params }: Props) {
+  const { slug } = await params
+  const product = ALL_PRODUCTS.find((p) => p.slug === slug)
   if (!product) notFound()
-  const dark = BASEMENT_PRODUCTS.some((p) => p.slug === params.slug)
+  const dark = BASEMENT_PRODUCTS.some((p) => p.slug === slug)
   return <ProductDetail product={product} dark={dark} />
 }

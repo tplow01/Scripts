@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Bebas_Neue } from "next/font/google";
+import { CartProvider } from "@/lib/cart";
+import CartDrawer from "@/components/CartDrawer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -6,14 +9,26 @@ export const metadata: Metadata = {
   description: "A home for creative culture — the SCR!PTS flagship world.",
 };
 
+// Used by the web/commerce pages (basement, inventory, products) via --font-bebas.
+const bebasNeue = Bebas_Neue({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-bebas",
+});
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-ink text-paper font-body antialiased">{children}</body>
+    <html lang="en" className={bebasNeue.variable}>
+      <body className="bg-ink text-paper font-body antialiased">
+        <CartProvider>
+          {children}
+          <CartDrawer />
+        </CartProvider>
+      </body>
     </html>
   );
 }
