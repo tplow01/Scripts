@@ -1,9 +1,11 @@
 import * as Phaser from "phaser";
+import { bakeAllTextures } from "@/game/art/registry";
 
 /**
- * Boot scene. v0 has no real assets to preload (placeholder rects are drawn
- * directly), so it immediately hands off to the world. Real asset loading
- * (spritesheets, tilemaps, fonts) will live here later.
+ * Boot scene. Bakes every pixel-art texture from the registry (floor, walls,
+ * props, decorations, character frames) into the texture cache, then hands off
+ * to the world. Baking here means the world scene only ever references texture
+ * keys — never raw pixel data.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +13,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    bakeAllTextures(this);
     this.scene.start("world");
   }
 }

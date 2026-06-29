@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mainRoom, isWalkable } from "@/game/world/mainRoom";
+import { footprint } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
   it("has a tile grid matching its declared dimensions", () => {
@@ -25,19 +26,43 @@ describe("mainRoom world data", () => {
     expect(isWalkable(mainRoom, tileX, tileY)).toBe(true);
   });
 
-  it("places every interaction on a walkable tile", () => {
+  it("makes every interaction reachable (on, or adjacent to, a walkable tile)", () => {
+    const neighbours = [
+      [0, 0],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ];
     for (const it of mainRoom.interactions) {
-      expect(isWalkable(mainRoom, it.tileX, it.tileY)).toBe(true);
+      const reachable = footprint(it).some((t) =>
+        neighbours.some(([dx, dy]) => isWalkable(mainRoom, t.x + dx, t.y + dy)),
+      );
+      expect(reachable, `${it.id} should be reachable`).toBe(true);
     }
   });
 
-  it("has the three expected interaction types", () => {
-    const types = mainRoom.interactions.map((i) => i.type).sort();
-    expect(types).toEqual(["checkout", "rack", "stairs"]);
+  it("blocks movement onto a solid fixture but leaves the tile as floor", () => {
+    const rack = mainRoom.interactions.find((i) => i.id === "rail-h")!;
+    expect(mainRoom.tiles[rack.tileY][rack.tileX]).toBe("floor");
+    expect(isWalkable(mainRoom, rack.tileX, rack.tileY)).toBe(false);
   });
 
-  it("treats out-of-bounds and wall tiles as not walkable", () => {
+  it("lets the player step onto the (non-solid) stairs", () => {
+    const stairs = mainRoom.interactions.find((i) => i.type === "stairs")!;
+    expect(isWalkable(mainRoom, stairs.tileX, stairs.tileY)).toBe(true);
+  });
+
+  it("includes the core shop interaction types", () => {
+    const types = new Set(mainRoom.interactions.map((i) => i.type));
+    for (const t of ["rack", "checkout", "stairs", "vinylDesk"]) {
+      expect(types.has(t as never)).toBe(true);
+    }
+  });
+
+  it("treats out-of-bounds, wall, and the carved void as not walkable", () => {
     expect(isWalkable(mainRoom, -1, 0)).toBe(false);
     expect(isWalkable(mainRoom, 0, 0)).toBe(false); // corner wall
+    expect(isWalkable(mainRoom, 10, 2)).toBe(false); // top-right cutout
   });
 });
