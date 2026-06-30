@@ -43,11 +43,12 @@ export const mainRoom: Room = {
   // Spawn on the centre door (bottom). WorldScene walks Scribbs up on entry.
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
-    // Basement entrance — stairs (top, a7), stepped onto → fade to Basement.
+    // Basement entrance — SECRET stairs (top, a7). Hidden behind record crates
+    // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
     { id: "stairs", type: "stairs", tileX: C(7), tileY: R("a"), artKey: "stairs", solid: false,
-      target: { roomId: "basement" }, transition: "fade" },
+      revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
 
-    // Music alcove (row a): vinyl deck (2 wide). Speakers are decorations.
+    // Music alcove (row a): vinyl deck (2 wide) — the reveal switch. Speakers are decorations.
     { id: "vinyl", type: "vinylDesk", tileX: C(3), tileY: R("a"), artKey: "vinylDesk", wTiles: 2, solid: true },
 
     // Checkout — single L footprint (2×5): top bar k1–k2 + right column k2–o2;
@@ -61,11 +62,38 @@ export const mainRoom: Room = {
     // Clothing rails: horizontal h8–14, vertical h15–n15.
     { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack-h7", wTiles: 7, solid: true },
     { id: "rail-v", type: "rack", tileX: C(15), tileY: R("h"), artKey: "rack-v7", hTiles: 7, solid: true },
+
+    // Shoppers populating the floor (each speaks when interacted with).
+    // Browsing the horizontal rail (stands just below it, i10).
+    { id: "npc-rail", type: "npc", tileX: C(10), tileY: R("i"), artKey: "npcRail", solid: true },
+    // Studying the vertical rail (stands to its left, k14).
+    { id: "npc-gazer", type: "npc", tileX: C(14), tileY: R("k"), artKey: "npcGazer", solid: true },
+    // Seated on the sofa, at the corner (e1).
+    { id: "npc-sofa", type: "npc", tileX: C(1), tileY: R("e"), artKey: "npcSitter", solid: true },
+    // Customer waiting at the checkout, in front of the counter (l3).
+    { id: "npc-checkout", type: "npc", tileX: C(3), tileY: R("l"), artKey: "npcShopper", solid: true },
+  ],
+  // The sofa itself — the L of cushions: vertical arm (col 1, rows c–e) + base
+  // (row e, cols 1–5). You can only sit by stepping down from the top side; you
+  // can't walk onto it from the back (below) or the sides. The open corner
+  // (cols 2–5 × rows c–d) is just normal floor.
+  seats: [
+    {
+      enterDir: "down",
+      tiles: [
+        { x: C(1), y: R("c") }, { x: C(1), y: R("d") }, { x: C(1), y: R("e") },
+        { x: C(2), y: R("e") }, { x: C(3), y: R("e") }, { x: C(4), y: R("e") }, { x: C(5), y: R("e") },
+      ],
+    },
   ],
   decorations: [
     // Speakers flanking the vinyl deck (a2, a5).
     { tileX: C(2), tileY: R("a"), artKey: "speaker", solid: true },
     { tileX: C(5), tileY: R("a"), artKey: "speaker", solid: true },
+
+    // Record crates concealing the secret stairs (a7). Solid + visible until the
+    // "basement-entrance" flag is revealed, then they slide away.
+    { tileX: C(7), tileY: R("a"), artKey: "crates", solid: true, concealing: "basement-entrance" },
 
     // Couch — single L footprint (5×3), arm down the left + base along the
     // bottom. Non-solid so Scribbs can step onto the cushions ("sit").

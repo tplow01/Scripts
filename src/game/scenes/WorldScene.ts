@@ -1,9 +1,10 @@
 import * as Phaser from "phaser";
-import { getRoom, startRoomId, isWalkableIn } from "@/game/world/rooms";
+import { getRoom, startRoomId, isWalkableIn, canStep, invalidateBlocked } from "@/game/world/rooms";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { wallVariant } from "@/game/art/wallVariant";
-import { footprint } from "@/game/world/types";
+import { footprint, propActive } from "@/game/world/types";
 import type { Interaction, Decoration, Room } from "@/game/world/types";
+import { gameSession } from "@/lib/gameSession";
 
 type Facing = "down" | "up" | "side";
 
@@ -36,6 +37,8 @@ export class WorldScene extends Phaser.Scene {
 
   /** Everything drawn for the current room; destroyed on each room load. */
   private roomObjects: Phaser.GameObjects.GameObject[] = [];
+  /** Concealing covers (e.g. crates over the secret stairs) for slide-away reveal. */
+  private coverObjects: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super("world");
@@ -63,26 +66,40 @@ export class WorldScene extends Phaser.Scene {
     const onDialog = (open: boolean) => { this.dialogOpen = open; };
     this.game.events.on("dialog", onDialog);
 
+    // Reveal a flag-gated secret (e.g. the hidden basement entrance).
+    const onReveal = (flag: string) => this.revealSecret(flag);
+    this.game.events.on("reveal", onReveal);
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off("vbutton", onVButton);
       this.game.events.off("dialog", onDialog);
+      this.game.events.off("reveal", onReveal);
       this.scale.off("resize", this.updateZoom, this);
     });
 
-    const roomId = data?.roomId ?? startRoomId;
+    // Resume from a saved session (returning from inventory/basement) drops us
+    // back into the exact room + tile we left; otherwise start fresh.
+    const resume = gameSession.pos;
+    const roomId = resume?.roomId ?? data?.roomId ?? startRoomId;
     this.loadRoom(roomId);
 
-    // Returning from a web page (inventory/basement/cart) re-enters the Lobby
-    // directly — skip the door walk-in so it feels instant, not a fresh boot.
-    const skipIntro =
-      typeof window !== "undefined" &&
-      (window as unknown as { __scriptsSkipIntro?: boolean }).__scriptsSkipIntro;
+    if (resume) {
+      this.tileX = resume.tileX;
+      this.tileY = resume.tileY;
+      this.facing = resume.facing;
+      this.scribbs.setFlipX(resume.flip);
+      this.setFrame(false);
+      this.syncScribbs();
+      this.cameras.main.centerOn(this.scribbs.x, this.scribbs.y);
+    }
 
     // First entry into the shop: walk in through the doors before input.
-    if (roomId === startRoomId && !this.introPlayed && !skipIntro) {
+    // (Resuming skips the intro — it would feel like a fresh boot.)
+    if (roomId === startRoomId && !this.introPlayed && !resume) {
       this.introPlayed = true;
       this.playDoorIntro();
     }
+    this.saveSession();
   }
 
   /** Swap to a room: clear the old art, redraw, reposition Scribbs + camera. */
@@ -90,6 +107,7 @@ export class WorldScene extends Phaser.Scene {
     this.room = getRoom(roomId);
     this.roomObjects.forEach((o) => o.destroy());
     this.roomObjects = [];
+    this.coverObjects = [];
 
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
     // The Basement lays down its own darker floor; everywhere else uses "floor".
@@ -107,6 +125,13 @@ export class WorldScene extends Phaser.Scene {
     const flatFloor = new Set(["emblem", "rug", "mat"]);
     const onWall = new Set(["poster", "window", "doors"]);
     for (const deco of this.room.decorations ?? []) {
+      if (!propActive(deco, gameSession.revealed)) continue;
+      // Concealing covers (crates over the secret stairs) sit above floor props
+      // and are tracked so the reveal can slide them away.
+      if (deco.concealing) {
+        this.coverObjects.push(this.placeProp(deco, 2.2, false));
+        continue;
+      }
       if (deco.artKey === "emblem") this.placeProp(deco, 0.4, false);
       else if (flatFloor.has(deco.artKey)) this.placeProp(deco, 0.6, false);
       else if (onWall.has(deco.artKey)) this.placeProp(deco, 1, false);
@@ -114,8 +139,10 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // Interactions: stairs lie on the floor, posters mount on the wall, the rest
-    // are standing fixtures with a shadow.
+    // are standing fixtures with a shadow. Flag-gated ones (hidden stairs) are
+    // skipped until revealed.
     for (const it of this.room.interactions) {
+      if (!propActive(it, gameSession.revealed)) continue;
       if (it.type === "stairs") this.placeProp(it, 0.5, false);
       else if (it.type === "poster") this.placeProp(it, 1, false);
       else this.placeProp(it, 2, true);
@@ -140,6 +167,7 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, this.room.width * this.room.tileSize, this.room.height * this.room.tileSize);
     this.updateZoom();
     this.lastInteractionId = null;
+    this.saveSession();
   }
 
   /** Snap Scribbs + shadow to the current tile. */
@@ -162,7 +190,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Place a prop honouring its footprint; solid props get a contact shadow. */
-  private placeProp(p: Interaction | Decoration, depth: number, withShadow: boolean) {
+  private placeProp(p: Interaction | Decoration, depth: number, withShadow: boolean): Phaser.GameObjects.Image {
     const ts = this.room.tileSize;
     const w = p.wTiles ?? 1;
     const h = p.hTiles ?? 1;
@@ -180,6 +208,37 @@ export class WorldScene extends Phaser.Scene {
       .setDisplaySize(w * ts, h * ts)
       .setDepth(depth);
     this.roomObjects.push(img);
+    return img;
+  }
+
+  /** Reveal a flag-gated secret: slide concealing covers away + draw newly-active props. */
+  private revealSecret(flag: string) {
+    if (gameSession.revealed.has(flag)) return;
+    gameSession.revealed.add(flag);
+    invalidateBlocked(this.room.id);
+
+    // Slide + fade the covers, then destroy them.
+    const ts = this.room.tileSize;
+    const covers = this.coverObjects;
+    this.coverObjects = [];
+    covers.forEach((c) => {
+      this.tweens.add({
+        targets: c,
+        x: c.x - ts * 1.5,
+        alpha: 0,
+        duration: 420,
+        ease: "Cubic.easeIn",
+        onComplete: () => c.destroy(),
+      });
+    });
+
+    // Draw any interactions this flag has just made active (the hidden stairs).
+    for (const it of this.room.interactions) {
+      if (it.revealedBy === flag && propActive(it, gameSession.revealed)) {
+        if (it.type === "stairs") this.placeProp(it, 0.5, false);
+        else this.placeProp(it, 2, true);
+      }
+    }
   }
 
   /** Cover the viewport with the room and keep pixels crisp (integer zoom). */
@@ -201,6 +260,8 @@ export class WorldScene extends Phaser.Scene {
       if (steps >= DOOR_WALK_TILES || !isWalkableIn(this.room, this.tileX, this.tileY - 1)) {
         this.setFrame(false);
         this.transitioning = false;
+        // Greet the player on first entry (React shows the welcome message).
+        this.game.events.emit("welcome");
         return;
       }
       this.stepToggle = !this.stepToggle;
@@ -262,8 +323,8 @@ export class WorldScene extends Phaser.Scene {
     const nx = this.tileX + dx;
     const ny = this.tileY + dy;
 
-    if (!isWalkableIn(this.room, nx, ny)) {
-      this.setFrame(false); // turn-in-place
+    if (!canStep(this.room, this.tileX, this.tileY, nx, ny)) {
+      this.setFrame(false); // turn-in-place (wall, fixture, or wrong-side seat)
       return;
     }
 
@@ -290,9 +351,21 @@ export class WorldScene extends Phaser.Scene {
         this.tileY = ny;
         this.moving = false;
         this.setFrame(false);
+        this.saveSession();
         this.checkInteraction();
       },
     });
+  }
+
+  /** Persist Scribbs' room + tile so we can resume here after a web-page detour. */
+  private saveSession() {
+    gameSession.pos = {
+      roomId: this.room.id,
+      tileX: this.tileX,
+      tileY: this.tileY,
+      facing: this.facing,
+      flip: this.scribbs.flipX,
+    };
   }
 
   /** Pick the texture for the current facing + walk phase. */
@@ -304,6 +377,7 @@ export class WorldScene extends Phaser.Scene {
   /** Step onto an interaction tile: transition (stairs) or fire a stub event. */
   private checkInteraction() {
     const hit = this.room.interactions.find((i) =>
+      propActive(i, gameSession.revealed) &&
       footprint(i).some((t) => t.x === this.tileX && t.y === this.tileY),
     );
     if (!hit) {
@@ -331,6 +405,7 @@ export class WorldScene extends Phaser.Scene {
     const fx = this.tileX + dx;
     const fy = this.tileY + dy;
     const hit = this.room.interactions.find((i) =>
+      propActive(i, gameSession.revealed) &&
       footprint(i).some((t) => t.x === fx && t.y === fy),
     );
     if (hit && !hit.target) this.fireInteraction(hit);

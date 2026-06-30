@@ -761,6 +761,75 @@ function buildCouch(): string[] {
 export const couchArt: PixelArt = { rows: buildCouch(), palette: PAL, outline: OUT };
 
 /**
+ * NPC sprite family — same silhouette as `npcArt`, recoloured per shopper so the
+ * world reads as a crowd, not clones. `body`/`pocket` are palette chars for the
+ * hoodie field + its pocket seam. Facing down (matches Scribbs' idle).
+ */
+const NPC_TEMPLATE = [
+  "................",
+  "....hhHHHHHH....",
+  "...HhhHHHHHHH...",
+  "...HNNNNNNNNH...",
+  "...HNONNNNONH...",
+  "....NNNNNNNN....",
+  "....NNNNNNNN....",
+  "...PPPPPPPPPP...",
+  "..PPPPPPPPPPPP..",
+  "..PPPPPPPPPPPP..",
+  "..PPpPPPPPPpPP..",
+  "..PPPPPPPPPPPP..",
+  "...WWWD..WWWD...",
+  "...WWWD..WWWD...",
+  "...BBB...BBB....",
+  "................",
+];
+function npcSprite(body: string, pocket: string): PixelArt {
+  return {
+    palette: PAL,
+    outline: OUT,
+    rows: NPC_TEMPLATE.map((r) => r.split("P").join(body).split("p").join(pocket)),
+  };
+}
+
+// Rail browser — army-green hoodie (echoes the Army Green colorway).
+export const npcRailArt: PixelArt = npcSprite("m", "k");
+// Sofa sitter — cream hoodie.
+export const npcSitterArt: PixelArt = npcSprite("C", "c");
+// Clothing gazer — charcoal hoodie.
+export const npcGazerArt: PixelArt = npcSprite("3", "4");
+// Checkout shopper — muted-rose hoodie.
+export const npcShopperArt: PixelArt = npcSprite("s", "X");
+
+/**
+ * Record crates (1 tile) — a wooden crate of vinyl with sleeves poking out the
+ * top. Conceals the secret basement stairs until the deck is played.
+ */
+function buildCrates(): string[] {
+  const W = 16, H = 16;
+  const sleeves = ["3", "C", "P", "s", "4", "C", "P", "3"]; // record spines
+  const rows: string[] = [];
+  for (let y = 0; y < H; y++) {
+    let row = "";
+    for (let x = 0; x < W; x++) {
+      let ch = ".";
+      const inSleeves = x >= 3 && x <= 12 && y >= 1 && y <= 3;
+      const inCrate = x >= 2 && x <= 13 && y >= 4 && y <= 14;
+      if (inSleeves) {
+        ch = sleeves[(x - 3) % sleeves.length];
+      } else if (inCrate) {
+        const rim = y === 4 || y === 14 || x === 2 || x === 13;
+        if (rim) ch = "d";
+        else ch = (y - 5) % 3 === 0 ? "U" : "u";
+      }
+      row += ch;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+export const cratesArt: PixelArt = { rows: buildCrates(), palette: PAL, outline: OUT };
+
+/**
  * Rug (2×2 tiles): solid brand-pink fill, a 1px ink border, and a single inner
  * rule (one inset ink line). Simple and warm — adds a spot of colour without
  * competing with the fixtures. Non-solid (walkable).

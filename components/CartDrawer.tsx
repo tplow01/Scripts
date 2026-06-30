@@ -2,12 +2,14 @@
 
 import Image from 'next/image'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
   const reduced = useReducedMotion()
+  const router = useRouter()
 
   useEffect(() => {
     if (isOpen) {
@@ -36,7 +38,7 @@ export default function CartDrawer() {
           {/* Drawer */}
           <motion.div
             key="drawer"
-            className="fixed top-0 right-0 h-full z-50 bg-white flex flex-col w-full md:w-[min(520px,90vw)]"
+            className="fixed top-0 right-0 h-full z-50 bg-white text-[#0d0d0d] flex flex-col w-full md:w-[min(520px,90vw)]"
             initial={reduced ? {} : { x: '100%' }}
             animate={{ x: 0 }}
             exit={reduced ? {} : { x: '100%' }}
@@ -103,9 +105,11 @@ export default function CartDrawer() {
                         <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#888] mt-[4px]">
                           {item.size}
                         </p>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#aaa] mt-[4px]">
-                          Ships on: July 2026
-                        </p>
+                        {item.product.shipDate && (
+                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6F6F73] mt-[4px]">
+                            Ships: {item.product.shipDate}
+                          </p>
+                        )}
 
                         {/* Qty + trash */}
                         <div className="flex items-center gap-[4px] mt-[12px]">
@@ -152,6 +156,7 @@ export default function CartDrawer() {
                 <motion.button
                   whileTap={reduced ? {} : { scale: 0.98 }}
                   transition={{ duration: 0.15 }}
+                  onClick={() => { closeCart(); router.push('/checkout') }}
                   className="w-full py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200"
                 >
                   Checkout

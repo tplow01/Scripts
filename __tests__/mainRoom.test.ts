@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mainRoom, isWalkable } from "@/game/world/mainRoom";
-import { footprint } from "@/game/world/types";
+import { footprint, buildBlockedSet } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
   it("has a tile grid matching its declared dimensions", () => {
@@ -48,9 +48,13 @@ describe("mainRoom world data", () => {
     expect(isWalkable(mainRoom, rack.tileX, rack.tileY)).toBe(false);
   });
 
-  it("lets the player step onto the (non-solid) stairs", () => {
+  it("hides the secret stairs behind the crates until revealed", () => {
     const stairs = mainRoom.interactions.find((i) => i.type === "stairs")!;
-    expect(isWalkable(mainRoom, stairs.tileX, stairs.tileY)).toBe(true);
+    // Concealed by default: the record crates cover the entrance tile.
+    expect(isWalkable(mainRoom, stairs.tileX, stairs.tileY)).toBe(false);
+    // Once the entrance flag is revealed, the cover lifts and the tile opens.
+    const revealed = buildBlockedSet(mainRoom, new Set(["basement-entrance"]));
+    expect(revealed.has(`${stairs.tileX},${stairs.tileY}`)).toBe(false);
   });
 
   it("includes the core shop interaction types", () => {

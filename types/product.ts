@@ -12,6 +12,8 @@ export interface Product {
   backImage: string | null
   slug: string
   description: string
+  /** Estimated dispatch window shown in cart/checkout (pre-order drop). */
+  shipDate: string
   sizes: string[]
   careInstructions: string[]
   fit: string

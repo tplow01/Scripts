@@ -33,6 +33,21 @@ interface Placed {
   holes?: Array<{ dx: number; dy: number }>;
   /** Key into the art registry — never an asset path. */
   artKey: string;
+  /**
+   * Secret/flag gating (optional). A prop with `revealedBy` is inactive — not
+   * drawn, not solid, not interactive — until that flag is in the revealed set
+   * (a hidden entrance). A prop with `concealing` is active ONLY until that flag
+   * is set, then it disappears (a cover that slides away on reveal).
+   */
+  revealedBy?: string;
+  concealing?: string;
+}
+
+/** Whether a flag-gated prop is currently present in the world. */
+export function propActive(p: Placed, revealed: Set<string>): boolean {
+  if (p.revealedBy && !revealed.has(p.revealedBy)) return false;
+  if (p.concealing && revealed.has(p.concealing)) return false;
+  return true;
 }
 
 export interface Interaction extends Placed {
@@ -52,6 +67,16 @@ export interface Interaction extends Placed {
  */
 export interface Decoration extends Placed {}
 
+/**
+ * A group of walkable tiles (e.g. sofa cushions) that may only be ENTERED from
+ * one side. `enterDir` is the movement direction required to step in from
+ * outside the zone; moving between tiles already inside the zone is unrestricted.
+ */
+export interface SeatZone {
+  tiles: Array<{ x: number; y: number }>;
+  enterDir: "up" | "down" | "left" | "right";
+}
+
 export interface Room {
   id: string;
   /** Pixel size of one tile (used by the renderer, not by world logic). */
@@ -66,6 +91,8 @@ export interface Room {
   decorations?: Decoration[];
   /** Optional darkening overlay drawn over the whole room (e.g. the Basement). */
   ambient?: { color: number; alpha: number };
+  /** Tiles you can only step onto from a specific side (e.g. sofa cushions). */
+  seats?: SeatZone[];
 }
 
 /** Every tile a placed prop covers, given its footprint. */
@@ -86,10 +113,10 @@ export function footprint(p: Placed): Array<{ x: number; y: number }> {
  * decorations). Used alongside `isWalkable` so the player navigates around
  * fixtures like a real shop floor.
  */
-export function buildBlockedSet(room: Room): Set<string> {
+export function buildBlockedSet(room: Room, revealed: Set<string> = new Set()): Set<string> {
   const blocked = new Set<string>();
   const add = (p: Placed) => {
-    if (!p.solid) return;
+    if (!p.solid || !propActive(p, revealed)) return;
     const holes = new Set((p.holes ?? []).map((h) => `${p.tileX + h.dx},${p.tileY + h.dy}`));
     for (const t of footprint(p)) {
       const key = `${t.x},${t.y}`;

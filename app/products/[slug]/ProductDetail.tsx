@@ -10,6 +10,7 @@ import BasementFooter from '@/components/BasementFooter'
 import type { Product } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
+import { useToast } from '@/lib/toast'
 
 const STATUS_LABEL: Record<string, string> = {
   'pre-order': 'PRE-ORDER',
@@ -22,16 +23,22 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   const [added, setAdded] = useState(false)
   const reduced = useReducedMotion()
   const { add, openCart } = useCart()
+  const { notify } = useToast()
   const isSoldOut = product.status === 'sold-out'
 
   function handleAddToBag() {
     if (!selectedSize) return
-    add(product, selectedSize)
-    setAdded(true)
-    setTimeout(() => {
-      setAdded(false)
-      openCart()
-    }, 800)
+    try {
+      add(product, selectedSize)
+      setAdded(true)
+      notify(`${product.emotion} (${selectedSize}) added to bag`, 'success')
+      setTimeout(() => {
+        setAdded(false)
+        openCart()
+      }, 800)
+    } catch {
+      notify('Could not add to bag — try again', 'error')
+    }
   }
 
   const images = [product.image, product.backImage].filter(Boolean) as string[]

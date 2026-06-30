@@ -27,8 +27,13 @@ import {
   speakerArt,
   boxArt,
   npcArt,
+  npcRailArt,
+  npcSitterArt,
+  npcGazerArt,
+  npcShopperArt,
   cashierArt,
   couchArt,
+  cratesArt,
   rugArt,
   scribbsFrames,
 } from "./sprites";
@@ -66,8 +71,13 @@ const TEXTURE_KEYS = [
   "speaker",
   "box",
   "npc",
+  "npcRail",
+  "npcSitter",
+  "npcGazer",
+  "npcShopper",
   "cashier",
   "couch",
+  "crates",
   "rug",
   "emblem",
   "window",
@@ -101,8 +111,13 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "speaker", speakerArt);
   bakePixelArt(scene, "box", boxArt);
   bakePixelArt(scene, "npc", npcArt);
+  bakePixelArt(scene, "npcRail", npcRailArt);
+  bakePixelArt(scene, "npcSitter", npcSitterArt);
+  bakePixelArt(scene, "npcGazer", npcGazerArt);
+  bakePixelArt(scene, "npcShopper", npcShopperArt);
   bakePixelArt(scene, "cashier", cashierArt);
   bakePixelArt(scene, "couch", couchArt);
+  bakePixelArt(scene, "crates", cratesArt);
   bakePixelArt(scene, "rug", rugArt);
   bakePixelArt(scene, "emblem", emblemArt);
   bakePixelArt(scene, "window", windowArt);

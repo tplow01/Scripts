@@ -5,13 +5,13 @@ import { useCart } from '@/lib/cart'
 
 interface NavBarProps {
   showBack?: boolean
-  /** Where the back arrow goes. Defaults to the game Lobby (skips the start screen). */
+  /** Where the back arrow goes. Defaults to the game Lobby (resumes in place). */
   backHref?: string
 }
 
 const ICON_CLS = 'flex items-center justify-center w-[36px] h-[36px] hover:opacity-60 transition-opacity'
 
-export default function NavBar({ showBack = false, backHref = '/?play=1' }: NavBarProps) {
+export default function NavBar({ showBack = false, backHref = '/' }: NavBarProps) {
   const { count, openCart } = useCart()
 
   return (
@@ -24,7 +24,7 @@ export default function NavBar({ showBack = false, backHref = '/?play=1' }: NavB
         className={`${ICON_CLS} ${showBack ? '' : 'invisible pointer-events-none'}`}
       >
         <svg width="26" height="26" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M23.8406 12.4604C23.8402 11.4627 22.669 10.9255 21.9128 11.5766L4.89429 26.2319C3.81325 27.1628 3.81325 28.8372 4.89429 29.7681L21.9128 44.4233C22.669 45.0744 23.8402 44.5372 23.8406 43.5395V35.5835H47.1746C48.4631 35.5833 49.5076 34.5381 49.5076 33.2495V22.7495C49.5073 21.4612 48.4629 20.4167 47.1746 20.4165H23.8406V12.4604Z" stroke="#0D0D0D" strokeWidth="4.5"/>
+          <path d="M23.8406 12.4604C23.8402 11.4627 22.669 10.9255 21.9128 11.5766L4.89429 26.2319C3.81325 27.1628 3.81325 28.8372 4.89429 29.7681L21.9128 44.4233C22.669 45.0744 23.8402 44.5372 23.8406 43.5395V35.5835H47.1746C48.4631 35.5833 49.5076 34.5381 49.5076 33.2495V22.7495C49.5073 21.4612 48.4629 20.4167 47.1746 20.4165H23.8406V12.4604Z" fill="#0D0D0D"/>
         </svg>
       </Link>
 
@@ -38,13 +38,8 @@ export default function NavBar({ showBack = false, backHref = '/?play=1' }: NavB
         </span>
       </Link>
 
-      {/* Right — profile + bag */}
+      {/* Right — bag */}
       <div className="flex items-center gap-[16px] ml-auto">
-        <Link href="/account" aria-label="Account" className={ICON_CLS}>
-          <svg width="26" height="26" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.75 47.25V43.75C8.75 38.5953 12.9287 34.4167 18.0833 34.4167H37.9167C43.0713 34.4167 47.25 38.5953 47.25 43.75V47.25M39.0833 17.5C39.0833 23.6212 34.1212 28.5833 28 28.5833C21.8788 28.5833 16.9167 23.6212 16.9167 17.5C16.9167 11.3788 21.8788 6.41667 28 6.41667C34.1212 6.41667 39.0833 11.3788 39.0833 17.5Z" stroke="#0D0D0D" strokeWidth="4.5" strokeLinecap="square"/>
-          </svg>
-        </Link>
         <button onClick={openCart} aria-label="Bag" className={`${ICON_CLS} relative`}>
           {/* Fixed 26×26 container keeps layout stable on icon swap */}
           <span className="flex items-center justify-center w-[26px] h-[26px]">

@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import NavBar from '@/components/NavBar'
 import FooterLinks from '@/components/FooterLinks'
@@ -11,6 +12,7 @@ import { fadeUp, stagger } from '@/lib/motion'
 export default function CartPage() {
   const { items, remove, increment, decrement, total } = useCart()
   const reduced = useReducedMotion()
+  const router = useRouter()
 
   const listVariants = reduced ? {} : stagger(0.06)
   const itemVariants = reduced ? {} : fadeUp
@@ -19,7 +21,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col">
       <NavBar showBack />
 
-      <main className="px-[200px] pb-[120px] flex-1">
+      <main className="px-4 md:px-16 lg:px-[120px] pb-[120px] flex-1">
 
         {/* Heading */}
         <motion.div
@@ -32,7 +34,7 @@ export default function CartPage() {
             Your Bag
           </h1>
           {items.length > 0 && (
-            <p className="text-[12px] font-bold tracking-[0.08em] uppercase text-[#888] mt-[8px]">
+            <p className="text-[12px] font-bold tracking-[0.08em] uppercase text-[#6F6F73] mt-[8px]">
               {items.reduce((s, i) => s + i.quantity, 0)} item{items.reduce((s, i) => s + i.quantity, 0) !== 1 ? 's' : ''}
             </p>
           )}
@@ -45,7 +47,7 @@ export default function CartPage() {
             animate="show"
             className="flex flex-col items-start gap-[16px]"
           >
-            <p className="text-[14px] font-bold uppercase tracking-[0.04em] text-[#888]">Your bag is empty.</p>
+            <p className="text-[14px] font-bold uppercase tracking-[0.04em] text-[#6F6F73]">Your bag is empty.</p>
             <Link
               href="/inventory"
               className="text-[13px] font-bold tracking-[0.06em] uppercase underline underline-offset-4 hover:opacity-50 transition-opacity"
@@ -54,7 +56,7 @@ export default function CartPage() {
             </Link>
           </motion.div>
         ) : (
-          <div className="flex gap-[80px] items-start">
+          <div className="flex flex-col lg:flex-row gap-[40px] lg:gap-[80px] items-start">
 
             {/* Item list */}
             <motion.div
@@ -87,7 +89,7 @@ export default function CartPage() {
                           {item.product.name}
                         </p>
                       </Link>
-                      <p className="text-[12px] font-bold text-[#888] uppercase tracking-[0.04em] mt-[4px]">
+                      <p className="text-[12px] font-bold text-[#6F6F73] uppercase tracking-[0.04em] mt-[4px]">
                         Size: {item.size}
                       </p>
                       <p className="text-[13px] font-bold mt-[8px]">
@@ -132,17 +134,17 @@ export default function CartPage() {
               variants={reduced ? {} : fadeUp}
               initial="hidden"
               animate="show"
-              className="w-[320px] shrink-0 border border-[#e5e5e5] rounded p-[32px]"
+              className="w-full lg:w-[320px] shrink-0 border border-[#e5e5e5] rounded p-[32px]"
             >
-              <p className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#888] mb-[20px]">Order Summary</p>
+              <p className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#6F6F73] mb-[20px]">Order Summary</p>
 
               <div className="flex justify-between mb-[12px]">
                 <span className="text-[13px] font-bold">Subtotal</span>
                 <span className="text-[13px] font-bold">${total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between mb-[24px]">
-                <span className="text-[12px] text-[#888]">Shipping</span>
-                <span className="text-[12px] text-[#888]">Calculated at checkout</span>
+                <span className="text-[12px] text-[#6F6F73]">Shipping</span>
+                <span className="text-[12px] text-[#6F6F73]">Calculated at checkout</span>
               </div>
 
               <div className="border-t border-[#e5e5e5] pt-[20px] mb-[24px] flex justify-between">
@@ -152,6 +154,7 @@ export default function CartPage() {
 
               <motion.button
                 whileTap={reduced ? {} : { scale: 0.98 }}
+                onClick={() => router.push('/checkout')}
                 className="w-full py-[14px] bg-[#0d0d0d] text-white text-[13px] font-bold tracking-[0.06em] uppercase border border-[#0d0d0d] rounded hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200 mb-[12px]"
               >
                 Checkout
@@ -159,7 +162,7 @@ export default function CartPage() {
 
               <Link
                 href="/inventory"
-                className="block text-center text-[12px] font-bold tracking-[0.06em] uppercase text-[#888] hover:text-[#0d0d0d] transition-colors duration-150"
+                className="block text-center text-[12px] font-bold tracking-[0.06em] uppercase text-[#6F6F73] hover:text-[#0d0d0d] transition-colors duration-150"
               >
                 Continue Shopping
               </Link>
