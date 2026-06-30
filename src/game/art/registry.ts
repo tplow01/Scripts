@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 import { bakePixelArt, bakeShadow } from "./pixelArt";
 import {
   floorArt,
+  floorBasementArt,
+  doorsArt,
   emblemArt,
   windowArt,
   plantArt,
@@ -12,6 +14,10 @@ import {
   wallBottomArt,
   wallFillArt,
   rackArt,
+  railH7Art,
+  railV7Art,
+  railH3Art,
+  railV3Art,
   checkoutArt,
   stairsArt,
   posterArt,
@@ -21,6 +27,7 @@ import {
   speakerArt,
   boxArt,
   npcArt,
+  cashierArt,
   couchArt,
   rugArt,
   scribbsFrames,
@@ -39,11 +46,17 @@ import {
 // time by `wallVariant()`, not stored in world data.
 const TEXTURE_KEYS = [
   "floor",
+  "floor-basement",
+  "doors",
   "wall-top",
   "wall-side",
   "wall-bottom",
   "wall-fill",
   "rack",
+  "rack-h7",
+  "rack-v7",
+  "rack-h3",
+  "rack-v3",
   "checkout",
   "stairs",
   "poster",
@@ -53,6 +66,7 @@ const TEXTURE_KEYS = [
   "speaker",
   "box",
   "npc",
+  "cashier",
   "couch",
   "rug",
   "emblem",
@@ -67,11 +81,17 @@ export const SHADOW_KEY = "shadow";
 
 export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "floor", floorArt);
+  bakePixelArt(scene, "floor-basement", floorBasementArt);
+  bakePixelArt(scene, "doors", doorsArt);
   bakePixelArt(scene, "wall-top", wallTopArt);
   bakePixelArt(scene, "wall-side", wallSideArt);
   bakePixelArt(scene, "wall-bottom", wallBottomArt);
   bakePixelArt(scene, "wall-fill", wallFillArt);
   bakePixelArt(scene, "rack", rackArt);
+  bakePixelArt(scene, "rack-h7", railH7Art);
+  bakePixelArt(scene, "rack-v7", railV7Art);
+  bakePixelArt(scene, "rack-h3", railH3Art);
+  bakePixelArt(scene, "rack-v3", railV3Art);
   bakePixelArt(scene, "checkout", checkoutArt);
   bakePixelArt(scene, "stairs", stairsArt);
   bakePixelArt(scene, "poster", posterArt);
@@ -81,6 +101,7 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "speaker", speakerArt);
   bakePixelArt(scene, "box", boxArt);
   bakePixelArt(scene, "npc", npcArt);
+  bakePixelArt(scene, "cashier", cashierArt);
   bakePixelArt(scene, "couch", couchArt);
   bakePixelArt(scene, "rug", rugArt);
   bakePixelArt(scene, "emblem", emblemArt);

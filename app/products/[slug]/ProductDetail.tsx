@@ -79,7 +79,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   return (
     <div className={`min-h-screen ${bg} ${text} flex flex-col`}>
 
-      {dark ? <BasementNavBar /> : <NavBar showBack />}
+      {dark ? <BasementNavBar backHref="/basement" /> : <NavBar showBack backHref="/inventory" />}
 
       <main className="px-4 md:px-16 lg:px-[200px] pb-[120px] flex-1">
         <div className="flex flex-col lg:flex-row gap-[80px] items-start">

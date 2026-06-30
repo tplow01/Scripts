@@ -50,27 +50,34 @@ export const mainRoom: Room = {
     // Music alcove (row a): vinyl deck (2 wide). Speakers are decorations.
     { id: "vinyl", type: "vinylDesk", tileX: C(3), tileY: R("a"), artKey: "vinylDesk", wTiles: 2, solid: true },
 
-    // Checkout L (bottom-left): top k1–k2 + column k2–o2.
-    { id: "checkout-top", type: "checkout", tileX: C(1), tileY: R("k"), artKey: "checkout", wTiles: 2, solid: true },
-    { id: "checkout-col", type: "checkout", tileX: C(2), tileY: R("k"), artKey: "checkout", hTiles: 5, solid: true },
+    // Checkout — single L footprint (2×5): top bar k1–k2 + right column k2–o2;
+    // the bottom-left 1×4 cutout is a hole (walkable, transparent art).
+    { id: "checkout", type: "checkout", tileX: C(1), tileY: R("k"), artKey: "checkout", wTiles: 2, hTiles: 5, solid: true,
+      holes: [{ dx: 0, dy: 1 }, { dx: 0, dy: 2 }, { dx: 0, dy: 3 }, { dx: 0, dy: 4 }] },
+
+    // Cashier — staff standing in the checkout gap, behind the counter (l1).
+    { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "cashier", solid: true },
 
     // Clothing rails: horizontal h8–14, vertical h15–n15.
-    { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack", wTiles: 7, solid: true },
-    { id: "rail-v", type: "rack", tileX: C(15), tileY: R("h"), artKey: "rack", hTiles: 7, solid: true },
+    { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack-h7", wTiles: 7, solid: true },
+    { id: "rail-v", type: "rack", tileX: C(15), tileY: R("h"), artKey: "rack-v7", hTiles: 7, solid: true },
   ],
   decorations: [
     // Speakers flanking the vinyl deck (a2, a5).
     { tileX: C(2), tileY: R("a"), artKey: "speaker", solid: true },
     { tileX: C(5), tileY: R("a"), artKey: "speaker", solid: true },
 
-    // Couch L: arm c1–e1 + base e1–e5 (solid).
-    { tileX: C(1), tileY: R("c"), artKey: "couch", hTiles: 3, solid: true },
-    { tileX: C(1), tileY: R("e"), artKey: "couch", wTiles: 5, solid: true },
+    // Couch — single L footprint (5×3), arm down the left + base along the
+    // bottom. Non-solid so Scribbs can step onto the cushions ("sit").
+    { tileX: C(1), tileY: R("c"), artKey: "couch", wTiles: 5, hTiles: 3, solid: false },
 
-    // Logo floor emblem (k6–m10, walkable decal).
-    { tileX: C(6), tileY: R("k"), artKey: "emblem", wTiles: 5, hTiles: 3 },
+    // SCR!PTS floor logo — 3×3 brand lockup, centred over the door (cols 7–9),
+    // two tiles above it (rows j–l, with y13–14 clear before the door at o).
+    { tileX: C(7), tileY: R("j"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
-    // Entrance doormat (o7–o9, walkable).
+    // Entrance: glass doors set into the bottom wall (cols 7–9, border row),
+    // with the doormat just inside it (o7–o9, walkable).
+    { tileX: C(7), tileY: HEIGHT - 1, artKey: "doors", wTiles: 3 },
     { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3 },
   ],
 };

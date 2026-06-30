@@ -5,11 +5,13 @@ import { useCart } from '@/lib/cart'
 
 interface NavBarProps {
   showBack?: boolean
+  /** Where the back arrow goes. Defaults to the game Lobby (skips the start screen). */
+  backHref?: string
 }
 
 const ICON_CLS = 'flex items-center justify-center w-[36px] h-[36px] hover:opacity-60 transition-opacity'
 
-export default function NavBar({ showBack = false }: NavBarProps) {
+export default function NavBar({ showBack = false, backHref = '/?play=1' }: NavBarProps) {
   const { count, openCart } = useCart()
 
   return (
@@ -17,8 +19,8 @@ export default function NavBar({ showBack = false }: NavBarProps) {
 
       {/* Left — back arrow */}
       <Link
-        href="/inventory"
-        aria-label="Back to inventory"
+        href={backHref}
+        aria-label="Back"
         className={`${ICON_CLS} ${showBack ? '' : 'invisible pointer-events-none'}`}
       >
         <svg width="26" height="26" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">

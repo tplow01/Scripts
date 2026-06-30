@@ -43,9 +43,9 @@ export const basementRoom: Room = {
     { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs", solid: false,
       target: { roomId: "main", spawn: { tileX: 7, tileY: 2 } }, transition: "fade" },
     // Rack room (right block): three rails framing the NPC.
-    { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack", wTiles: 3, solid: true },
-    { id: "rail-left", type: "rack", tileX: C(7), tileY: R("a"), artKey: "rack", hTiles: 3, solid: true },
-    { id: "rail-right", type: "rack", tileX: C(11), tileY: R("a"), artKey: "rack", hTiles: 3, solid: true },
+    { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack-h3", wTiles: 3, solid: true },
+    { id: "rail-left", type: "rack", tileX: C(7), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
+    { id: "rail-right", type: "rack", tileX: C(11), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
     { id: "basement-npc", type: "npc", tileX: C(9), tileY: R("b"), artKey: "npc", solid: true },
   ],
   decorations: [

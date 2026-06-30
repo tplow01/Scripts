@@ -28,6 +28,7 @@ export class WorldScene extends Phaser.Scene {
   private tileY = 0;
   private moving = false;
   private transitioning = false;
+  private dialogOpen = false;
   private introPlayed = false;
   private facing: Facing = "down";
   private stepToggle = false;
@@ -53,15 +54,32 @@ export class WorldScene extends Phaser.Scene {
     kb.addCapture(["UP", "DOWN", "LEFT", "RIGHT", "W", "A", "S", "D", "Z", "SPACE", "ENTER"]);
     kb.on("keydown", (event: KeyboardEvent) => this.onKey(event));
 
+    // On-screen Game Boy controls (mobile) emit "vbutton" with a KeyboardEvent
+    // `code`, so they flow through the exact same input path as the keyboard.
+    const onVButton = (code: string) => this.onKey({ code } as KeyboardEvent);
+    this.game.events.on("vbutton", onVButton);
+
+    // React-side Yes/No dialogue freezes movement while it's open.
+    const onDialog = (open: boolean) => { this.dialogOpen = open; };
+    this.game.events.on("dialog", onDialog);
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off("vbutton", onVButton);
+      this.game.events.off("dialog", onDialog);
       this.scale.off("resize", this.updateZoom, this);
     });
 
     const roomId = data?.roomId ?? startRoomId;
     this.loadRoom(roomId);
 
+    // Returning from a web page (inventory/basement/cart) re-enters the Lobby
+    // directly — skip the door walk-in so it feels instant, not a fresh boot.
+    const skipIntro =
+      typeof window !== "undefined" &&
+      (window as unknown as { __scriptsSkipIntro?: boolean }).__scriptsSkipIntro;
+
     // First entry into the shop: walk in through the doors before input.
-    if (roomId === startRoomId && !this.introPlayed) {
+    if (roomId === startRoomId && !this.introPlayed && !skipIntro) {
       this.introPlayed = true;
       this.playDoorIntro();
     }
@@ -74,10 +92,12 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects = [];
 
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
+    // The Basement lays down its own darker floor; everywhere else uses "floor".
+    const floorKey = roomId === "basement" ? "floor-basement" : "floor";
     for (let y = 0; y < this.room.height; y++) {
       for (let x = 0; x < this.room.width; x++) {
         const isWall = this.room.tiles[y][x] === "wall";
-        const key = isWall ? wallVariant(this.room, x, y) : "floor";
+        const key = isWall ? wallVariant(this.room, x, y) : floorKey;
         this.placeTile(resolveTextureKey(key), x, y, 0);
       }
     }
@@ -85,7 +105,7 @@ export class WorldScene extends Phaser.Scene {
     // Decorations: flat floor art sits low, wall art mounts on the wall, solid
     // obstacles stand with a contact shadow.
     const flatFloor = new Set(["emblem", "rug", "mat"]);
-    const onWall = new Set(["poster", "window"]);
+    const onWall = new Set(["poster", "window", "doors"]);
     for (const deco of this.room.decorations ?? []) {
       if (deco.artKey === "emblem") this.placeProp(deco, 0.4, false);
       else if (flatFloor.has(deco.artKey)) this.placeProp(deco, 0.6, false);
@@ -194,7 +214,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private onKey(event: KeyboardEvent) {
-    if (this.transitioning) return;
+    if (this.transitioning || this.dialogOpen) return;
     if (event.code === "KeyZ" || event.code === "Space" || event.code === "Enter") {
       this.interactAhead();
       return;

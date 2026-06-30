@@ -26,6 +26,11 @@ interface Placed {
   hTiles?: number;
   /** When true the prop blocks movement; the player walks around it. */
   solid?: boolean;
+  /**
+   * Footprint tiles (relative dx,dy from the origin) that are NOT solid — the
+   * transparent cutout of an L-shaped prop, so the player can walk into it.
+   */
+  holes?: Array<{ dx: number; dy: number }>;
   /** Key into the art registry — never an asset path. */
   artKey: string;
 }
@@ -85,7 +90,11 @@ export function buildBlockedSet(room: Room): Set<string> {
   const blocked = new Set<string>();
   const add = (p: Placed) => {
     if (!p.solid) return;
-    for (const t of footprint(p)) blocked.add(`${t.x},${t.y}`);
+    const holes = new Set((p.holes ?? []).map((h) => `${p.tileX + h.dx},${p.tileY + h.dy}`));
+    for (const t of footprint(p)) {
+      const key = `${t.x},${t.y}`;
+      if (!holes.has(key)) blocked.add(key);
+    }
   };
   room.interactions.forEach(add);
   (room.decorations ?? []).forEach(add);
