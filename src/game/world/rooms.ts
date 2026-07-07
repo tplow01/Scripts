@@ -50,10 +50,13 @@ export function isWalkableIn(room: Room, tileX: number, tileY: number): boolean 
   return !blockedFor(room).has(`${tileX},${tileY}`);
 }
 
+const OPPOSITE = { up: "down", down: "up", left: "right", right: "left" } as const;
+
 /**
  * True when the player may move from (fromX,fromY) to (toX,toY): walkable AND,
- * for seat zones, only entered from the allowed side. Movement within a zone is
- * unrestricted. Use this for player movement instead of `isWalkableIn` alone.
+ * for seat zones, obeying the sitting rules — enter only from the allowed side,
+ * and once seated you're planted: no shuffling along the cushions, the only
+ * move is stepping back off the way you came in.
  */
 export function canStep(room: Room, fromX: number, fromY: number, toX: number, toY: number): boolean {
   if (!isWalkableIn(room, toX, toY)) return false;
@@ -62,9 +65,11 @@ export function canStep(room: Room, fromX: number, fromY: number, toX: number, t
   const dir = dx === 1 ? "right" : dx === -1 ? "left" : dy === 1 ? "down" : dy === -1 ? "up" : null;
   for (const zone of room.seats ?? []) {
     const inZone = (x: number, y: number) => zone.tiles.some((t) => t.x === x && t.y === y);
-    if (inZone(toX, toY) && !inZone(fromX, fromY) && dir !== zone.enterDir) {
-      return false;
-    }
+    const fromIn = inZone(fromX, fromY);
+    const toIn = inZone(toX, toY);
+    if (!fromIn && toIn && dir !== zone.enterDir) return false; // sit down from the open side only
+    if (fromIn && toIn) return false; // seated = planted; no sliding along the couch
+    if (fromIn && !toIn && dir !== OPPOSITE[zone.enterDir]) return false; // stand up the way you sat
   }
   return true;
 }

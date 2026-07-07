@@ -87,13 +87,29 @@ function PillBtn({ label, onPress }: { label: Btn; onPress: (b: Btn) => void }) 
 export default function GameBoyShell({
   screen,
   onPress,
+  onRelease,
   mobile,
 }: {
   screen: ReactNode
   onPress: (b: Btn) => void
+  /** Fired when a held button is let go (D-pad hold-to-walk). */
+  onRelease?: (b: Btn) => void
   mobile: boolean
 }) {
-  const press = (b: Btn) => (e: React.PointerEvent) => { e.preventDefault(); onPress(b) }
+  const press = (b: Btn) => (e: React.PointerEvent) => {
+    e.preventDefault()
+    // Capture the pointer so the release always lands on this zone, even if
+    // the finger drifts off it mid-hold. (Can throw for already-gone pointers.)
+    try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    onPress(b)
+  }
+  const release = (b: Btn) => (e: React.PointerEvent) => { e.preventDefault(); onRelease?.(b) }
+  /** Press/release handler set for a holdable zone (the D-pad arms). */
+  const hold = (b: Btn) => ({
+    onPointerDown: press(b),
+    onPointerUp: release(b),
+    onPointerCancel: release(b),
+  })
 
   // ── DESKTOP: full-bleed bezel, keyboard-driven (no on-screen buttons).
   if (!mobile) {
@@ -180,10 +196,10 @@ export default function GameBoyShell({
               }} />
               <div style={{ position: 'absolute', top: '33%', left: '33%', width: '34%', height: '34%', background: '#7A7A74', borderRadius: 3 }} />
               {/* touch zones */}
-              <div onPointerDown={press('up')} style={{ position: 'absolute', top: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div onPointerDown={press('down')} style={{ position: 'absolute', bottom: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div onPointerDown={press('left')} style={{ position: 'absolute', left: 0, top: '28%', width: '40%', height: '44%' }} />
-              <div onPointerDown={press('right')} style={{ position: 'absolute', right: 0, top: '28%', width: '40%', height: '44%' }} />
+              <div {...hold('up')} style={{ position: 'absolute', top: 0, left: '28%', width: '44%', height: '40%' }} />
+              <div {...hold('down')} style={{ position: 'absolute', bottom: 0, left: '28%', width: '44%', height: '40%' }} />
+              <div {...hold('left')} style={{ position: 'absolute', left: 0, top: '28%', width: '40%', height: '44%' }} />
+              <div {...hold('right')} style={{ position: 'absolute', right: 0, top: '28%', width: '40%', height: '44%' }} />
             </div>
 
             {/* A / B — B lower-left, A upper-right (Delta diagonal) */}

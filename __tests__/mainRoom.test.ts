@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { mainRoom, isWalkable } from "@/game/world/mainRoom";
+import { mainRoom } from "@/game/world/mainRoom";
+import { isWalkableIn as isWalkable } from "@/game/world/rooms";
 import { footprint, buildBlockedSet } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
@@ -19,6 +20,13 @@ describe("mainRoom world data", () => {
       expect(mainRoom.tiles[y][0]).toBe("wall");
       expect(mainRoom.tiles[y][mainRoom.width - 1]).toBe("wall");
     }
+  });
+
+  it("has a two-tile-thick top wall (play space starts at row b)", () => {
+    for (let x = 0; x < mainRoom.width; x++) {
+      expect(mainRoom.tiles[1][x]).toBe("wall"); // interior row a is wall now
+    }
+    expect(mainRoom.tiles[2][1]).toBe("floor"); // row b, col 1 is play space
   });
 
   it("spawns the player in bounds on a walkable tile", () => {

@@ -7,7 +7,9 @@ describe("wallVariant (neighbour-based)", () => {
   const maxY = mainRoom.height - 1;
 
   it("caps a top wall whose face the player sees (floor below)", () => {
-    expect(wallVariant(mainRoom, 5, 0)).toBe("wall-top");
+    // Top wall is 2 thick: row 1 is the capped face, row 0 fully enclosed.
+    expect(wallVariant(mainRoom, 5, 1)).toBe("wall-top");
+    expect(wallVariant(mainRoom, 5, 0)).toBe("wall-fill");
   });
 
   it("uses the bottom wall where floor sits above", () => {

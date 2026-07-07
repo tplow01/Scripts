@@ -33,6 +33,8 @@ interface Placed {
   holes?: Array<{ dx: number; dy: number }>;
   /** Key into the art registry — never an asset path. */
   artKey: string;
+  /** Mirror the art horizontally (e.g. an NPC facing the other way). */
+  flip?: boolean;
   /**
    * Secret/flag gating (optional). A prop with `revealedBy` is inactive — not
    * drawn, not solid, not interactive — until that flag is in the revealed set
