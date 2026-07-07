@@ -1178,3 +1178,88 @@ export const railH7Art: PixelArt = { rows: buildRail(7, "h"), palette: PAL, outl
 export const railV7Art: PixelArt = { rows: buildRail(7, "v"), palette: PAL, outline: OUT };
 export const railH3Art: PixelArt = { rows: buildRail(3, "h"), palette: PAL, outline: OUT };
 export const railV3Art: PixelArt = { rows: buildRail(3, "v"), palette: PAL, outline: OUT };
+
+// ── Exterior street (main-room void treatment) ──────────────────────────────
+/**
+ * Exterior street tiles (main-room void treatment). Pavement = light slabs
+ * with joint lines; kerb = pavement with an edge stone along the bottom;
+ * asphalt = near-black with a sparse dither so the void reads as ground.
+ */
+function buildExtPavement(): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < TILE; y++) {
+    let row = "";
+    for (let x = 0; x < TILE; x++) {
+      const joint = y === 0 || x === 0 || x === 8; // slab joints (half-tile slabs)
+      const speckle = (x * 7 + y * 3) % 23 === 0;
+      row += joint ? "0" : speckle ? "a" : "9";
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+function buildExtKerb(): string[] {
+  const rows = buildExtPavement();
+  // Kerb stone along the bottom 4px: lit top edge + grey face + dark lip.
+  for (let y = TILE - 4; y < TILE; y++) {
+    rows[y] = (y === TILE - 4 ? "2" : y === TILE - 1 ? "K" : "+").repeat(TILE);
+  }
+  return rows;
+}
+
+function buildExtAsphalt(): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < TILE; y++) {
+    let row = "";
+    for (let x = 0; x < TILE; x++) {
+      row += (x * 5 + y * 11) % 29 === 0 ? ">" : "<"; // sparse dither
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+export const extPavementArt: PixelArt = { rows: buildExtPavement(), palette: PAL };
+export const extKerbArt: PixelArt = { rows: buildExtKerb(), palette: PAL };
+export const extAsphaltArt: PixelArt = { rows: buildExtAsphalt(), palette: PAL };
+
+/** Streetlamp (1×2 tiles = 16×32): slim post, gold head, warm light pool. */
+export const extLampArt: PixelArt = {
+  palette: PAL,
+  outline: OUT,
+  rows: [
+    "................",
+    "......????......",
+    ".....?LLLL?.....",
+    ".....?LLLL?.....",
+    "......????......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    ".......GG.......",
+    "......GGGG......",
+    ".....GGGGGG.....",
+    "....LLLLLLLL....",
+    "...LLLLLLLLLL...",
+    "....LLLLLLLL....",
+    ".....LLLLLL.....",
+    "................",
+  ],
+};

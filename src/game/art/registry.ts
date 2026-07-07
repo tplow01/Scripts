@@ -37,6 +37,10 @@ import {
   cratesArt,
   rugArt,
   scribbsFrames,
+  extPavementArt,
+  extKerbArt,
+  extAsphaltArt,
+  extLampArt,
 } from "./sprites";
 
 /**
@@ -86,6 +90,10 @@ const TEXTURE_KEYS = [
   "plant",
   "tree",
   "mat",
+  "ext-pavement",
+  "ext-kerb",
+  "ext-asphalt",
+  "ext-lamp",
 ] as const;
 
 /** Reusable soft contact-shadow texture key. */
@@ -127,6 +135,10 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "plant", plantArt);
   bakePixelArt(scene, "tree", treeArt);
   bakePixelArt(scene, "mat", matArt);
+  bakePixelArt(scene, "ext-pavement", extPavementArt);
+  bakePixelArt(scene, "ext-kerb", extKerbArt);
+  bakePixelArt(scene, "ext-asphalt", extAsphaltArt);
+  bakePixelArt(scene, "ext-lamp", extLampArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
   for (const [key, art] of Object.entries(scribbsFrames)) {
     bakePixelArt(scene, key, art);

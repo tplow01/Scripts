@@ -37,4 +37,10 @@ describe("art registry", () => {
   it("resolves the entrance display window", () => {
     expect(resolveTextureKey("display-window")).toBe("display-window");
   });
+
+  it("resolves the exterior street tiles", () => {
+    for (const k of ["ext-pavement", "ext-kerb", "ext-asphalt", "ext-lamp"]) {
+      expect(resolveTextureKey(k)).toBe(k);
+    }
+  });
 });

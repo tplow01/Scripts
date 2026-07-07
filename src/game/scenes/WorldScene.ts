@@ -73,7 +73,6 @@ export class WorldScene extends Phaser.Scene {
     // Scribbs + shadow persist across rooms (so camera-follow stays valid).
     this.scribbsShadow = this.add.image(0, 0, SHADOW_KEY).setDepth(9);
     this.scribbs = this.add.image(0, 0, "scribbs-down-a").setDepth(10);
-    this.cameras.main.setBackgroundColor("#1C1A22");
     this.cameras.main.roundPixels = true;
     this.cameras.main.startFollow(this.scribbs, true, 0.18, 0.18);
     this.scale.on("resize", this.updateZoom, this);
@@ -189,6 +188,37 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects.forEach((o) => o.destroy());
     this.roomObjects = [];
     this.coverObjects = [];
+
+    // ── Exterior treatment (main room only): the void beyond the walls reads
+    // as city ground, not dead space. Top/left/right: dithered asphalt apron.
+    // Below the entrance: sidewalk (pavement + kerb) then asphalt road, with a
+    // streetlamp by the doors. All decorative — outside bounds, never walkable.
+    const APRON = 4;
+    if (roomId === "main") {
+      this.cameras.main.setBackgroundColor("#1B1822"); // matches ext-asphalt
+      for (let y = -APRON; y < this.room.height + APRON; y++) {
+        for (let x = -APRON; x < this.room.width + APRON; x++) {
+          const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
+          if (inside) continue;
+          let key = "ext-asphalt";
+          if (y >= this.room.height) {
+            // Street in front of the shop: 2 sidewalk rows, kerb, then road.
+            const d = y - this.room.height;
+            key = d === 0 ? "ext-pavement" : d === 1 ? "ext-kerb" : "ext-asphalt";
+          }
+          this.placeTile(resolveTextureKey(key), x, y, -0.5);
+        }
+      }
+      // Streetlamp on the sidewalk beside the doors (cols 7–9 are the doors).
+      const ts = this.room.tileSize;
+      const lamp = this.add
+        .image(11 * ts + ts / 2, this.room.height * ts + ts, resolveTextureKey("ext-lamp"))
+        .setDisplaySize(ts, ts * 2)
+        .setDepth(-0.4);
+      this.roomObjects.push(lamp);
+    } else {
+      this.cameras.main.setBackgroundColor("#1C1A22"); // basement: untouched void
+    }
 
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
     // The Basement lays down its own darker floor; everywhere else uses "floor".
