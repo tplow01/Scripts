@@ -15,7 +15,7 @@ export default function NavBar({ showBack = false, backHref = '/' }: NavBarProps
   const { count, openCart } = useCart()
 
   return (
-    <header className="relative flex items-center px-4 md:px-16 lg:px-[200px] pt-6 md:pt-10 lg:pt-[64px] pb-4 md:pb-8 lg:pb-[48px]">
+    <header className="sticky top-0 z-50 bg-white flex items-center px-4 md:px-16 lg:px-[200px] pt-6 md:pt-10 lg:pt-[64px] pb-4 md:pb-8 lg:pb-[48px]">
 
       {/* Left — back arrow */}
       <Link
