@@ -778,44 +778,107 @@ function buildCouch(): string[] {
 export const couchArt: PixelArt = { rows: buildCouch(), palette: PAL, outline: OUT };
 
 /**
- * NPC sprite family — same silhouette as `npcArt`, recoloured per shopper so the
- * world reads as a crowd, not clones. `body`/`pocket` are palette chars for the
- * hoodie field + its pocket seam. Facing down (matches Scribbs' idle).
+ * The shop-floor regulars, FireRed style. Likeness = hair + the SCR!PTS tee
+ * each wears (base colour + a small chest accent — all designs are sold in
+ * the shop). Internal names only; no nameplates.
  */
-const NPC_TEMPLATE = [
-  "................",
-  "....hhHHHHHH....",
-  "...HhhHHHHHHH...",
-  "...HNNNNNNNNH...",
-  "...HNONNNNONH...",
-  "....NNNNNNNN....",
-  "....NNNNNNNN....",
-  "...PPPPPPPPPP...",
-  "..PPPPPPPPPPPP..",
-  "..PPPPPPPPPPPP..",
-  "..PPpPPPPPPpPP..",
-  "..PPPPPPPPPPPP..",
-  "...WWWD..WWWD...",
-  "...WWWD..WWWD...",
-  "...BBB...BBB....",
-  "................",
-];
-function npcSprite(body: string, pocket: string): PixelArt {
-  return {
-    palette: PAL,
-    outline: OUT,
-    rows: NPC_TEMPLATE.map((r) => r.split("P").join(body).split("p").join(pocket)),
-  };
-}
 
-// Rail browser — army-green hoodie (echoes the Army Green colorway).
-export const npcRailArt: PixelArt = npcSprite("m", "k");
-// Sofa sitter — cream hoodie.
-export const npcSitterArt: PixelArt = npcSprite("C", "c");
-// Clothing gazer — charcoal hoodie.
-export const npcGazerArt: PixelArt = npcSprite("3", "4");
-// Checkout shopper — muted-rose hoodie.
-export const npcShopperArt: PixelArt = npcSprite("s", "X");
+// Teo (artKey "npcRail") — messy black hair, LOVE tee (green, pink heart).
+export const npcRailArt: PixelArt = {
+  palette: PAL,
+  outline: OUT,
+  rows: [
+    "................",
+    "...HhHHhHHhH....",
+    "..HHHHHHHHHHH...",
+    "..HhHHHHHHHhH...",
+    "...H*SSSSSS*....",
+    "...HSOSSSOSS....",
+    "....nSSSSSSn....",
+    "....nnSSSSnn....",
+    "...mmmmmmmmmm...",
+    "..mmmmmmmmmmmm..",
+    "..mmmk(PP(kmmm..",
+    "..mmmmkPPkmmmm..",
+    "...WWW....WWW...",
+    "...WWWD..WWWD...",
+    "...BBB....BBB...",
+    "................",
+  ],
+};
+
+// Thomas (artKey "npcGazer") — sandy curls, CONFUSION tee (white, pink ?).
+export const npcGazerArt: PixelArt = {
+  palette: PAL,
+  outline: OUT,
+  rows: [
+    "................",
+    "....~^~~~^~.....",
+    "...~~~~~~~~~....",
+    "...^~~~~~~~^....",
+    "...~*SSSSSS*....",
+    "...~SOSSSOSS....",
+    "....nSSSSSSn....",
+    "....nnSSSSnn....",
+    "...==========...",
+    "..============..",
+    "..===9(PP(9===..",
+    "..====9PP9====..",
+    "...JJJ....JJJ...",
+    "...JJJj..JJJj...",
+    "...BBB....BBB...",
+    "................",
+  ],
+};
+
+// Karl (artKey "npcSitter") — dark hair, ARE YOU OKAY tee (black, pink cross).
+// Same standing pose (he's placed on the couch cushions, reads as lounging).
+export const npcSitterArt: PixelArt = {
+  palette: PAL,
+  outline: OUT,
+  rows: [
+    "................",
+    "....HHHHHHHH....",
+    "...HhHHHHHHhH...",
+    "...HHHHHHHHHH...",
+    "...H*SSSSSS*....",
+    "...HSOSSSOSS....",
+    "....nSSSSSSn....",
+    "....nnSSSSnn....",
+    "...3333333333...",
+    "..333333333333..",
+    "..334(PPPP(433..",
+    "..3334(PP(4333..",
+    "...WWW....WWW...",
+    "...WWWD..WWWD...",
+    "...BBB....BBB...",
+    "................",
+  ],
+};
+
+// Gomes (artKey "npcShopper") — black spiky hair, RAGE tee (white, pink/blue).
+export const npcShopperArt: PixelArt = {
+  palette: PAL,
+  outline: OUT,
+  rows: [
+    "................",
+    "...H.HH.HH.H....",
+    "...HHhHHhHHH....",
+    "..HHHHHHHHHHH...",
+    "...H*SSSSSS*....",
+    "...HSOSSSOSS....",
+    "....nSSSSSSn....",
+    "....nnSSSSnn....",
+    "...==========...",
+    "..============..",
+    "..==9(JPPJ(9==..",
+    "..===9(PP(9===..",
+    "...WWW....WWW...",
+    "...WWWD..WWWD...",
+    "...BBB....BBB...",
+    "................",
+  ],
+};
 
 /**
  * Record crates (1 tile) — a wooden crate of vinyl with sleeves poking out the
