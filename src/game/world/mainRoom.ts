@@ -1,13 +1,13 @@
 import type { Room, TileType } from "./types";
-import { buildBlockedSet } from "./types";
 
 /**
  * Shop floor (Main) — Map v3, the exact measured layout (see docs/world-layout.md).
  *
  * Interior is the player's notation: rows **a–o** (top→bottom) × columns **1–15**,
  * wrapped in a 1-tile wall border. So letter→y = (index + 1), column n → x = n.
- * The top-right is cut away (cols 8–15 × rows a–g) → an L-shaped floor of 169
- * tiles. Rendered with the baked pixel-art sprites in the art registry.
+ * Row a is now wall too (the top came down one tile), so play space is rows b–o;
+ * the top-right is cut away (cols 8–15 × rows a–g) → an L-shaped floor.
+ * Rendered with the baked pixel-art sprites in the art registry.
  */
 const WIDTH = 17; // 15 interior cols + border
 const HEIGHT = 17; // 15 interior rows (a–o) + border
@@ -24,7 +24,9 @@ function buildTiles(width: number, height: number): TileType[][] {
   for (let y = 0; y < height; y++) {
     const row: TileType[] = [];
     for (let x = 0; x < width; x++) {
-      const border = x === 0 || y === 0 || x === maxX || y === maxY;
+      // Top wall is 2 tiles thick (row 0 + interior row a) — the play space
+      // starts at row b, per the "top of map comes down one tile" layout note.
+      const border = x === 0 || y <= R("a") || x === maxX || y === maxY;
       // Top-right cutout: interior cols 8–15 × rows a–g (plus their border).
       const cutout = x >= C(8) && y <= R("g");
       row.push(border || cutout ? "wall" : "floor");
@@ -43,21 +45,22 @@ export const mainRoom: Room = {
   // Spawn on the centre door (bottom). WorldScene walks Scribbs up on entry.
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
-    // Basement entrance — SECRET stairs (top, a7). Hidden behind record crates
+    // Basement entrance — SECRET stairs (top, b7). Hidden behind record crates
     // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
-    { id: "stairs", type: "stairs", tileX: C(7), tileY: R("a"), artKey: "stairs", solid: false,
+    { id: "stairs", type: "stairs", tileX: C(7), tileY: R("b"), artKey: "stairs", solid: false,
       revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
 
-    // Music alcove (row a): vinyl deck (2 wide) — the reveal switch. Speakers are decorations.
-    { id: "vinyl", type: "vinylDesk", tileX: C(3), tileY: R("a"), artKey: "vinylDesk", wTiles: 2, solid: true },
+    // Music alcove (row b): vinyl deck (2 wide) — the reveal switch. Speakers are decorations.
+    { id: "vinyl", type: "vinylDesk", tileX: C(3), tileY: R("b"), artKey: "vinylDesk", wTiles: 2, solid: true },
 
     // Checkout — single L footprint (2×5): top bar k1–k2 + right column k2–o2;
     // the bottom-left 1×4 cutout is a hole (walkable, transparent art).
     { id: "checkout", type: "checkout", tileX: C(1), tileY: R("k"), artKey: "checkout", wTiles: 2, hTiles: 5, solid: true,
       holes: [{ dx: 0, dy: 1 }, { dx: 0, dy: 2 }, { dx: 0, dy: 3 }, { dx: 0, dy: 4 }] },
 
-    // Cashier — staff standing in the checkout gap, behind the counter (l1).
-    { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "cashier", solid: true },
+    // Cashier — Heath himself, standing in the checkout gap behind the counter
+    // (l1), facing his checkout. He also stars in the first-entry intro walk.
+    { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "cashier", solid: true, flip: true },
 
     // Clothing rails: horizontal h8–14, vertical h15–n15.
     { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack-h7", wTiles: 7, solid: true },
@@ -70,8 +73,9 @@ export const mainRoom: Room = {
     { id: "npc-gazer", type: "npc", tileX: C(14), tileY: R("k"), artKey: "npcGazer", solid: true },
     // Seated on the sofa, at the corner (e1).
     { id: "npc-sofa", type: "npc", tileX: C(1), tileY: R("e"), artKey: "npcSitter", solid: true },
-    // Customer waiting at the checkout, in front of the counter (l3).
-    { id: "npc-checkout", type: "npc", tileX: C(3), tileY: R("l"), artKey: "npcShopper", solid: true },
+    // Customer who just checked out, tucked into the checkout corner (o3) so
+    // the counter approach stays clear.
+    { id: "npc-checkout", type: "npc", tileX: C(3), tileY: R("o"), artKey: "npcShopper", solid: true },
   ],
   // The sofa itself — the L of cushions: vertical arm (col 1, rows c–e) + base
   // (row e, cols 1–5). You can only sit by stepping down from the top side; you
@@ -87,13 +91,13 @@ export const mainRoom: Room = {
     },
   ],
   decorations: [
-    // Speakers flanking the vinyl deck (a2, a5).
-    { tileX: C(2), tileY: R("a"), artKey: "speaker", solid: true },
-    { tileX: C(5), tileY: R("a"), artKey: "speaker", solid: true },
+    // Speakers flanking the vinyl deck (b2, b5).
+    { tileX: C(2), tileY: R("b"), artKey: "speaker", solid: true },
+    { tileX: C(5), tileY: R("b"), artKey: "speaker", solid: true },
 
-    // Record crates concealing the secret stairs (a7). Solid + visible until the
+    // Record crates concealing the secret stairs (b7). Solid + visible until the
     // "basement-entrance" flag is revealed, then they slide away.
-    { tileX: C(7), tileY: R("a"), artKey: "crates", solid: true, concealing: "basement-entrance" },
+    { tileX: C(7), tileY: R("b"), artKey: "crates", solid: true, concealing: "basement-entrance" },
 
     // Couch — single L footprint (5×3), arm down the left + base along the
     // bottom. Non-solid so Scribbs can step onto the cushions ("sit").
@@ -103,22 +107,60 @@ export const mainRoom: Room = {
     // two tiles above it (rows j–l, with y13–14 clear before the door at o).
     { tileX: C(7), tileY: R("j"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
-    // Entrance: glass doors set into the bottom wall (cols 7–9, border row),
-    // with the doormat just inside it (o7–o9, walkable).
+    // ── Entrance facade (all on the bottom border wall row, non-walkable) ──
+    // Luxury glass doors + integrated fascia sign (cols 7–9).
     { tileX: C(7), tileY: HEIGHT - 1, artKey: "doors", wTiles: 3 },
+    // Display windows flanking the doors: tee'd mannequins in glass.
+    { tileX: C(5), tileY: HEIGHT - 1, artKey: "display-window", wTiles: 2 },
+    { tileX: C(10), tileY: HEIGHT - 1, artKey: "display-window", wTiles: 2, flip: true },
+    // Sculpted topiary bookending the storefront.
+    { tileX: C(4), tileY: HEIGHT - 1, artKey: "tree" },
+    { tileX: C(12), tileY: HEIGHT - 1, artKey: "tree" },
+    // Doormat just inside (walkable, warm-flecked).
     { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3 },
   ],
 };
 
-/** Tiles blocked by solid fixtures (computed once from world data). */
-const blockedTiles = buildBlockedSet(mainRoom);
+/**
+ * Heath's first-entry intro walk (see WorldScene.playHeathIntro). He fades in
+ * beside the counter (j1), walks along column 3 and row n, and stops one tile
+ * above the door spawn (n8). Scripted walks bypass collision, so keep this in
+ * sync with the fixture layout above.
+ */
+export const HEATH_INTRO_PATH: Array<{ x: number; y: number }> = [
+  { x: C(1), y: R("j") },
+  { x: C(2), y: R("j") },
+  { x: C(3), y: R("j") },
+  { x: C(3), y: R("k") },
+  { x: C(3), y: R("l") },
+  { x: C(3), y: R("m") },
+  { x: C(3), y: R("n") },
+  { x: C(4), y: R("n") },
+  { x: C(5), y: R("n") },
+  { x: C(6), y: R("n") },
+  { x: C(7), y: R("n") },
+  { x: C(8), y: R("n") },
+];
 
-/** True when (tileX, tileY) is in bounds, floor, and not blocked by a fixture. */
-export function isWalkable(room: Room, tileX: number, tileY: number): boolean {
-  if (tileX < 0 || tileY < 0 || tileX >= room.width || tileY >= room.height) {
-    return false;
+/** Where Heath stands as the static cashier prop — checkout-summon walks start here. */
+export const HEATH_HOME: { x: number; y: number } = { x: C(1), y: R("l") };
+
+/** The walkable hole rows behind the counter (col 1, rows l–o) — Heath never leaves col 1. */
+const HEATH_COUNTER_MIN_ROW = R("l");
+const HEATH_COUNTER_MAX_ROW = R("o");
+
+/**
+ * Path for Heath to slide along behind the counter (staying on column 1, like
+ * a real checkout clerk) to line up with whichever row the player is facing
+ * from. Clamped to the walkable hole rows — see WorldScene.playHeathCheckout.
+ */
+export function heathPathAlongCounter(targetY: number): Array<{ x: number; y: number }> {
+  const y = Math.max(HEATH_COUNTER_MIN_ROW, Math.min(HEATH_COUNTER_MAX_ROW, targetY));
+  const pts: Array<{ x: number; y: number }> = [];
+  if (y === HEATH_HOME.y) return pts;
+  const step = y > HEATH_HOME.y ? 1 : -1;
+  for (let row = HEATH_HOME.y + step; step > 0 ? row <= y : row >= y; row += step) {
+    pts.push({ x: HEATH_HOME.x, y: row });
   }
-  if (room.tiles[tileY][tileX] !== "floor") return false;
-  if (room === mainRoom && blockedTiles.has(`${tileX},${tileY}`)) return false;
-  return true;
+  return pts;
 }

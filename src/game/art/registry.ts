@@ -4,6 +4,7 @@ import {
   floorArt,
   floorBasementArt,
   doorsArt,
+  displayWindowArt,
   emblemArt,
   windowArt,
   plantArt,
@@ -53,6 +54,7 @@ const TEXTURE_KEYS = [
   "floor",
   "floor-basement",
   "doors",
+  "display-window",
   "wall-top",
   "wall-side",
   "wall-bottom",
@@ -93,6 +95,7 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "floor", floorArt);
   bakePixelArt(scene, "floor-basement", floorBasementArt);
   bakePixelArt(scene, "doors", doorsArt);
+  bakePixelArt(scene, "display-window", displayWindowArt);
   bakePixelArt(scene, "wall-top", wallTopArt);
   bakePixelArt(scene, "wall-side", wallSideArt);
   bakePixelArt(scene, "wall-bottom", wallBottomArt);

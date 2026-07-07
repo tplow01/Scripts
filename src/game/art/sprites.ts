@@ -941,23 +941,38 @@ function buildRug(): string[] {
 export const rugArt: PixelArt = { rows: buildRug(), palette: PAL };
 
 /**
- * Entrance doors (3×1 = 48×16): a glass double-door — paper glass panels in a
- * grey frame, a grey centre mullion splitting the two leaves, and a horizontal
- * push bar across each. Reads as a front door at a glance.
+ * Entrance (3×1 = 48×16): luxury storefront doors with an integrated fascia.
+ * Top 5px: ink fascia band with the wordmark dotted in paper. Below: full-
+ * height glass double doors — slim ink frames, warm interior glow at the
+ * bottom of the glass, gold handle pixels at the centre mullion.
  */
 function buildDoors(): string[] {
-  const W = 48;
-  const H = 16;
-  const MULL = W / 2; // centre mullion (24)
+  const W = 48, H = 16, MULL = 24;
   const rows: string[] = [];
+  // Fascia: a clean paper rule + a centred 4-point pink star mark (the tiny
+  // 3×5 "scr!pts" lettering read as noise at 48px wide during the visual
+  // check, so this is the authorised fallback from the brief).
+  const dot = ".".repeat(W);
+  const star = ".".repeat(23) + "PP" + ".".repeat(W - 25);
+  const rule = "....".concat("=".repeat(W - 8), "....");
+  const FASCIA = [dot, dot, star, rule, star];
   for (let y = 0; y < H; y++) {
     let row = "";
     for (let x = 0; x < W; x++) {
-      const frame = x <= 1 || x >= W - 2 || y === 0; // left/right jambs + head
-      const mullion = x === MULL - 1 || x === MULL; // split between the leaves
-      const pushBar = y >= 9 && y <= 10 && !frame && !mullion; // grey push bars
-      if (frame || mullion || pushBar) row += "+";
-      else row += "="; // glass panel
+      if (y < 5) {
+        // Fascia: ink band, paper rule + pink star mark from the FASCIA map.
+        const c = FASCIA[y]?.[x];
+        row += c === "=" ? "=" : c === "P" ? "P" : "@";
+        continue;
+      }
+      const frame = x <= 1 || x >= W - 2 || y === 5; // jambs + head under fascia
+      const mullion = x === MULL - 1 || x === MULL;
+      const handle = (x === MULL - 3 || x === MULL + 2) && y >= 8 && y <= 11;
+      const glow = y >= 12 && !frame && !mullion; // warm interior light
+      if (frame || mullion) row += "@";
+      else if (handle) row += "?";
+      else if (glow) row += "o";
+      else row += "I"; // glass
     }
     rows.push(row);
   }
@@ -965,6 +980,34 @@ function buildDoors(): string[] {
 }
 
 export const doorsArt: PixelArt = { rows: buildDoors(), palette: PAL, outline: "#0D0D0D" };
+
+/**
+ * Display window (2×1 = 32×16): fascia-topped glass vitrine with a tee'd
+ * mannequin and a warm spotlight pool. Placed flanking the entrance doors;
+ * the second placement is flipped for variety.
+ */
+export const displayWindowArt: PixelArt = {
+  palette: PAL,
+  outline: "#0D0D0D",
+  rows: [
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    "@IIIIIIIIIIIIIIIIIIIIIIIIIIIIII@",
+    "@IIIIIII===IIIIIIIIImmmIIIIIIII@",
+    "@IIIIII=====IIIIIIIImmmmmIIIIII@",
+    "@IIIIII==P==IIIIIIIImmPmmIIIIII@",
+    "@IIIIII=====IIIIIIIImmmmmIIIIII@",
+    "@IIIIIII===IIIIIIIIImmmIIIIIIII@",
+    "@IIIIIII=I=IIIIIIIIIm.mIIIIIIII@",
+    "@IIIIIIIYIYIIIIIIIIIYmYIIIIIIII@",
+    "@IIIIIIIIIIIIIIIIIIIIIIIIIIIIII@",
+    "@IIooooIIIIIIIIIIIIIIIooooIIIII@",
+    "@IooooooIIIIIIIIIIIIIIooooooIII@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+  ],
+};
 
 /** Window for the back wall: wood frame, sky glass, a muntin bar + greenery. */
 export const windowArt: PixelArt = {
@@ -1052,7 +1095,7 @@ function buildMat(tiles = 3): string[] {
         const border = x < 4 || x > W - 5 || y < 4 || y > 11;
         if (border) ch = "P";
         else if (Math.abs(y - 8) < 1 && x > 6 && x < W - 7) ch = "v";
-        else ch = "o";
+        else ch = (x + y) % 7 === 0 ? "L" : "o"; // warm flecks in the cream field
       }
       row += ch;
     }

@@ -33,4 +33,8 @@ describe("art registry", () => {
   it("throws on an unknown key", () => {
     expect(() => resolveTextureKey("does-not-exist")).toThrow();
   });
+
+  it("resolves the entrance display window", () => {
+    expect(resolveTextureKey("display-window")).toBe("display-window");
+  });
 });

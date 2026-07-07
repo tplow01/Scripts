@@ -204,7 +204,7 @@ export class WorldScene extends Phaser.Scene {
     // Decorations: flat floor art sits low, wall art mounts on the wall, solid
     // obstacles stand with a contact shadow.
     const flatFloor = new Set(["emblem", "rug", "mat"]);
-    const onWall = new Set(["poster", "window", "doors"]);
+    const onWall = new Set(["poster", "window", "doors", "display-window"]);
     for (const deco of this.room.decorations ?? []) {
       if (!propActive(deco, gameSession.revealed)) continue;
       // Concealing covers (crates over the secret stairs) sit above floor props
