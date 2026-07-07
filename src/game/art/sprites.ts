@@ -107,6 +107,18 @@ const PAL: Palette = {
   J: "#3A4670", // jeans
   j: "#2A3354", // jeans shade
   B: "#1A1A1A", // shoes
+
+  // ── FireRed character refresh (Heath/Teo/Thomas/Karl/Gomes) + exterior ──
+  "*": "#F5CBA3", // skin highlight (3-tone skin: * highlight, S mid, n shade)
+  "%": "#8A5A34", // light-brown hair (Heath's curls)
+  "&": "#6B4226", // light-brown hair shade
+  "~": "#D8B36A", // sandy-blond hair (Thomas)
+  "^": "#B08A45", // sandy-blond shade
+  "?": "#D9A94A", // gold (door handles, lamp)
+  "/": "#A87B2C", // gold shade
+  "(": "#FFB3DA", // pink highlight (logo 3-tone: ( highlight, P mid, p shade)
+  "<": "#1B1822", // exterior asphalt
+  ">": "#262230", // asphalt speckle / dither
 };
 
 const TILE = 16;
@@ -689,26 +701,31 @@ export const npcArt: PixelArt = {
   ],
 };
 
-/** Cashier (1 tile): staff at the till — charcoal tee + pink apron, facing down. */
+/**
+ * Heath (artKey "cashier") — the shop host at the till. White ribbed beanie
+ * with light-brown curls peeking out, white MJ tee (tiny dark figure on the
+ * chest), charcoal trousers. FireRed shading: 3-tone skin, 2-tone hair,
+ * auto-outline. Faces down; flipped in world data to face the checkout.
+ */
 export const cashierArt: PixelArt = {
   palette: PAL,
   outline: OUT,
   rows: [
     "................",
-    "....HHHHHH......",
-    "...HHHHHHHH.....",
-    "...HNNNNNNH.....",
-    "...HNONNONH.....",
-    "....NNNNNN......",
-    "...33333333.....",
-    "..3333333333....",
-    "..33PPPPPP33....",
-    "..33PppppP33....",
-    "..33PPPPPP33....",
-    "..33PPPPPP33....",
-    "...333..333.....",
-    "...333..333.....",
-    "...BB....BB.....",
+    "....========....",
+    "...==========...",
+    "...=99999999=...",
+    "...%%&SSSS&%%...",
+    "...%*SOSSOS*%...",
+    "....nSSSSSSn....",
+    "....nnSSSSnn....",
+    "...==========...",
+    "..============..",
+    "..====9KK9====..",
+    "..====9KK9====..",
+    "...333....333...",
+    "...333....333...",
+    "...BB......BB...",
     "................",
   ],
 };
