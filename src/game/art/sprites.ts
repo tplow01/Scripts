@@ -163,63 +163,70 @@ function buildFloorBasement(): string[] {
 }
 
 /**
- * SCR!PTS floor logo — the brand lockup as a pixel inlay (square 5×5 = 80×80):
- * the lowercase wordmark `scr!pts` (the `!` is a 4-point star) under a pink comet
- * arcing from the upper-right. Drawn flat under everything as a tasteful decal.
+ * SCR!PTS floor logo — the real brand lockup as a pixel inlay (80×80):
+ * pink comet (big 4-point star upper-right, tapering streak down-left to a
+ * small star) ABOVE the `scr!pts` wordmark. 3-tone pink for the logo's 3D
+ * look: `(` highlight (upper-left of forms), `P` mid, `p` shade.
  */
 function buildEmblem(): string[] {
   const N = 80;
   const g: string[][] = Array.from({ length: N }, () => Array(N).fill("."));
 
-  // ── Pink comet: big star (upper-right) → small star (mid-left), tapering streak.
-  const bx = 60, by = 12, sx = 18, sy = 44;
-  const star = (cx: number, cy: number, r: number, core: string, edge: string) => {
+  // ── Comet: big star upper-right → small star lower-left of the top half.
+  const bx = 62, by = 12, sx = 16, sy = 40;
+  const star = (cx: number, cy: number, r: number) => {
     for (let y = 0; y < N; y++)
       for (let x = 0; x < N; x++) {
         const dx = x - cx, dy = y - cy;
-        const spike = (Math.abs(dx) <= 1 && Math.abs(dy) <= r * 1.5) ||
-          (Math.abs(dy) <= 1 && Math.abs(dx) <= r * 1.5);
+        const spike = (Math.abs(dx) <= 1 && Math.abs(dy) <= r * 1.6) ||
+          (Math.abs(dy) <= 1 && Math.abs(dx) <= r * 1.6);
         const body = Math.abs(dx) + Math.abs(dy) <= r;
-        if (body) g[y][x] = core;
-        else if (spike) g[y][x] = g[y][x] === core ? core : edge;
+        if (body || spike) {
+          // 3-tone: highlight toward top-left, shade toward bottom-right.
+          g[y][x] = dx + dy < -Math.floor(r / 2) ? "(" : dx + dy > Math.floor(r / 2) ? "p" : "P";
+        }
       }
   };
-  // tapering streak (thick at the big star, thin toward the small one)
+  // Tapering streak, thick at the big star.
   const len = Math.hypot(bx - sx, by - sy);
   for (let t = 0; t <= 1; t += 1 / (len * 2)) {
     const cx = bx + (sx - bx) * t;
     const cy = by + (sy - by) * t;
-    const th = 4 * (1 - t) + 0.6; // thickness ramp
-    for (let y = -5; y <= 5; y++)
-      for (let x = -5; x <= 5; x++) {
-        if (Math.hypot(x, y) <= th) {
+    const th = 4.5 * (1 - t) + 0.5;
+    for (let y = -6; y <= 6; y++)
+      for (let x = -6; x <= 6; x++) {
+        const d = Math.hypot(x, y);
+        if (d <= th) {
           const px = Math.round(cx + x), py = Math.round(cy + y);
-          if (px >= 0 && px < N && py >= 0 && py < N) g[py][px] = Math.hypot(x, y) > th - 1 ? "p" : "P";
+          if (px >= 0 && px < N && py >= 0 && py < N) {
+            g[py][px] = d > th - 1.2 ? "p" : y < -th / 3 ? "(" : "P";
+          }
         }
       }
   }
-  star(sx, sy, 4, "P", "p");
-  star(bx, by, 8, "P", "p");
+  star(sx, sy, 4);
+  star(bx, by, 9);
 
-  // ── Wordmark `scr!pts` (ink). Simple blocky lowercase, 7w × 9h glyphs.
+  // ── Wordmark `scr!pts` — bolder 8w×11h glyphs (2px strokes) so it holds at
+  // floor scale. `!` is the brand 4-point star.
   const X = "K";
   const G: Record<string, string[]> = {
-    s: [".#####.", "#.....#", "#......", ".#####.", "......#", "#.....#", ".#####.", ".......", "......."],
-    c: [".#####.", "#.....#", "#......", "#......", "#......", "#.....#", ".#####.", ".......", "......."],
-    r: ["#.####.", "##....#", "#......", "#......", "#......", "#......", "#......", ".......", "......."],
-    "!": ["...#...", "..###..", ".#####.", "###.###", ".#####.", "..###..", "...#...", ".......", "......."],
-    p: ["######.", "#.....#", "#.....#", "######.", "#......", "#......", "#......", ".......", "......."],
-    t: ["..#....", "..#....", "#####..", "..#....", "..#....", "..#..#.", "...##..", ".......", "......."],
+    s: ["..#####.", ".##...##", ".##.....", "..#####.", ".....##.", ".##...##", "..#####.", "........", "........", "........", "........"],
+    c: ["..#####.", ".##...##", ".##.....", ".##.....", ".##.....", ".##...##", "..#####.", "........", "........", "........", "........"],
+    r: [".##.###.", ".###..##", ".##.....", ".##.....", ".##.....", ".##.....", ".##.....", "........", "........", "........", "........"],
+    "!": ["...##...", "..####..", ".######.", "###..###", ".######.", "..####..", "...##...", "........", "........", "........", "........"],
+    p: [".######.", ".##...##", ".##...##", ".######.", ".##.....", ".##.....", ".##.....", "........", "........", "........", "........"],
+    t: ["...##...", "...##...", ".######.", "...##...", "...##...", "...##.##", "....###.", "........", "........", "........", "........"],
   };
   const word = ["s", "c", "r", "!", "p", "t", "s"];
-  let cx = 11;
-  const y0 = 52;
+  let cx = 6;
+  const y0 = 56;
   for (const ch of word) {
     const glyph = G[ch];
     for (let gy = 0; gy < glyph.length; gy++)
       for (let gx = 0; gx < glyph[gy].length; gx++)
         if (glyph[gy][gx] === "#" && y0 + gy < N && cx + gx < N) g[y0 + gy][cx + gx] = X;
-    cx += glyph[0].length + 1;
+    cx += glyph[0].length + 2;
   }
 
   return g.map((r) => r.join(""));
