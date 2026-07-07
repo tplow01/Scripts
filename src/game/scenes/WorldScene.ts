@@ -13,6 +13,9 @@ const FADE_MS = 260;
 const STEP_MS = 130;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
 const INTRO_FALLBACK_MS = 15000;
+/** Tiles of decorative street apron drawn around the main room, and how far
+ * the camera bounds expand to reveal it. */
+const EXTERIOR_APRON = 4;
 
 /**
  * Renders the current room from world data + baked pixel-art textures, drives
@@ -193,11 +196,10 @@ export class WorldScene extends Phaser.Scene {
     // as city ground, not dead space. Top/left/right: dithered asphalt apron.
     // Below the entrance: sidewalk (pavement + kerb) then asphalt road, with a
     // streetlamp by the doors. All decorative — outside bounds, never walkable.
-    const APRON = 4;
     if (roomId === "main") {
       this.cameras.main.setBackgroundColor("#1B1822"); // matches ext-asphalt
-      for (let y = -APRON; y < this.room.height + APRON; y++) {
-        for (let x = -APRON; x < this.room.width + APRON; x++) {
+      for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
+        for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
           const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
           if (inside) continue;
           let key = "ext-asphalt";
@@ -282,7 +284,13 @@ export class WorldScene extends Phaser.Scene {
     this.tileY = spawn.tileY;
     this.syncScribbs();
 
-    this.cameras.main.setBounds(0, 0, this.room.width * this.room.tileSize, this.room.height * this.room.tileSize);
+    const ts = this.room.tileSize;
+    if (roomId === "main") {
+      const a = EXTERIOR_APRON * ts;
+      this.cameras.main.setBounds(-a, -a, this.room.width * ts + 2 * a, this.room.height * ts + 2 * a);
+    } else {
+      this.cameras.main.setBounds(0, 0, this.room.width * ts, this.room.height * ts);
+    }
     this.updateZoom();
     this.lastInteractionId = null;
     this.saveSession();
