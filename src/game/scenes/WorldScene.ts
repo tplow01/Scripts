@@ -211,7 +211,7 @@ export class WorldScene extends Phaser.Scene {
           this.placeTile(resolveTextureKey(key), x, y, -0.5);
         }
       }
-      // Streetlamp on the sidewalk beside the doors (cols 7–9 are the doors).
+      // Streetlamp on the sidewalk beside the right display window (col 11).
       const ts = this.room.tileSize;
       const lamp = this.add
         .image(11 * ts + ts / 2, this.room.height * ts + ts, resolveTextureKey("ext-lamp"))
@@ -720,10 +720,8 @@ export class WorldScene extends Phaser.Scene {
     });
   }
 
-  /** v0 stub — log + emit. Real behaviour (inventory/cart, NPC dialogue, music)
-   * is wired in a later pass. */
+  /** Hand an interaction to React (prompts, cart, dialogue routing). */
   private fireInteraction(hit: Interaction) {
-    console.log(`[SCRIPTS] interaction: ${hit.type} (${hit.id})`);
     this.game.events.emit("interaction", hit);
   }
 }
