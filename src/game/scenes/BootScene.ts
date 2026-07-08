@@ -26,13 +26,11 @@ export class BootScene extends Phaser.Scene {
     for (const key of SCRIBBS_FRAMES) {
       this.load.image(key, `/assets/scribbs/${key}.png`);
     }
-    // SCR!PTS floor logo — the real brand lockup as a smooth decal.
-    this.load.image("emblem", "/assets/logo.png");
+    // Floor emblem is the code-baked FireRed pixel medallion (emblemArt) —
+    // the smooth logo.png decal was retired with the FireRed UI push.
   }
 
   create() {
-    // Logo stays smooth (linear) over the pixel floor; everything else is nearest.
-    this.textures.get("emblem").setFilter(Phaser.Textures.FilterMode.LINEAR);
     bakeAllTextures(this);
     this.scene.start("world");
   }

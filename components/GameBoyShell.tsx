@@ -114,7 +114,7 @@ export default function GameBoyShell({
   // ── DESKTOP: full-bleed bezel, keyboard-driven (no on-screen buttons).
   if (!mobile) {
     return (
-      <div className="h-screen w-screen" style={{ background: BODY }}>
+      <div className="h-dvh w-screen" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
         <div className="flex items-center justify-center w-full h-full" style={{ position: 'relative' }}>
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -149,7 +149,7 @@ export default function GameBoyShell({
 
   // ── MOBILE: split — LCD on top, Delta-style controls below.
   return (
-    <div className="h-screen w-screen flex flex-col" style={{ background: BODY }}>
+    <div className="h-dvh w-screen flex flex-col" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
       {/* Top: screen */}
       <div style={{ height: '50%', background: BODY, padding: '16px 16px 0 16px', display: 'flex', alignItems: 'stretch', position: 'relative' }}>
         <div style={{

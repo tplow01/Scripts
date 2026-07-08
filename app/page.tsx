@@ -319,7 +319,7 @@ export default function Home() {
 
   // Avoid a hydration flash before we know the layout.
   if (mobile === null) {
-    return <main className="h-screen w-screen bg-ink" />;
+    return <main className="h-dvh w-screen bg-ink" />;
   }
 
   // Swap {A} for the platform's interact button (mobile A button / desktop Z key).
@@ -354,7 +354,7 @@ export default function Home() {
   );
 
   return (
-    <main className="h-screen w-screen overflow-hidden">
+    <main className="h-dvh w-screen overflow-hidden">
       <GameBoyShell mobile={mobile} screen={screen} onPress={handlePress} onRelease={handleRelease} />
     </main>
   );

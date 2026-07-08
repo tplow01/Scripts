@@ -52,6 +52,15 @@ const PAL: Palette = {
   s: "#C97FA0", // muted rose — FireRed-toned brand accent (headphones, trims)
   X: "#A75F82", // muted rose shade
 
+  // ── FireRed wall/floor ramp (Track A) + rail blue ──
+  "!": "#EFEDE6", // wall face / floor alt quad
+  ",": "#E4E1D8", // wall cap seam / floor grout
+  ";": "#D6D3C9", // floor quad shade pixel
+  ":": "#B9B9BC", // wall grooves / molding
+  "#": "#8C8C90", // wall lower band
+  "'": "#4A4A4F", // wall base shadow
+  "<": "#5FA7D6", // rail blue
+
   // metal (rack)
   M: "#C2C8D0", // highlight
   e: "#9AA0AA", // mid
@@ -123,21 +132,24 @@ const PAL: Palette = {
 const TILE = 16;
 
 /**
- * Pale retail tile floor (city shopping-centre idiom). One light square tile per
- * 16px cell: a thin grout seam on the top + left edges (forms a clean grid when
- * tiled), a lit sheen just inside, a soft shade on the far edges, and a faint
- * speckle for life. Light + neutral so the clothes and fixtures pop.
+ * Warm 2-tone checker floor (FireRed interior idiom): each 16px tile is a 2×2
+ * checker of 8px quads with a thin grout grid and a single shade pixel per
+ * quad. Light + neutral so the clothes and fixtures pop.
  */
 function buildFloor(): string[] {
   const rows: string[] = [];
   for (let y = 0; y < TILE; y++) {
     let row = "";
     for (let x = 0; x < TILE; x++) {
-      // Clean concrete: paper field with a single, low-contrast grey corner
-      // mark at the top-left. A 2px L-tick only — when tiled it forms a quiet,
-      // even grid of marks that reads as a surface, never as a pattern.
-      const cornerMark = (x === 0 && y <= 1) || (y === 0 && x <= 1);
-      row += cornerMark ? "+" : "=";
+      // Warm 2-tone checker: each tile is a 2×2 grid of 8px quads. Quads
+      // (0,0)/(1,1) use paper, (0,1)/(1,0) a warm off-white; each quad gets a
+      // 1px grout line on its top + left edge and a single shade pixel at its
+      // inner bottom-right corner.
+      const lx = x % 8;
+      const ly = y % 8;
+      if (lx === 0 || ly === 0) row += ",";
+      else if (lx === 7 && ly === 7) row += ";";
+      else row += (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? "=" : "!";
     }
     rows.push(row);
   }
@@ -162,17 +174,40 @@ function buildFloorBasement(): string[] {
 }
 
 /**
- * SCR!PTS floor logo — the real brand lockup as a pixel inlay (80×80):
- * pink comet (big 4-point star upper-right, tapering streak down-left to a
- * small star) ABOVE the `scr!pts` wordmark. 3-tone pink for the logo's 3D
- * look: `(` highlight (upper-left of forms), `P` mid, `p` shade.
+ * SCR!PTS floor medallion — a FireRed-style inlaid floor plate (80×80):
+ * 1px ink outer line, 3px grey frame with diagonal-cut corners, a thin pink
+ * keyline, then an inlay field with a dithered rim. Centre-top carries a big
+ * 3-tone pink comet star; the `scr!pts` wordmark sits below.
  */
 function buildEmblem(): string[] {
   const N = 80;
   const g: string[][] = Array.from({ length: N }, () => Array(N).fill("."));
 
-  // ── Comet: big star upper-right → small star lower-left of the top half.
-  const bx = 62, by = 12, sx = 16, sy = 40;
+  const CUT = 5; // corner chamfer depth
+  const cornerDepth = (x: number, y: number) =>
+    Math.min(x + y, (N - 1 - x) + y, x + (N - 1 - y), (N - 1 - x) + (N - 1 - y));
+
+  for (let y = 0; y < N; y++) {
+    for (let x = 0; x < N; x++) {
+      const edge = Math.min(x, y, N - 1 - x, N - 1 - y); // distance to square edge
+      const corner = cornerDepth(x, y);
+      if (corner < CUT) {
+        g[y][x] = "."; // chopped corner — outside the medallion
+      } else if (corner === CUT || edge === 0) {
+        g[y][x] = "@"; // 1px ink outline (incl. the diagonal cut edges)
+      } else if (edge <= 3 || corner <= CUT + 3) {
+        g[y][x] = "+"; // 3px grey frame
+      } else if (edge === 4 || corner === CUT + 4) {
+        g[y][x] = "p"; // thin pink keyline inside the frame
+      } else {
+        // inlay field — dithered rim (2px-period checker) fading to clean F
+        const fieldDepth = Math.min(edge - 5, corner - CUT - 5);
+        g[y][x] = fieldDepth < 8 && (Math.floor(x / 2) + Math.floor(y / 2)) % 2 === 0 ? ";" : "F";
+      }
+    }
+  }
+
+  // ── Comet star, centre-top of the field, 3-tone pink.
   const star = (cx: number, cy: number, r: number) => {
     for (let y = 0; y < N; y++)
       for (let x = 0; x < N; x++) {
@@ -186,25 +221,7 @@ function buildEmblem(): string[] {
         }
       }
   };
-  // Tapering streak, thick at the big star.
-  const len = Math.hypot(bx - sx, by - sy);
-  for (let t = 0; t <= 1; t += 1 / (len * 2)) {
-    const cx = bx + (sx - bx) * t;
-    const cy = by + (sy - by) * t;
-    const th = 4.5 * (1 - t) + 0.5;
-    for (let y = -6; y <= 6; y++)
-      for (let x = -6; x <= 6; x++) {
-        const d = Math.hypot(x, y);
-        if (d <= th) {
-          const px = Math.round(cx + x), py = Math.round(cy + y);
-          if (px >= 0 && px < N && py >= 0 && py < N) {
-            g[py][px] = d > th - 1.2 ? "p" : y < -th / 3 ? "(" : "P";
-          }
-        }
-      }
-  }
-  star(sx, sy, 4);
-  star(bx, by, 9);
+  star(40, 28, 10);
 
   // ── Wordmark `scr!pts` — bolder 8w×11h glyphs (2px strokes) so it holds at
   // floor scale. `!` is the brand 4-point star.
@@ -219,7 +236,7 @@ function buildEmblem(): string[] {
   };
   const word = ["s", "c", "r", "!", "p", "t", "s"];
   let cx = 6;
-  const y0 = 56;
+  const y0 = 54;
   for (const ch of word) {
     const glyph = G[ch];
     for (let gy = 0; gy < glyph.length; gy++)
@@ -238,23 +255,55 @@ function buildWallRows(rowChar: (y: number) => string): string[] {
   return rows;
 }
 
-// Architectural, not decorative: paper face with a grey base band. The TOP
-// variant gets a thin ink line along its very top edge so the wall reads as a
-// crisp horizon against the floor.
-const wallTopRows = buildWallRows((y) => {
-  if (y === 0) return "@"; // thin ink top line
-  if (y <= 12) return "="; // paper face
-  return "+"; // grey base band (y13–15)
-});
+/**
+ * FireRed 3-band wall face: lit cap → warm face with vertical grooves and a
+ * horizontal molding → darkening base (pink trim on the visible faces). The
+ * side variant trades the ink horizon for a lit cap and keeps only the x=0
+ * groove; the bottom variant is plain face (no molding row / pink trim).
+ */
+function buildWallFace(kind: "top" | "side" | "bottom"): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < TILE; y++) {
+    let row = "";
+    for (let x = 0; x < TILE; x++) {
+      let ch: string;
+      if (kind === "side") {
+        // Side runs stack vertically, so no horizontal bands — a quiet face
+        // with continuous vertical panel grooves that tile seamlessly.
+        ch = x === 0 || x === 8 ? ":" : "!";
+      } else if (y === 0) ch = "@"; // ink horizon
+      else if (y <= 2) ch = "="; // lit cap
+      else if (y === 3) ch = ","; // cap seam
+      else if (y === 15) ch = "@"; // ink base line
+      else if (y === 14) ch = "'"; // base shadow
+      else if (kind === "bottom") {
+        // plain face y4–13 with vertical grooves
+        ch = x === 0 || x === 8 ? ":" : "!";
+      } else if (y === 12) ch = "P"; // pink trim
+      else if (y === 13) ch = "#"; // lower band
+      else if (y === 8) ch = ":"; // horizontal molding
+      else {
+        // face y4–11 with vertical grooves
+        ch = x === 0 || x === 8 ? ":" : "!";
+      }
+      row += ch;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
 
-// Side wall: paper face, grey base band — no ink horizon (it's seen edge-on).
-const wallSideRows = buildWallRows((y) => (y <= 12 ? "=" : "+"));
+const wallTopRows = buildWallFace("top");
 
-// Fully-enclosed wall (interior / void): solid ink with a faint grey top edge.
-const wallFillRows = buildWallRows((y) => (y === 0 ? "+" : "@"));
+// Side wall: lit cap instead of the ink horizon (it's seen edge-on).
+const wallSideRows = buildWallFace("side");
 
-// Bottom wall: meets the floor at its TOP edge; paper face above a grey base.
-const wallBottomRows = buildWallRows((y) => (y <= 12 ? "=" : "+"));
+// Fully-enclosed wall (interior / void): solid ink so the cutout merges with
+// the exterior void.
+const wallFillRows = buildWallRows(() => "@");
+
+// Bottom wall: meets the floor at its TOP edge.
+const wallBottomRows = buildWallFace("bottom");
 
 export const floorArt: PixelArt = { rows: buildFloor(), palette: PAL };
 export const floorBasementArt: PixelArt = { rows: buildFloorBasement(), palette: PAL };
@@ -346,29 +395,31 @@ function buildCheckout(): string[] {
 export const checkoutArt: PixelArt = { rows: buildCheckout(), palette: PAL, outline: "#14121A" };
 
 /**
- * Down stairs (shop ↔ basement) — top-down steps: paper treads, grey risers,
- * a 1px ink nosing line at each step edge. A single brand-pink pixel on the top
- * riser flags it as a transition point without shouting.
+ * Down stairs (shop ↔ basement) — a framed dark stairwell seen top-down:
+ * side rails (charcoal outer column + ink inner line), an ink lintel across
+ * the top, and four treads receding upward from light paper to near-dark,
+ * each topped with a 1px ink nosing. One brand-pink pixel marks the bottom
+ * tread edge as the transition point.
  */
 export const stairsArt: PixelArt = {
   palette: PAL,
   rows: [
-    "================", // tread
-    "================",
-    "@@@@@@@@@@@@@@@@", // ink nosing
-    "+++++++P++++++++", // riser (grey) — pink accent on the top step
-    "================", // tread
-    "================",
+    "@@@@@@@@@@@@@@@@", // ink lintel
     "@@@@@@@@@@@@@@@@",
-    "++++++++++++++++", // riser
-    "================", // tread
-    "================",
-    "@@@@@@@@@@@@@@@@",
-    "++++++++++++++++", // riser
-    "================", // tread
-    "================",
-    "@@@@@@@@@@@@@@@@",
-    "++++++++++++++++", // riser (descends into the dark)
+    "'@@@@@@@@@@@@@@'", // dark headroom — the hole the stairs descend into
+    "'@@@@@@@@@@@@@@'",
+    "'@@@@@@@@@@@@@@'",
+    "'@''''''''''''@'", // top tread — barely lit
+    "'@@@@@@@@@@@@@@'", // nosing
+    "'@############@'", // tread 3
+    "'@''''''''''''@'", // riser shadow
+    "'@@@@@@@@@@@@@@'", // nosing
+    "'@;;;;;;;;;;;;@'", // tread 2
+    "'@############@'",
+    "'@@@@@@@@@@@@@@'", // nosing
+    "'@=P==========@'", // bottom tread — lightest, pink accent at the edge
+    "'@============@'",
+    "'@;;;;;;;;;;;;@'",
   ],
 };
 
@@ -1013,11 +1064,17 @@ export const matArt: PixelArt = { rows: buildMat(3), palette: PAL };
  * vertically (1 tile × length, a side-on rail receding away). Deterministic by
  * garment index so any length tiles believably.
  */
-const RAIL_COLORS: Array<[string, string, string]> = [
-  ["P", "p", "P"], // pink: base, shade, highlight
-  ["3", "4", "5"], // charcoal
-  ["C", "c", "b"], // cream
-  ["J", "j", "M"], // denim
+type RailTee = { base: string; shade: string; hi: string; graphic: string[] };
+const RAIL_TEES: RailTee[] = [
+  // LOVE — green body, pink heart
+  { base: "m", shade: "k", hi: "m", graphic: ["(PP(", "PPPP", ".PP."] },
+  // CONFUSION — white body, pink question mark (hook · gap · dot)
+  { base: "=", shade: "9", hi: "=", graphic: ["PPP.", "..P.", ".P..", "....", ".P.."] },
+  // ARE YOU OKAY — charcoal body (lit fold so it reads as a garment, not a
+  // gap, between the white tees), pink plus
+  { base: "3", shade: "4", hi: "5", graphic: [".PP.", "PPPP", ".PP."] },
+  // RAGE — white body, diagonal pink-over-blue rage slash
+  { base: "=", shade: "9", hi: "=", graphic: ["..PP", ".P<.", "P<..", "<..."] },
 ];
 
 function buildRail(tiles: number, orient: "h" | "v"): string[] {
@@ -1025,7 +1082,7 @@ function buildRail(tiles: number, orient: "h" | "v"): string[] {
   const ACROSS = 16;
   const W = orient === "h" ? len : ACROSS;
   const H = orient === "h" ? ACROSS : len;
-  const STEP = 6; // garment pitch (dense, touching)
+  const STEP = 8; // garment pitch — wide enough for a chest graphic
   const rows: string[] = [];
   for (let y = 0; y < H; y++) {
     let row = "";
@@ -1042,27 +1099,35 @@ function buildRail(tiles: number, orient: "h" | "v"): string[] {
         ch = "e"; // pole
       } else if (c >= 2 && a >= 3 && a < len - 3) {
         const gi = Math.floor((a - 3) / STEP);
-        const w = (a - 3) % STEP; // 0..5 across this garment
-        const [base, shade, hi] = RAIL_COLORS[gi % RAIL_COLORS.length];
-        const shape = gi % 3; // 0 tee · 1 hoodie · 2 jacket
-        const hem = shape === 2 ? 14 : shape === 1 ? 13 : 11; // jacket longest
+        const w = (a - 3) % STEP; // 0..7 across this garment
+        const { base, shade, hi, graphic } = RAIL_TEES[gi % RAIL_TEES.length];
+        const hem = 12; // graphic-tee silhouette
         const shoulder = 3; // garment top
-        // hanger hook over the pole
-        if (c === 2 && (w === 2 || w === 3)) {
+        // hanger: M hook over the pole, e shoulder-bar beneath it
+        if (c === 2 && (w === 3 || w === 4)) {
           ch = "M";
+        } else if (c === 3 && w >= 2 && w <= 5) {
+          ch = "e"; // hanger shoulder bar
         } else if (c >= shoulder && c <= hem) {
           // shoulders taper in at the very top row; body is full width
-          const narrow = c === shoulder && (w === 0 || w === 5);
+          const narrow = c === shoulder && (w === 0 || w === 7);
           if (!narrow) {
             if (w === 0) ch = shade; // seam to the left neighbour
             else if (c === hem) ch = shade; // hem shadow
             else if (w === 1 || c === shoulder) ch = hi; // lit fold / shoulder
             else ch = base;
-            // garment detailing
-            if (shape === 1 && c >= 8 && c <= 10 && w >= 2 && w <= 3) ch = shade; // hoodie pocket
-            if (shape === 1 && c === shoulder + 1 && w >= 2 && w <= 3) ch = shade; // hood
-            if (shape === 2 && w === 3) ch = shade; // jacket centre zip
+            // chest graphic — centred on the garment
+            const gh = graphic.length;
+            const gy = c - (8 - Math.floor(gh / 2));
+            const gx = w - 2;
+            if (gy >= 0 && gy < gh && gx >= 0 && gx < graphic[gy].length && graphic[gy][gx] !== ".") {
+              ch = graphic[gy][gx];
+            }
           }
+        }
+        // price tag off the right shoulder on every 3rd garment
+        if (gi % 3 === 2 && w >= 6 && w <= 7 && (c === 4 || c === 5)) {
+          ch = w === 6 && c === 4 ? "v" : "o";
         }
       }
       row += ch;
