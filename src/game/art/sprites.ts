@@ -1041,11 +1041,16 @@ export const plantArt: PixelArt = {
 /**
  * Entrance carpet (default 3 tiles wide): a flat SCR!PTS-pink fill marking
  * the doorway, FireRed-style — no doors sprite, the carpet IS the entrance.
- * A single lit pixel row along the top gives it a hair of depth.
+ * A single lit pixel row along the top gives it a hair of depth. The mat
+ * overhangs its own tile by `MAT_OVERHANG_PX` so it can bleed slightly past
+ * the floor edge onto the black exterior, like the FireRed doormat that
+ * pokes just over the threshold.
  */
+export const MAT_OVERHANG_PX = 5;
+
 function buildMat(tiles = 3): string[] {
   const W = tiles * 16;
-  const H = 16;
+  const H = 16 + MAT_OVERHANG_PX;
   const rows: string[] = [];
   for (let y = 0; y < H; y++) {
     rows.push((y === 0 ? "(" : "$").repeat(W));

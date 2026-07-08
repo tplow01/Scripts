@@ -211,10 +211,19 @@ export class WorldScene extends Phaser.Scene {
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
     // The Basement lays down its own darker floor; everywhere else uses "floor".
     const floorKey = roomId === "basement" ? "floor-basement" : "floor";
+    // The main room's southern border sits against the exterior void, not an
+    // interior wall — render it flat black (no cap/trim line) so the floor
+    // reads as running straight up to the outside, FireRed-threshold style.
+    const isOuterSouthEdge = (x: number, y: number) =>
+      roomId === "main" && y === this.room.height - 1;
     for (let y = 0; y < this.room.height; y++) {
       for (let x = 0; x < this.room.width; x++) {
         const isWall = this.room.tiles[y][x] === "wall";
-        const key = isWall ? wallVariant(this.room, x, y) : floorKey;
+        const key = isOuterSouthEdge(x, y)
+          ? "wall-fill"
+          : isWall
+            ? wallVariant(this.room, x, y)
+            : floorKey;
         this.placeTile(resolveTextureKey(key), x, y, 0);
       }
     }

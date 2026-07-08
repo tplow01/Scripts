@@ -1,4 +1,5 @@
 import type { Room, TileType } from "./types";
+import { MAT_OVERHANG_PX } from "@/game/art/sprites";
 
 /**
  * Shop floor (Main) — Map v3, the exact measured layout (see docs/world-layout.md).
@@ -108,8 +109,10 @@ export const mainRoom: Room = {
     { tileX: C(7), tileY: R("j"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
     // Entrance: a flat SCR!PTS-black wall (no doors sprite) with a pink
-    // carpet marking the walk-in gap — Pokémon-style building exterior.
-    { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3 },
+    // carpet marking the walk-in gap — Pokémon-style building exterior. The
+    // mat's own art overhangs its tile (see MAT_OVERHANG_PX) so it bleeds a
+    // few px past the floor edge onto the black exterior row below.
+    { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3, hTiles: (16 + MAT_OVERHANG_PX) / 16 },
   ],
 };
 
