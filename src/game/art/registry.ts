@@ -3,12 +3,9 @@ import { bakePixelArt, bakeShadow } from "./pixelArt";
 import {
   floorArt,
   floorBasementArt,
-  doorsArt,
-  displayWindowArt,
   emblemArt,
   windowArt,
   plantArt,
-  treeArt,
   matArt,
   wallTopArt,
   wallSideArt,
@@ -37,10 +34,7 @@ import {
   cratesArt,
   rugArt,
   scribbsFrames,
-  extPavementArt,
-  extKerbArt,
-  extAsphaltArt,
-  extLampArt,
+  extVoidArt,
 } from "./sprites";
 
 /**
@@ -57,8 +51,6 @@ import {
 const TEXTURE_KEYS = [
   "floor",
   "floor-basement",
-  "doors",
-  "display-window",
   "wall-top",
   "wall-side",
   "wall-bottom",
@@ -88,12 +80,8 @@ const TEXTURE_KEYS = [
   "emblem",
   "window",
   "plant",
-  "tree",
   "mat",
-  "ext-pavement",
-  "ext-kerb",
-  "ext-asphalt",
-  "ext-lamp",
+  "ext-void",
 ] as const;
 
 /** Reusable soft contact-shadow texture key. */
@@ -102,8 +90,6 @@ export const SHADOW_KEY = "shadow";
 export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "floor", floorArt);
   bakePixelArt(scene, "floor-basement", floorBasementArt);
-  bakePixelArt(scene, "doors", doorsArt);
-  bakePixelArt(scene, "display-window", displayWindowArt);
   bakePixelArt(scene, "wall-top", wallTopArt);
   bakePixelArt(scene, "wall-side", wallSideArt);
   bakePixelArt(scene, "wall-bottom", wallBottomArt);
@@ -133,12 +119,8 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "emblem", emblemArt);
   bakePixelArt(scene, "window", windowArt);
   bakePixelArt(scene, "plant", plantArt);
-  bakePixelArt(scene, "tree", treeArt);
   bakePixelArt(scene, "mat", matArt);
-  bakePixelArt(scene, "ext-pavement", extPavementArt);
-  bakePixelArt(scene, "ext-kerb", extKerbArt);
-  bakePixelArt(scene, "ext-asphalt", extAsphaltArt);
-  bakePixelArt(scene, "ext-lamp", extLampArt);
+  bakePixelArt(scene, "ext-void", extVoidArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
   for (const [key, art] of Object.entries(scribbsFrames)) {
     bakePixelArt(scene, key, art);

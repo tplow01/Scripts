@@ -107,16 +107,8 @@ export const mainRoom: Room = {
     // two tiles above it (rows j–l, with y13–14 clear before the door at o).
     { tileX: C(7), tileY: R("j"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
-    // ── Entrance facade (all on the bottom border wall row, non-walkable) ──
-    // Luxury glass doors + integrated fascia sign (cols 7–9).
-    { tileX: C(7), tileY: HEIGHT - 1, artKey: "doors", wTiles: 3 },
-    // Display windows flanking the doors: tee'd mannequins in glass.
-    { tileX: C(5), tileY: HEIGHT - 1, artKey: "display-window", wTiles: 2 },
-    { tileX: C(10), tileY: HEIGHT - 1, artKey: "display-window", wTiles: 2, flip: true },
-    // Sculpted topiary bookending the storefront.
-    { tileX: C(4), tileY: HEIGHT - 1, artKey: "tree" },
-    { tileX: C(12), tileY: HEIGHT - 1, artKey: "tree" },
-    // Doormat just inside (walkable, warm-flecked).
+    // Entrance: a flat SCR!PTS-black wall (no doors sprite) with a pink
+    // carpet marking the walk-in gap — Pokémon-style building exterior.
     { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3 },
   ],
 };

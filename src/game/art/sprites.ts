@@ -117,8 +117,7 @@ const PAL: Palette = {
   "?": "#D9A94A", // gold (door handles, lamp)
   "/": "#A87B2C", // gold shade
   "(": "#FFB3DA", // pink highlight (logo 3-tone: ( highlight, P mid, p shade)
-  "<": "#1B1822", // exterior asphalt
-  ">": "#262230", // asphalt speckle / dither
+  "$": "#FF4FA3", // brand secondary pink — entrance carpet fill
 };
 
 const TILE = 16;
@@ -940,75 +939,6 @@ function buildRug(): string[] {
 
 export const rugArt: PixelArt = { rows: buildRug(), palette: PAL };
 
-/**
- * Entrance (3×1 = 48×16): luxury storefront doors with an integrated fascia.
- * Top 5px: ink fascia band with the wordmark dotted in paper. Below: full-
- * height glass double doors — slim ink frames, warm interior glow at the
- * bottom of the glass, gold handle pixels at the centre mullion.
- */
-function buildDoors(): string[] {
-  const W = 48, H = 16, MULL = 24;
-  const rows: string[] = [];
-  // Fascia: a clean paper rule + a centred 4-point pink star mark (the tiny
-  // 3×5 "scr!pts" lettering read as noise at 48px wide during the visual
-  // check, so this is the authorised fallback from the brief).
-  const dot = ".".repeat(W);
-  const star = ".".repeat(23) + "PP" + ".".repeat(W - 25);
-  const rule = "....".concat("=".repeat(W - 8), "....");
-  const FASCIA = [dot, dot, star, rule, star];
-  for (let y = 0; y < H; y++) {
-    let row = "";
-    for (let x = 0; x < W; x++) {
-      if (y < 5) {
-        // Fascia: ink band, paper rule + pink star mark from the FASCIA map.
-        const c = FASCIA[y]?.[x];
-        row += c === "=" ? "=" : c === "P" ? "P" : "@";
-        continue;
-      }
-      const frame = x <= 1 || x >= W - 2 || y === 5; // jambs + head under fascia
-      const mullion = x === MULL - 1 || x === MULL;
-      const handle = (x === MULL - 3 || x === MULL + 2) && y >= 8 && y <= 11;
-      const glow = y >= 12 && !frame && !mullion; // warm interior light
-      if (frame || mullion) row += "@";
-      else if (handle) row += "?";
-      else if (glow) row += "o";
-      else row += "I"; // glass
-    }
-    rows.push(row);
-  }
-  return rows;
-}
-
-export const doorsArt: PixelArt = { rows: buildDoors(), palette: PAL, outline: "#0D0D0D" };
-
-/**
- * Display window (2×1 = 32×16): fascia-topped glass vitrine with a tee'd
- * mannequin and a warm spotlight pool. Placed flanking the entrance doors;
- * the second placement is flipped for variety.
- */
-export const displayWindowArt: PixelArt = {
-  palette: PAL,
-  outline: "#0D0D0D",
-  rows: [
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-    "@IIIIIIIIIIIIIIIIIIIIIIIIIIIIII@",
-    "@IIIIIII===IIIIIIIIImmmIIIIIIII@",
-    "@IIIIII=====IIIIIIIImmmmmIIIIII@",
-    "@IIIIII==P==IIIIIIIImmPmmIIIIII@",
-    "@IIIIII=====IIIIIIIImmmmmIIIIII@",
-    "@IIIIIII===IIIIIIIIImmmIIIIIIII@",
-    "@IIIIIII=I=IIIIIIIIIm.mIIIIIIII@",
-    "@IIIIIIIYIYIIIIIIIIIYmYIIIIIIII@",
-    "@IIIIIIIIIIIIIIIIIIIIIIIIIIIIII@",
-    "@IIooooIIIIIIIIIIIIIIIooooIIIII@",
-    "@IooooooIIIIIIIIIIIIIIooooooIII@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
-  ],
-};
-
 /** Window for the back wall: wood frame, sky glass, a muntin bar + greenery. */
 export const windowArt: PixelArt = {
   palette: PAL,
@@ -1057,49 +987,17 @@ export const plantArt: PixelArt = {
   ],
 };
 
-/** Leafy potted tree (1 tile, taller foliage). */
-export const treeArt: PixelArt = {
-  palette: PAL,
-  outline: OUT,
-  rows: [
-    "....mlllm.......",
-    "...mlllllm......",
-    "..mlllllllm.....",
-    "..llllllllk.....",
-    "..mllllllk......",
-    "..mlllllllk.....",
-    "...mllllllk.....",
-    "....mllllk......",
-    ".....mlk........",
-    "......kk........",
-    "......kk........",
-    ".....wwww.......",
-    ".....wwww.......",
-    "....wwwwww......",
-    "....wVVVVw......",
-    "....wwwwww......",
-  ],
-};
-
-/** Framed entrance mat at its true footprint (default 3 tiles wide): pink frame,
- * cream field, ink band. */
+/**
+ * Entrance carpet (default 3 tiles wide): a flat SCR!PTS-pink fill marking
+ * the doorway, FireRed-style — no doors sprite, the carpet IS the entrance.
+ * A single lit pixel row along the top gives it a hair of depth.
+ */
 function buildMat(tiles = 3): string[] {
   const W = tiles * 16;
   const H = 16;
   const rows: string[] = [];
   for (let y = 0; y < H; y++) {
-    let row = "";
-    for (let x = 0; x < W; x++) {
-      let ch = ".";
-      if (y >= 2 && y <= 13 && x >= 2 && x <= W - 3) {
-        const border = x < 4 || x > W - 5 || y < 4 || y > 11;
-        if (border) ch = "P";
-        else if (Math.abs(y - 8) < 1 && x > 6 && x < W - 7) ch = "v";
-        else ch = (x + y) % 7 === 0 ? "L" : "o"; // warm flecks in the cream field
-      }
-      row += ch;
-    }
-    rows.push(row);
+    rows.push((y === 0 ? "(" : "$").repeat(W));
   }
   return rows;
 }
@@ -1179,87 +1077,14 @@ export const railV7Art: PixelArt = { rows: buildRail(7, "v"), palette: PAL, outl
 export const railH3Art: PixelArt = { rows: buildRail(3, "h"), palette: PAL, outline: OUT };
 export const railV3Art: PixelArt = { rows: buildRail(3, "v"), palette: PAL, outline: OUT };
 
-// ── Exterior street (main-room void treatment) ──────────────────────────────
-/**
- * Exterior street tiles (main-room void treatment). Pavement = light slabs
- * with joint lines; kerb = pavement with an edge stone along the bottom;
- * asphalt = near-black with a sparse dither so the void reads as ground.
- */
-function buildExtPavement(): string[] {
+// ── Exterior void (main-room, Pokémon-style building exterior) ──────────────
+/** The void beyond the shop walls: a flat SCR!PTS-black fill, no street. */
+function buildExtVoid(): string[] {
   const rows: string[] = [];
   for (let y = 0; y < TILE; y++) {
-    let row = "";
-    for (let x = 0; x < TILE; x++) {
-      const joint = y === 0 || x === 0 || x === 8; // slab joints (half-tile slabs)
-      const speckle = (x * 7 + y * 3) % 23 === 0;
-      row += joint ? "0" : speckle ? "a" : "9";
-    }
-    rows.push(row);
+    rows.push("@".repeat(TILE));
   }
   return rows;
 }
 
-function buildExtKerb(): string[] {
-  const rows = buildExtPavement();
-  // Kerb stone along the bottom 4px: lit top edge + grey face + dark lip.
-  for (let y = TILE - 4; y < TILE; y++) {
-    rows[y] = (y === TILE - 4 ? "2" : y === TILE - 1 ? "K" : "+").repeat(TILE);
-  }
-  return rows;
-}
-
-function buildExtAsphalt(): string[] {
-  const rows: string[] = [];
-  for (let y = 0; y < TILE; y++) {
-    let row = "";
-    for (let x = 0; x < TILE; x++) {
-      row += (x * 5 + y * 11) % 29 === 0 ? ">" : "<"; // sparse dither
-    }
-    rows.push(row);
-  }
-  return rows;
-}
-
-export const extPavementArt: PixelArt = { rows: buildExtPavement(), palette: PAL };
-export const extKerbArt: PixelArt = { rows: buildExtKerb(), palette: PAL };
-export const extAsphaltArt: PixelArt = { rows: buildExtAsphalt(), palette: PAL };
-
-/** Streetlamp (1×2 tiles = 16×32): slim post, gold head, warm light pool. */
-export const extLampArt: PixelArt = {
-  palette: PAL,
-  outline: OUT,
-  rows: [
-    "................",
-    "......????......",
-    ".....?LLLL?.....",
-    ".....?LLLL?.....",
-    "......????......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    ".......GG.......",
-    "......GGGG......",
-    ".....GGGGGG.....",
-    "....LLLLLLLL....",
-    "...LLLLLLLLLL...",
-    "....LLLLLLLL....",
-    ".....LLLLLL.....",
-    "................",
-  ],
-};
+export const extVoidArt: PixelArt = { rows: buildExtVoid(), palette: PAL };

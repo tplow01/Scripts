@@ -34,13 +34,7 @@ describe("art registry", () => {
     expect(() => resolveTextureKey("does-not-exist")).toThrow();
   });
 
-  it("resolves the entrance display window", () => {
-    expect(resolveTextureKey("display-window")).toBe("display-window");
-  });
-
-  it("resolves the exterior street tiles", () => {
-    for (const k of ["ext-pavement", "ext-kerb", "ext-asphalt", "ext-lamp"]) {
-      expect(resolveTextureKey(k)).toBe(k);
-    }
+  it("resolves the exterior void tile", () => {
+    expect(resolveTextureKey("ext-void")).toBe("ext-void");
   });
 });

@@ -13,8 +13,8 @@ const FADE_MS = 260;
 const STEP_MS = 130;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
 const INTRO_FALLBACK_MS = 15000;
-/** Tiles of decorative street apron drawn around the main room, and how far
- * the camera bounds expand to reveal it. */
+/** Tiles of flat black void drawn around the main room, and how far the
+ * camera bounds expand to reveal it. */
 const EXTERIOR_APRON = 4;
 
 /**
@@ -192,32 +192,18 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects = [];
     this.coverObjects = [];
 
-    // ── Exterior treatment (main room only): the void beyond the walls reads
-    // as city ground, not dead space. Top/left/right: dithered asphalt apron.
-    // Below the entrance: sidewalk (pavement + kerb) then asphalt road, with a
-    // streetlamp by the doors. All decorative — outside bounds, never walkable.
+    // ── Exterior treatment (main room only): the void beyond the walls is a
+    // flat SCR!PTS-black fill, Pokémon-style — the shop reads as a solid
+    // building block sitting on the overworld, not a street scene.
     if (roomId === "main") {
-      this.cameras.main.setBackgroundColor("#1B1822"); // matches ext-asphalt
+      this.cameras.main.setBackgroundColor("#0D0D0D");
       for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
         for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
           const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
           if (inside) continue;
-          let key = "ext-asphalt";
-          if (y >= this.room.height) {
-            // Street in front of the shop: 2 sidewalk rows, kerb, then road.
-            const d = y - this.room.height;
-            key = d === 0 ? "ext-pavement" : d === 1 ? "ext-kerb" : "ext-asphalt";
-          }
-          this.placeTile(resolveTextureKey(key), x, y, -0.5);
+          this.placeTile(resolveTextureKey("ext-void"), x, y, -0.5);
         }
       }
-      // Streetlamp on the sidewalk beside the right display window (col 11).
-      const ts = this.room.tileSize;
-      const lamp = this.add
-        .image(11 * ts + ts / 2, this.room.height * ts + ts, resolveTextureKey("ext-lamp"))
-        .setDisplaySize(ts, ts * 2)
-        .setDepth(-0.4);
-      this.roomObjects.push(lamp);
     } else {
       this.cameras.main.setBackgroundColor("#1C1A22"); // basement: untouched void
     }
@@ -236,7 +222,7 @@ export class WorldScene extends Phaser.Scene {
     // Decorations: flat floor art sits low, wall art mounts on the wall, solid
     // obstacles stand with a contact shadow.
     const flatFloor = new Set(["emblem", "rug", "mat"]);
-    const onWall = new Set(["poster", "window", "doors", "display-window"]);
+    const onWall = new Set(["poster", "window"]);
     for (const deco of this.room.decorations ?? []) {
       if (!propActive(deco, gameSession.revealed)) continue;
       // Concealing covers (crates over the secret stairs) sit above floor props
