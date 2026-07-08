@@ -53,9 +53,9 @@ const PAL: Palette = {
   X: "#A75F82", // muted rose shade
 
   // ── FireRed wall/floor ramp (Track A) + rail blue ──
-  "!": "#EFEDE6", // wall face / floor alt quad
-  ",": "#E4E1D8", // wall cap seam / floor grout
-  ";": "#D6D3C9", // floor quad shade pixel
+  "!": "#F5F3EE", // wall face / floor alt quad — close to SCR!PTS paper white
+  ",": "#EDEBE4", // wall cap seam / floor grout — barely-there line
+  ";": "#E3E0D7", // floor quad shade pixel
   ":": "#B9B9BC", // wall grooves / molding
   "#": "#8C8C90", // wall lower band
   "'": "#4A4A4F", // wall base shadow
@@ -174,40 +174,19 @@ function buildFloorBasement(): string[] {
 }
 
 /**
- * SCR!PTS floor medallion — a FireRed-style inlaid floor plate (80×80):
- * 1px ink outer line, 3px grey frame with diagonal-cut corners, a thin pink
- * keyline, then an inlay field with a dithered rim. Centre-top carries a big
- * 3-tone pink comet star; the `scr!pts` wordmark sits below.
+ * SCR!PTS floor logo — the real brand lockup as a pixel inlay (80×80), no
+ * frame or medallion: a 3-tone pink comet (big 4-point star upper-right,
+ * tapering streak down-left to a small star) floats directly over the
+ * floor, with the `scr!pts` wordmark centred below it — matching the actual
+ * logo mark 1:1 rather than a bordered plate.
  */
 function buildEmblem(): string[] {
   const N = 80;
   const g: string[][] = Array.from({ length: N }, () => Array(N).fill("."));
 
-  const CUT = 5; // corner chamfer depth
-  const cornerDepth = (x: number, y: number) =>
-    Math.min(x + y, (N - 1 - x) + y, x + (N - 1 - y), (N - 1 - x) + (N - 1 - y));
-
-  for (let y = 0; y < N; y++) {
-    for (let x = 0; x < N; x++) {
-      const edge = Math.min(x, y, N - 1 - x, N - 1 - y); // distance to square edge
-      const corner = cornerDepth(x, y);
-      if (corner < CUT) {
-        g[y][x] = "."; // chopped corner — outside the medallion
-      } else if (corner === CUT || edge === 0) {
-        g[y][x] = "@"; // 1px ink outline (incl. the diagonal cut edges)
-      } else if (edge <= 3 || corner <= CUT + 3) {
-        g[y][x] = "+"; // 3px grey frame
-      } else if (edge === 4 || corner === CUT + 4) {
-        g[y][x] = "p"; // thin pink keyline inside the frame
-      } else {
-        // inlay field — dithered rim (2px-period checker) fading to clean F
-        const fieldDepth = Math.min(edge - 5, corner - CUT - 5);
-        g[y][x] = fieldDepth < 8 && (Math.floor(x / 2) + Math.floor(y / 2)) % 2 === 0 ? ";" : "F";
-      }
-    }
-  }
-
-  // ── Comet star, centre-top of the field, 3-tone pink.
+  // ── Comet: big star upper-right → small star lower-left, joined by a
+  // tapering streak (thick at the big star, thin at the small one).
+  const bx = 58, by = 14, sx = 20, sy = 46;
   const star = (cx: number, cy: number, r: number) => {
     for (let y = 0; y < N; y++)
       for (let x = 0; x < N; x++) {
@@ -221,7 +200,24 @@ function buildEmblem(): string[] {
         }
       }
   };
-  star(40, 28, 10);
+  const len = Math.hypot(bx - sx, by - sy);
+  for (let t = 0; t <= 1; t += 1 / (len * 2)) {
+    const cx = bx + (sx - bx) * t;
+    const cy = by + (sy - by) * t;
+    const th = 4 * (1 - t) + 0.6;
+    for (let y = -6; y <= 6; y++)
+      for (let x = -6; x <= 6; x++) {
+        const d = Math.hypot(x, y);
+        if (d <= th) {
+          const px = Math.round(cx + x), py = Math.round(cy + y);
+          if (px >= 0 && px < N && py >= 0 && py < N) {
+            g[py][px] = d > th - 1.2 ? "p" : y < -th / 3 ? "(" : "P";
+          }
+        }
+      }
+  }
+  star(bx, by, 11);
+  star(sx, sy, 5);
 
   // ── Wordmark `scr!pts` — bolder 8w×11h glyphs (2px strokes) so it holds at
   // floor scale. `!` is the brand 4-point star.
@@ -236,7 +232,7 @@ function buildEmblem(): string[] {
   };
   const word = ["s", "c", "r", "!", "p", "t", "s"];
   let cx = 6;
-  const y0 = 54;
+  const y0 = 58;
   for (const ch of word) {
     const glyph = G[ch];
     for (let gy = 0; gy < glyph.length; gy++)
