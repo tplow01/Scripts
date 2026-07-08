@@ -60,6 +60,9 @@ const PAL: Palette = {
   "#": "#8C8C90", // wall lower band
   "'": "#4A4A4F", // wall base shadow
   "<": "#5FA7D6", // rail blue
+  "]": "#161616", // basement floor alt quad (ink checker partner)
+  "[": "#1E1E1E", // basement floor grout
+  "}": "#101010", // basement floor quad shade pixel
 
   // metal (rack)
   M: "#C2C8D0", // highlight
@@ -157,16 +160,21 @@ function buildFloor(): string[] {
 }
 
 /**
- * Basement floor — the inverse of the shop floor. Near-black ink field with a
- * single grey grid line along the top + left edge, so tiling lays down a subtle
- * underground grid. No pink here; warmth arrives only through the props.
+ * Basement floor — the same warm 2-tone checker as the shop floor (8px
+ * quads, grout grid, shade pixel), just in SCR!PTS ink instead of paper —
+ * the underground twin of the upstairs pattern. No pink here; warmth
+ * arrives only through the props.
  */
 function buildFloorBasement(): string[] {
   const rows: string[] = [];
   for (let y = 0; y < TILE; y++) {
     let row = "";
     for (let x = 0; x < TILE; x++) {
-      row += x === 0 || y === 0 ? "+" : "@"; // grey grid line on ink
+      const lx = x % 8;
+      const ly = y % 8;
+      if (lx === 0 || ly === 0) row += "[";
+      else if (lx === 7 && ly === 7) row += "}";
+      else row += (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? "@" : "]";
     }
     rows.push(row);
   }
