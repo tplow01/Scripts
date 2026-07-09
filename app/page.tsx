@@ -265,6 +265,14 @@ export default function Home() {
     if (gameSession.playing) setStarted(true);
   }, []);
 
+  // Lock body scroll only while this game screen is mounted — inventory,
+  // basement, cart, and checkout are normal scrolling pages and must not
+  // inherit the fixed/no-scroll shell treatment.
+  useEffect(() => {
+    document.body.classList.add("game-active");
+    return () => document.body.classList.remove("game-active");
+  }, []);
+
   // Once playing: remember it (so back-nav resumes) and prefetch the reachable
   // routes so rack/checkout/NPC handoffs are instant.
   useEffect(() => {

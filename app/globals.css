@@ -15,6 +15,12 @@ html,
 body {
   margin: 0;
   padding: 0;
+}
+
+/* Scroll lock for the game screen only ("/") — toggled by app/page.tsx via a
+   body class. Other routes (inventory, basement, cart, checkout) are normal
+   scrolling pages and must not inherit this. */
+body.game-active {
   height: 100dvh;
   width: 100%;
   overflow: hidden;
