@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>sprite preview</title>
+<body style="background:#F7F7F5;font-family:monospace;padding:24px">
+<div id="row" style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end"></div>
+<script>
+const SCALE = 12;
+fetch('/sprite-preview-data.json').then(r => r.json()).then(({pal, chars}) => {
+  const OUT = '#14121A';
+  for (const [name, rows] of Object.entries(chars)) {
+    const h = rows.length, w = Math.max(...rows.map(r => r.length));
+    const c = document.createElement('canvas');
+    c.width = w * SCALE; c.height = h * SCALE;
+    c.style.imageRendering = 'pixelated';
+    const ctx = c.getContext('2d');
+    const opaque = (x, y) => y >= 0 && y < h && x >= 0 && x < (rows[y]?.length ?? 0) && !!pal[rows[y][x]];
+    for (let y = 0; y < h; y++) for (let x = 0; x < rows[y].length; x++) {
+      const col = pal[rows[y][x]];
+      if (col) { ctx.fillStyle = col; ctx.fillRect(x*SCALE, y*SCALE, SCALE, SCALE); }
+    }
+    ctx.fillStyle = OUT;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (opaque(x, y)) continue;
+      if (opaque(x-1,y) || opaque(x+1,y) || opaque(x,y-1) || opaque(x,y+1))
+        ctx.fillRect(x*SCALE, y*SCALE, SCALE, SCALE);
+    }
+    const cell = document.createElement('div');
+    cell.style.textAlign = 'center';
+    cell.appendChild(c);
+    const label = document.createElement('div');
+    label.textContent = name;
+    cell.appendChild(label);
+    document.getElementById('row').appendChild(cell);
+  }
+});
+</script>

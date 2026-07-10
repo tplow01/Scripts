@@ -133,7 +133,7 @@ const PAL: Palette = {
 
   // ── Anime hair refresh — deeper shade + sheen so each ramp reads 3-tone ──
   "-": "#1B1624", // ink hair deep shade (under-layer)
-  "_": "#575068", // ink hair sheen (anime highlight streak)
+  "_": "#6A6280", // ink hair sheen (anime highlight streak)
   ")": "#A5794A", // light-brown hair highlight (Heath's curls)
   ">": "#EFD695", // sandy-blond highlight (Thomas)
 };
@@ -750,7 +750,7 @@ export const npcArt: PixelArt = {
   outline: OUT,
   rows: [
     "................",
-    "...H.H_H.H_H....",
+    "...h.h_h.h_h....",
     "..HHHHHHHHHHH...",
     "..HHh_HHHH_hH-..",
     "..HHNNNNNNNNHH..",
@@ -908,7 +908,7 @@ export const npcSitterArt: PixelArt = {
     "...HHH_.._HHH...",
     "..HHHHH--HHHHH..",
     "..HHhHH--HHhHH..",
-    "..HHSSSHHSSSHH..",
+    "..HHSSSSSSSSHH..",
     "..HSSOSSSSOSSH..",
     "...HnSSSSSSnH...",
     "....nnSSSSnn....",
