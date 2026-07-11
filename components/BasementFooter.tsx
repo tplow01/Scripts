@@ -55,7 +55,7 @@ export default function BasementFooter() {
             />
             <button
               type="submit"
-              className="bg-[#f7f7f5] text-[#0d0d0d] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#f7f7f5] rounded-r hover:bg-transparent hover:text-[#f7f7f5] transition-colors duration-150 whitespace-nowrap"
+              className="bg-transparent text-[#f7f7f5] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#f7f7f5] rounded-r hover:bg-[#f7f7f5] hover:text-[#0d0d0d] transition-colors duration-150 whitespace-nowrap"
             >
               Sign Up
             </button>
