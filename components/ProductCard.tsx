@@ -11,12 +11,25 @@ const STATUS_LABELS: Record<Product['status'], string> = {
   'available': '',
 }
 
+const THEME = {
+  light: {
+    pill: 'bg-[#0d0d0d] text-[#f7f7f5]',
+    text: 'text-[#0d0d0d]',
+  },
+  dark: {
+    pill: 'bg-[#f7f7f5] text-[#0d0d0d]',
+    text: 'text-[#f7f7f5]',
+  },
+} as const
+
 interface ProductCardProps {
   product: Product
+  theme: 'light' | 'dark'
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, theme }: ProductCardProps) {
   const reduced = useReducedMotion()
+  const { pill, text } = THEME[theme]
 
   return (
     <Link href={`/products/${product.slug}`} className="group block w-full">
@@ -46,11 +59,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Pills */}
       <div className="flex flex-wrap gap-[8px] mt-[8px] justify-center">
-        <span className="inline-flex items-center bg-[#0d0d0d] text-[#f7f7f5] text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]">
+        <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300 group-hover:bg-[#FF8AC7] group-hover:text-[#0d0d0d]`}>
           {product.collection}
         </span>
         {product.status !== 'available' && (
-          <span className="inline-flex items-center bg-[#0d0d0d] text-[#f7f7f5] text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]">
+          <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300 group-hover:bg-[#FF8AC7] group-hover:text-[#0d0d0d]`}>
             {STATUS_LABELS[product.status]}
           </span>
         )}
@@ -58,10 +71,10 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       {/* Name + price */}
       <div className="mt-[16px] text-center">
-        <p className="text-[13px] font-bold text-[#0d0d0d] uppercase leading-snug">
+        <p className={`text-[13px] font-bold ${text} uppercase leading-snug transition-colors duration-300 group-hover:text-[#FF8AC7]`}>
           {product.name}
         </p>
-        <p className="text-[13px] font-bold text-[#0d0d0d] leading-snug mt-[4px]">
+        <p className={`text-[13px] font-bold ${text} leading-snug mt-[4px] transition-colors duration-300 group-hover:text-[#FF8AC7]`}>
           ${product.price}.00
         </p>
       </div>
