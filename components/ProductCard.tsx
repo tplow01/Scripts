@@ -36,7 +36,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
 
       <motion.div
         className="relative w-full aspect-square"
-        whileHover={reduced ? {} : { scale: 1.02 }}
+        whileHover={reduced ? {} : { scale: 1.05 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
         {product.image && (
@@ -44,15 +44,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
             src={product.image}
             alt={product.name}
             fill
-            className="object-contain transition-opacity duration-300 group-hover:opacity-0"
-          />
-        )}
-        {product.backImage && (
-          <Image
-            src={product.backImage}
-            alt={`${product.name} — back`}
-            fill
-            className="absolute inset-0 object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className="object-contain"
           />
         )}
       </motion.div>
