@@ -32,10 +32,10 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
   const { pill, text } = THEME[theme]
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block w-full">
+    <Link href={`/products/${product.slug}`} className="block w-full">
 
       <motion.div
-        className="relative w-full aspect-square"
+        className="peer relative w-full aspect-square"
         whileHover={reduced ? {} : { scale: 1.05 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
@@ -50,12 +50,12 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
       </motion.div>
 
       {/* Pills */}
-      <div className="flex flex-wrap gap-[8px] mt-[8px] justify-center">
-        <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300 group-hover:bg-[#FF8AC7] group-hover:text-[#0d0d0d]`}>
+      <div className="flex flex-wrap gap-[8px] mt-[8px] justify-center peer-hover:[&>span]:bg-[#FF8AC7] peer-hover:[&>span]:text-[#0d0d0d]">
+        <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300`}>
           {product.collection}
         </span>
         {product.status !== 'available' && (
-          <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300 group-hover:bg-[#FF8AC7] group-hover:text-[#0d0d0d]`}>
+          <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300`}>
             {STATUS_LABELS[product.status]}
           </span>
         )}
@@ -63,10 +63,10 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
 
       {/* Name + price */}
       <div className="mt-[16px] text-center">
-        <p className={`text-[13px] font-bold ${text} uppercase leading-snug transition-colors duration-300 group-hover:text-[#FF8AC7]`}>
+        <p className={`text-[13px] font-bold ${text} uppercase leading-snug`}>
           {product.name}
         </p>
-        <p className={`text-[13px] font-bold ${text} leading-snug mt-[4px] transition-colors duration-300 group-hover:text-[#FF8AC7]`}>
+        <p className={`text-[13px] font-bold ${text} leading-snug mt-[4px]`}>
           ${product.price}.00
         </p>
       </div>
