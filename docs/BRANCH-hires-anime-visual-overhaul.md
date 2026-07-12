@@ -25,6 +25,10 @@ This branch is the isolated production-graphics overhaul. `main` remains clean.
 - Original rainy-night title tableau: moving skyline, train, reflections, rain,
   and walking Heath/Scribbs figures.
 - Removed runtime loading of the supplied GBA sprite frames.
+- Restored the exact pre-overhaul comet + `scr!pts` floor emblem and plain-pink
+  entrance mat as brand invariants; high-resolution art must not reinterpret them.
+- Refined anatomy with separated sleeves, visible hands, larger eyes, profile
+  nose/ear details, back-facing construction, and directional arm/leg motion.
 
 ## Source map
 

@@ -19,6 +19,10 @@ The active production implementation is now `src/game/art/hiresArt.ts`:
   speakers, boxes, vinyl desk, crates, couch, and entrance mat;
 - no third-party character frames are loaded by `BootScene`.
 
+Brand-locked exceptions: `emblem` and `mat` deliberately use the exact
+pre-overhaul `sprites.ts` definitions. The emblem is the approved comet plus
+`scr!pts` wordmark; the entrance is plain pink and carries no invented mark.
+
 The older 16px tables below remain useful as historical footprint contracts.
 Their `placeholder` labels do not describe the active high-resolution overrides.
 

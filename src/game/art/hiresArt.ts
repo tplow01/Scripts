@@ -116,19 +116,53 @@ function drawFace(g: Grid, facing: Facing, skin: "light" | "deep" = "light") {
   const base = skin === "deep" ? "S" : "s";
   const shade = skin === "deep" ? "n" : "S";
   if (facing === "up") {
-    rect(g, 11, 10, 11, 10, shade);
+    // Only a narrow neck is visible from behind; the hair owns the head.
+    rect(g, 14, 18, 5, 5, shade);
     return;
   }
   if (facing === "side") {
-    ellipse(g, 17, 14, 6, 7, base); rect(g, 12, 16, 4, 5, shade);
-    put(g, 21, 13, "k"); put(g, 23, 16, shade);
+    ellipse(g, 17, 14, 6, 8, base);
+    rect(g, 12, 16, 3, 5, shade); // ear-side facial shade
+    rect(g, 21, 12, 2, 2, "k"); // profile eye + brow
+    put(g, 22, 13, "w");
+    rect(g, 23, 15, 2, 2, base); // nose projects beyond the face oval
+    put(g, 22, 18, "n");
+    rect(g, 11, 14, 2, 3, shade); put(g, 11, 15, "q"); // ear + earring
   } else {
-    ellipse(g, 16, 14, 7, 7, base); rect(g, 10, 16, 13, 5, shade);
-    rect(g, 11, 13, 3, 1, "k"); rect(g, 19, 13, 3, 1, "k");
-    put(g, 13, 14, "w"); put(g, 20, 14, "w");
-    rect(g, 15, 18, 3, 1, "n");
+    ellipse(g, 16, 14, 7, 8, base);
+    rect(g, 10, 17, 13, 4, shade);
+    rect(g, 11, 12, 4, 2, "k"); rect(g, 19, 12, 4, 2, "k");
+    rect(g, 12, 13, 3, 2, "k"); rect(g, 19, 13, 3, 2, "k");
+    put(g, 13, 13, "w"); put(g, 20, 13, "w");
+    put(g, 16, 16, shade); rect(g, 15, 18, 3, 1, "n");
+    put(g, 9, 15, shade); put(g, 23, 15, shade); // ears
   }
   rect(g, 14, 20, 5, 3, shade);
+}
+
+/** Hair that intentionally overlaps the forehead after the face is drawn. */
+function drawFringe(g: Grid, style: Hair, facing: Facing) {
+  if (facing === "up") return;
+  const base = style === "curls" ? "C" : "K";
+  const mid = style === "curls" ? "c" : "d";
+  const hi = style === "curls" ? "y" : "H";
+  if (style === "curtains") {
+    rect(g, 10, 8, 5, 5, base); rect(g, 19, 8, 5, 5, base);
+    rect(g, 14, 7, 2, 4, hi); rect(g, 18, 7, 2, 4, mid);
+  } else if (style === "wolf") {
+    rect(g, 9, 8, 8, 4, base); rect(g, 16, 7, 9, 4, mid);
+    rect(g, 9, 11, 4, 6, base); rect(g, 22, 10, 4, 7, base);
+  } else if (style === "curls") {
+    ellipse(g, 11, 10, 3, 3, base); ellipse(g, 16, 8, 3, 3, mid); ellipse(g, 21, 10, 3, 3, base);
+    put(g, 10, 9, hi); put(g, 15, 7, hi); put(g, 20, 9, hi);
+  } else if (style === "sweep") {
+    rect(g, 9, 8, 13, 4, base); rect(g, 18, 6, 8, 5, mid); rect(g, 13, 8, 7, 2, hi);
+  } else if (style === "twists") {
+    rect(g, 9, 8, 15, 4, base);
+  } else {
+    rect(g, 9, 8, 16, 3, base); rect(g, 11, 10, 5, 3, mid); rect(g, 18, 9, 5, 3, base);
+    rect(g, 13, 8, 3, 2, hi);
+  }
 }
 
 function outfitColors(outfit: Outfit): { top: string; shade: string; accent: string; trouser: string } {
@@ -146,47 +180,74 @@ function outfitColors(outfit: Outfit): { top: string; shade: string; accent: str
 function drawOutfit(g: Grid, outfit: Outfit, facing: Facing, walk: boolean) {
   const o = outfitColors(outfit);
   const side = facing === "side";
-  // Oversized editorial silhouette: dropped shoulder, long hem, slim neck.
-  rect(g, side ? 10 : 8, 23, side ? 15 : 17, 14, o.top);
-  rect(g, side ? 10 : 8, 33, side ? 15 : 17, 4, o.shade);
-  rect(g, side ? 8 : 6, 25, 3, 11, o.shade);
-  rect(g, side ? 25 : 25, 25, 3, 11, o.shade);
-  if (outfit === "scribbs") {
-    rect(g, 8, 22, 17, 2, "q"); // headphone cord / collar flash
+  const skinBase = (outfit === "love" || outfit === "rage" || outfit === "basement") ? "S" : "s";
+  const skinShade = (outfit === "love" || outfit === "rage" || outfit === "basement") ? "n" : "S";
+  // Oversized editorial silhouette with a dark under-arm gap. Sleeves and
+  // hands are separate shapes instead of one rectangular torso silhouette.
+  rect(g, side ? 10 : 9, 23, side ? 15 : 15, 14, o.top);
+  rect(g, side ? 10 : 9, 33, side ? 15 : 15, 4, o.shade);
+  rect(g, side ? 8 : 6, walk ? 27 : 25, 3, 8, o.shade);
+  rect(g, side ? 25 : 25, walk ? 24 : 25, 3, 8, o.shade);
+  rect(g, side ? 9 : 8, 25, 1, 10, "k");
+  rect(g, 24, 25, 1, 10, "k");
+  // Exposed hands make the arm direction readable at game zoom.
+  rect(g, side ? 8 : 6, walk ? 35 : 33, 3, 3, skinShade);
+  rect(g, side ? 25 : 25, walk ? 32 : 33, 3, 3, skinBase);
+  put(g, side ? 8 : 6, walk ? 37 : 35, skinBase);
+  put(g, side ? 27 : 27, walk ? 34 : 35, skinShade);
+  if (facing !== "up" && outfit === "scribbs") {
+    rect(g, 9, 22, 15, 2, "q"); // headphone cord / collar flash
     rect(g, 12, 27, 9, 5, "p"); rect(g, 14, 28, 5, 3, "P");
-  } else if (outfit === "heath") {
+  } else if (facing !== "up" && outfit === "heath") {
     // Tiny graphic-photo tee and chain.
     rect(g, 15, 25, 2, 5, "y"); rect(g, 13, 28, 6, 5, o.accent); put(g, 16, 29, "w");
-  } else if (outfit === "love") {
+  } else if (facing !== "up" && outfit === "love") {
     rect(g, 14, 27, 2, 2, o.accent); rect(g, 18, 27, 2, 2, o.accent); rect(g, 15, 29, 4, 3, o.accent);
-  } else if (outfit === "confusion") {
+  } else if (facing !== "up" && outfit === "confusion") {
     rect(g, 15, 26, 4, 2, o.accent); rect(g, 18, 28, 2, 3, o.accent); rect(g, 16, 32, 2, 2, o.accent);
-  } else if (outfit === "okay") {
+  } else if (facing !== "up" && outfit === "okay") {
     rect(g, 16, 26, 2, 7, o.accent); rect(g, 13, 29, 8, 2, o.accent);
-  } else if (outfit === "rage") {
+  } else if (facing !== "up" && outfit === "rage") {
     rect(g, 12, 27, 10, 2, "p"); rect(g, 14, 30, 6, 3, o.accent);
-  } else {
+  } else if (facing !== "up") {
     rect(g, 12, 26, 10, 7, "p"); rect(g, 14, 28, 6, 3, "k");
   }
 
-  const leftOffset = walk ? -1 : 0;
-  const rightOffset = walk ? 1 : 0;
-  rect(g, 10 + leftOffset, 37, 6, walk ? 8 : 7, o.trouser);
-  rect(g, 18 + rightOffset, 37, 6, walk ? 8 : 7, o.trouser);
-  rect(g, 9 + leftOffset, walk ? 44 : 43, 7, 3, "k");
-  rect(g, 18 + rightOffset, walk ? 44 : 43, 7, 3, "k");
-  put(g, 10 + leftOffset, walk ? 44 : 43, "G");
-  put(g, 19 + rightOffset, walk ? 44 : 43, "G");
+  if (side) {
+    // Profile legs overlap when idle and separate into a long stride.
+    rect(g, walk ? 8 : 11, 37, 7, walk ? 8 : 7, o.trouser);
+    rect(g, walk ? 20 : 18, 37, 7, walk ? 8 : 7, o.trouser);
+    rect(g, walk ? 6 : 10, walk ? 44 : 43, 10, 3, "k");
+    rect(g, walk ? 20 : 18, walk ? 44 : 43, 10, 3, "k");
+  } else {
+    const leftOffset = walk ? -2 : 0;
+    const rightOffset = walk ? 2 : 0;
+    rect(g, 10 + leftOffset, 37, 6, walk ? 8 : 7, o.trouser);
+    rect(g, 18 + rightOffset, 37, 6, walk ? 8 : 7, o.trouser);
+    rect(g, 9 + leftOffset, walk ? 44 : 43, 8, 3, "k");
+    rect(g, 18 + rightOffset, walk ? 44 : 43, 8, 3, "k");
+  }
+  // Back-facing frames show the garment's rear seam/label, not a front print.
+  if (facing === "up") {
+    rect(g, 13, 24, 8, 2, o.shade); rect(g, 16, 27, 2, 7, o.shade); put(g, 17, 25, "p");
+  }
 }
 
 function character(style: Hair, outfit: Outfit, facing: Facing, walk = false, skin: "light" | "deep" = "light"): PixelArt {
   const g = grid(32, 48);
-  drawFace(g, facing, skin);
-  drawHair(g, style, facing);
+  if (facing === "up") {
+    drawFace(g, facing, skin);
+    drawHair(g, style, facing);
+  } else {
+    // Hair back/silhouette first, face second, intentional fringe last.
+    drawHair(g, style, facing);
+    drawFace(g, facing, skin);
+    drawFringe(g, style, facing);
+  }
   // Headphones are Scribbs' signature and stay readable in every facing.
   if (outfit === "scribbs") {
     rect(g, facing === "side" ? 9 : 7, 12, 2, 8, "p");
-    rect(g, facing === "side" ? 24 : 24, 12, 2, 8, "P");
+    rect(g, 24, 12, 2, 8, "P");
     rect(g, 10, 7, 14, 2, "p");
   }
   // Heath's ribbed white beanie.

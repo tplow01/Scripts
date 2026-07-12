@@ -20,17 +20,16 @@ import {
   hiresCratesArt,
   hiresCheckoutArt,
   hiresCouchArt,
-  hiresMatArt,
   hiresPosterArt,
   hiresDisplayTableArt,
   hiresMannequinArt,
   hiresWindowArt,
   hiresPlantArt,
   hiresRugArt,
-  hiresEmblemArt,
   hiresExtVoidArt,
   HIRES_NATIVE_SIZE,
 } from "./hiresArt";
+import { emblemArt, matArt } from "./sprites";
 
 /**
  * Art registry — the ONLY place that maps a world `artKey` to a drawable.
@@ -113,10 +112,12 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "couch", hiresCouchArt);
   bakePixelArt(scene, "crates", hiresCratesArt);
   bakePixelArt(scene, "rug", hiresRugArt);
-  bakePixelArt(scene, "emblem", hiresEmblemArt);
+  // Brand invariant: use the exact pre-overhaul comet + scr!pts wordmark.
+  bakePixelArt(scene, "emblem", emblemArt);
   bakePixelArt(scene, "window", hiresWindowArt);
   bakePixelArt(scene, "plant", hiresPlantArt);
-  bakePixelArt(scene, "mat", hiresMatArt);
+  // Entrance invariant: keep the previous plain-pink threshold; no fake mark.
+  bakePixelArt(scene, "mat", matArt);
   bakePixelArt(scene, "ext-void", hiresExtVoidArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
   for (const [key, art] of Object.entries(hiresCharacters)) {
