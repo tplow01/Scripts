@@ -206,6 +206,18 @@ Browser-native, Pokémon-style movement, tilemaps, lightweight, mobile-friendly,
 ### Pixel art pipeline
 Aseprite · Tiled · Photoshop · Illustrator.
 
+**Production resolution:** 32px native environment tiles and approximately
+32×48px characters, rendered only at integer scale with smoothing disabled.
+World positions and collision remain grid-based. Character and prop art stays
+behind the art registry so visual upgrades never rewrite room logic. Production
+atlases should use PNG + JSON frame metadata; deterministic code-authored art is
+allowed for assets that benefit from exact palette and grid control.
+
+The character direction is original anime-fashion editorial: model-like
+proportions, distinctive hair silhouettes, visible SCR!PTS garments, and subtle
+idle/walk personality. Third-party game sprites may be studied for readability
+but cannot be copied, traced, extracted, or shipped.
+
 ### Backend
 - **Supabase** + **PostgreSQL** + **Next.js API Routes**
 - Stores: products, inventory, orders, variants, images, customers.
@@ -277,3 +289,4 @@ Record meaningful changes to this playbook here so the project's direction has a
 - **2026-06-25** — **Reconciled with locked UX decisions.** Defined the game-layer / web-layer boundary: Lobby + Basement are Phaser game; product listings, product pages, cart and checkout are normal ecommerce. Clothing racks now route to a normal ecommerce inventory/product page (not an in-game menu). Loading simplified to a loading screen + "Enter to play" prompt. Lounge upgraded from optional/hidden to an **interactive lure zone** with lore, music toggle, and social links. Checkout desk now routes straight to the normal ecommerce cart (Heath dialogue optional flavor only). **Basement promoted to the main game experience**: discover products by exploring → Basement NPC → swipeable "choose your piece" special rack (Pokémon starter-ball moment) → selecting a piece opens a normal ecommerce product page. Added a Layer & Page Summary table.
 - **2026-06-28** — **Added the canonical brand bible [`BRAND.md`](./BRAND.md)** (from Heath's Brand Identity doc) — audience, positioning, personality, voice, fonts (Pixel Operator Bold / Fashion Whacks / Inter·Geist), and colour tokens (`#0D0D0D`, `#F7F7F5`, `#FF8AC7`, `#FF4FA3`, `#6F6F73`). It must always be followed for design/copy; `CLAUDE.md` now requires reading it each session. Clarified the rack interaction: it opens an **AWGE-style editorial shopping interface**. **Map v2** captured in `docs/world-map-notes.md`: three areas (Main, Basement, Lounge); Lounge is now a **music/vinyl lounge** (vinyl desk + speakers); display tables & mannequins kept; Basement reached via stairs hinted by a book + a poster-button.
 - **2026-06-28** — **v0 app scaffold landed.** Stood up the Next.js 15 + React 19 + TypeScript + Phaser 3 + Tailwind + Vitest foundation with brand tokens as a single source of truth and the **swappable-visuals architecture** (world data separated from an art registry). One playable placeholder Main room: Scribbs moves on a tile grid, camera follows, and rack/checkout/stairs tiles fire a stub interaction. Spec: `docs/superpowers/specs/2026-06-28-app-scaffold-design.md`; plan: `docs/superpowers/plans/2026-06-28-app-scaffold.md`. Still stubs/TODO: real art, AWGE shopping UI, Supabase/Stripe/Resend, `/admin`, mobile D-pad, Lounge + Basement rooms.
+- **2026-07-12** — **Locked the production visual direction.** Upgraded the game from mixed 16px/external sprite inputs to an original 32px SCR!PTS art system: 32×48 model-proportioned characters, six fashion/anime hairstyle families, garment-specific NPC styling, higher-resolution architectural tiles/racks/core fixtures, animated Heath walk frames, localized light pools and dust, plus an original rainy-city title loop. Added the explicit rule that third-party game art is reference-only and may never be copied or shipped.

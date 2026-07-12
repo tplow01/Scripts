@@ -86,6 +86,27 @@ interface inspired by the AWGE website**. That interface uses the SCRIPTS typefa
 
 ## Design & Typography
 
+### Pixel character and world direction
+
+The production game art uses a **32px-per-tile native grid** with characters
+authored at approximately **32×48px**. Characters should read as stylish young
+creative models first and retro-RPG overworld figures second: taller proportions,
+strong silhouettes, oversized fashion fits, visible garment graphics, headphones,
+jewellery, and confident poses.
+
+Hair is a primary identity signal. Use original anime-inspired shapes such as
+graphic spikes, centre-part curtains, wolf cuts, sculpted curls, swept fringes,
+and long twists. Similar monster-RPG overworld games may be used as broad
+inspiration for readability only. **Never copy, trace, rip, or ship third-party
+game sprites.** Every SCR!PTS character and environment asset must be original or
+have a documented licence.
+
+Pixel art remains crisp: no anti-aliasing, no fractional camera zoom, and no
+texture smoothing. Lighting is built from restrained pixel-clean pools, contact
+shadows, and palette ramps rather than blur-heavy filters. Game UI continues to
+use the exact brand tokens below; art shading ramps may derive lighter/darker
+material tones while keeping pink, paper, ink, and grey as the visual anchors.
+
 | Use case | Font |
 |---|---|
 | **Game world** — dialogue, menus, NPC names, item names, UI | **Pixel Operator Bold** |
@@ -113,3 +134,4 @@ interface inspired by the AWGE website**. That interface uses the SCRIPTS typefa
 - Never sound corporate, generic, or trend-chasing. Underground & intentional > loud & forced.
 - Use the exact colour tokens and the right font per context.
 - Every feature should reinforce **world & community first, selling second.**
+- Characters should look collectible, fashionable, and individually styled — never generic NPC filler.

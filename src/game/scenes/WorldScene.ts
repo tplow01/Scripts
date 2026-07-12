@@ -16,6 +16,8 @@ const INTRO_FALLBACK_MS = 15000;
 /** Tiles of flat black void drawn around the main room, and how far the
  * camera bounds expand to reveal it. */
 const EXTERIOR_APRON = 4;
+const CHARACTER_KEYS = new Set(["scribbs", "npc", "npcRail", "npcSitter", "npcGazer", "npcShopper", "cashier"]);
+const CHARACTER_HEIGHT_TILES = 1.5;
 
 /**
  * Renders the current room from world data + baked pixel-art textures, drives
@@ -75,7 +77,7 @@ export class WorldScene extends Phaser.Scene {
 
     // Scribbs + shadow persist across rooms (so camera-follow stays valid).
     this.scribbsShadow = this.add.image(0, 0, SHADOW_KEY).setDepth(9);
-    this.scribbs = this.add.image(0, 0, "scribbs-down-a").setDepth(10);
+    this.scribbs = this.add.image(0, 0, "scribbs-down-a").setOrigin(0.5, 1).setDepth(10);
     this.cameras.main.roundPixels = true;
     this.cameras.main.startFollow(this.scribbs, true, 0.18, 0.18);
     this.scale.on("resize", this.updateZoom, this);
@@ -273,6 +275,8 @@ export class WorldScene extends Phaser.Scene {
       this.roomObjects.push(overlay);
     }
 
+    this.addAtmosphere(roomId);
+
     // Place Scribbs at the spawn (override wins, else the room default).
     const spawn = spawnOverride ?? this.room.spawn;
     this.tileX = spawn.tileX;
@@ -294,10 +298,12 @@ export class WorldScene extends Phaser.Scene {
   /** Snap Scribbs + shadow to the current tile. */
   private syncScribbs() {
     const ts = this.room.tileSize;
-    this.scribbs.setPosition(this.tileX * ts + ts / 2, this.tileY * ts + ts / 2).setDisplaySize(ts, ts);
+    this.scribbs
+      .setPosition(this.tileX * ts + ts / 2, (this.tileY + 1) * ts)
+      .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES);
     this.scribbsShadow
-      .setPosition(this.tileX * ts + ts / 2, this.tileY * ts + ts / 2 + ts * 0.28)
-      .setDisplaySize(ts * 0.7, ts * 0.35);
+      .setPosition(this.tileX * ts + ts / 2, (this.tileY + 1) * ts - ts * 0.08)
+      .setDisplaySize(ts * 0.72, ts * 0.24);
   }
 
   /** Place a 16px texture at a tile centre, scaled to the tile size. */
@@ -324,13 +330,61 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(1.5);
       this.roomObjects.push(sh);
     }
-    const img = this.add
-      .image(cx, cy, resolveTextureKey(p.artKey))
-      .setDisplaySize(w * ts, h * ts)
-      .setFlipX(!!p.flip)
-      .setDepth(depth);
+    const isCharacter = CHARACTER_KEYS.has(p.artKey);
+    const img = this.add.image(
+      cx,
+      isCharacter ? p.tileY * ts + h * ts : cy,
+      resolveTextureKey(p.artKey),
+    );
+    if (isCharacter) img.setOrigin(0.5, 1).setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES);
+    else img.setDisplaySize(w * ts, h * ts);
+    img.setFlipX(!!p.flip).setDepth(isCharacter ? Math.max(depth, 3) : depth);
     this.roomObjects.push(img);
     return img;
+  }
+
+  /**
+   * Layered, pixel-clean light pools and dust motes give the boutique depth
+   * without applying a blurry post-processing filter to the artwork.
+   */
+  private addAtmosphere(roomId: string) {
+    const ts = this.room.tileSize;
+    const glow = (x: number, y: number, color: number, width: number, alpha: number) => {
+      const layers = [1, 0.72, 0.46];
+      layers.forEach((scale, i) => {
+        const light = this.add
+          .ellipse(x * ts, y * ts, width * ts * scale, width * ts * 0.46 * scale, color, alpha * (0.35 + i * 0.28))
+          .setDepth(4.6)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.roomObjects.push(light);
+      });
+    };
+
+    if (roomId === "main") {
+      glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
+      glow(4, 3.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
+      glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
+    } else {
+      glow(9.5, 3.2, 0xff4fa3, 4.8, 0.09); // secret rack spotlight
+      glow(2.0, 5.0, 0x6db1dc, 3.2, 0.045); // cold stair spill
+    }
+
+    const dustCount = roomId === "main" ? 14 : 8;
+    for (let i = 0; i < dustCount; i++) {
+      const dust = this.add
+        .rectangle(((i * 47) % (this.room.width * 29)) + ts * 0.5, ((i * 83) % (this.room.height * 27)) + ts * 0.5, 1, 1, i % 3 ? 0xf7f7f5 : 0xff8ac7, roomId === "main" ? 0.24 : 0.16)
+        .setDepth(6);
+      this.roomObjects.push(dust);
+      this.tweens.add({
+        targets: dust,
+        y: dust.y - ts * (0.35 + (i % 4) * 0.12),
+        alpha: { from: dust.alpha, to: 0.04 },
+        yoyo: true,
+        repeat: -1,
+        duration: 1800 + i * 137,
+        ease: "Sine.easeInOut",
+      });
+    }
   }
 
   /** Reveal a flag-gated secret: slide concealing covers away + draw newly-active props. */
@@ -384,8 +438,10 @@ export class WorldScene extends Phaser.Scene {
     const ts = this.room.tileSize;
     return new Promise((resolve) => {
       let i = 0;
+      let walkPhase = false;
       const step = () => {
         if (i >= path.length || !img.active) {
+          if (img.active && img.texture.key.startsWith("cashier-walk")) img.setTexture("cashier");
           resolve();
           return;
         }
@@ -394,10 +450,14 @@ export class WorldScene extends Phaser.Scene {
         // step (e.g. Heath sliding along the counter) keeps its current flip.
         const targetX = t.x * ts + ts / 2;
         if (targetX !== img.x) img.setFlipX(targetX < img.x);
+        if (img.texture.key === "cashier" || img.texture.key.startsWith("cashier-walk")) {
+          walkPhase = !walkPhase;
+          img.setTexture(walkPhase ? "cashier-walk-b" : "cashier-walk-a");
+        }
         this.tweens.add({
           targets: img,
           x: t.x * ts + ts / 2,
-          y: t.y * ts + ts / 2,
+          y: (t.y + 1) * ts,
           duration: stepMs,
           ease: "Linear",
           onComplete: step,
@@ -420,8 +480,9 @@ export class WorldScene extends Phaser.Scene {
     const ts = this.room.tileSize;
     const start = HEATH_INTRO_PATH[0];
     const heath = this.add
-      .image(start.x * ts + ts / 2, start.y * ts + ts / 2, resolveTextureKey("cashier"))
-      .setDisplaySize(ts, ts)
+      .image(start.x * ts + ts / 2, (start.y + 1) * ts, resolveTextureKey("cashier"))
+      .setOrigin(0.5, 1)
+      .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
       .setDepth(10)
       .setAlpha(0);
     this.roomObjects.push(heath);
@@ -471,8 +532,9 @@ export class WorldScene extends Phaser.Scene {
 
     const ts = this.room.tileSize;
     const heath = this.add
-      .image(HEATH_HOME.x * ts + ts / 2, HEATH_HOME.y * ts + ts / 2, resolveTextureKey("cashier"))
-      .setDisplaySize(ts, ts)
+      .image(HEATH_HOME.x * ts + ts / 2, (HEATH_HOME.y + 1) * ts, resolveTextureKey("cashier"))
+      .setOrigin(0.5, 1)
+      .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
       .setFlipX(true) // faces right, toward the customer side
       .setDepth(10);
     this.roomObjects.push(heath);
@@ -591,14 +653,14 @@ export class WorldScene extends Phaser.Scene {
     this.tweens.add({
       targets: this.scribbsShadow,
       x: nx * ts + ts / 2,
-      y: ny * ts + ts / 2 + ts * 0.28,
+      y: (ny + 1) * ts - ts * 0.08,
       duration: 120,
       ease: "Linear",
     });
     this.tweens.add({
       targets: this.scribbs,
       x: nx * ts + ts / 2,
-      y: ny * ts + ts / 2,
+      y: (ny + 1) * ts,
       duration: 120,
       ease: "Linear",
       onComplete: () => {

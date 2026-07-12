@@ -2,32 +2,14 @@ import * as Phaser from "phaser";
 import { bakeAllTextures } from "@/game/art/registry";
 
 /**
- * Scribbs character frames come from the supplied GBA sprite sheet (sliced to
- * public/assets/scribbs/). They're loaded here under the scene's frame keys;
- * everything else (floor, walls, props) is hand-baked in the registry. When
- * `bakeAllTextures` runs it skips any key already loaded, so the real Scribbs
- * art wins while the rest stays code-authored FireRed pixel art.
+ * Production art is baked from the original SCR!PTS 32px source definitions.
+ * Keeping boot deterministic means no externally supplied game sprite is able
+ * to silently override the house style or its licensing provenance.
  */
-const SCRIBBS_FRAMES = [
-  "scribbs-down-a",
-  "scribbs-down-b",
-  "scribbs-up-a",
-  "scribbs-up-b",
-  "scribbs-side-a",
-  "scribbs-side-b",
-];
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super("boot");
-  }
-
-  preload() {
-    for (const key of SCRIBBS_FRAMES) {
-      this.load.image(key, `/assets/scribbs/${key}.png`);
-    }
-    // Floor emblem is the code-baked FireRed pixel medallion (emblemArt) —
-    // the smooth logo.png decal was retired with the FireRed UI push.
   }
 
   create() {

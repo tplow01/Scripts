@@ -1,0 +1,44 @@
+# Branch: `codex/hires-anime-visual-overhaul`
+
+This branch is the isolated production-graphics overhaul. `main` remains clean.
+
+## Visual direction
+
+- Original SCR!PTS art only; PokeMMO and similar overworld games are broad
+  readability references, never asset sources.
+- 32×32 native environment tiles.
+- 32×48 bottom-anchored characters on a 1×1 collision tile.
+- Fashion-model proportions, oversized garments, visible collection graphics,
+  headphones/jewellery, and strong anime-inspired hair silhouettes.
+- Integer camera scaling, nearest-neighbour rendering, and pixel-clean lighting.
+
+## Implemented
+
+- Original Scribbs directional/walk frames.
+- Original Heath idle and walking frames.
+- Four distinct shop models plus the Basement NPC, with six hair families.
+- Higher-resolution showroom/Basement floors and all wall variants.
+- Higher-resolution racks, checkout, stairs, vinyl desk, speakers, stock boxes,
+  crates, couch, and entrance mat.
+- Correct 32×48 bottom anchoring for player, NPCs, and scripted Heath sequences.
+- Layered entrance/lounge/till/Basement light pools and animated dust motes.
+- Original rainy-night title tableau: moving skyline, train, reflections, rain,
+  and walking Heath/Scribbs figures.
+- Removed runtime loading of the supplied GBA sprite frames.
+
+## Source map
+
+| Area | File |
+|---|---|
+| High-resolution art | `src/game/art/hiresArt.ts` |
+| Texture registration | `src/game/art/registry.ts` |
+| Character anchoring, lights, animation | `src/game/scenes/WorldScene.ts` |
+| Deterministic boot | `src/game/scenes/BootScene.ts` |
+| Cinematic city | `components/PixelCityIntro.tsx` |
+| Title composition | `components/StartScreen.tsx` |
+
+## Verification
+
+Run `npm test`, `npx tsc --noEmit`, and `npm run build`. Then play from the
+title screen at desktop and mobile sizes, checking the Lobby entrance, lounge,
+checkout sequence, hidden-stair reveal, Basement transition, and return path.

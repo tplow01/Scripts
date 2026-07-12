@@ -2,6 +2,7 @@
 
 import { Press_Start_2P } from 'next/font/google'
 import { useEffect, useState } from 'react'
+import PixelCityIntro from './PixelCityIntro'
 
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 
@@ -30,6 +31,7 @@ export default function StartScreen({
       onClick={onStart}
       style={{ position: 'absolute', inset: 0, cursor: 'pointer' }}
     >
+      <PixelCityIntro />
       {/* Scanlines ~5% */}
       <div style={{
         position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
@@ -74,11 +76,11 @@ export default function StartScreen({
           className={pressStart.className}
           style={{
             fontSize: mobile ? 'clamp(26px, 9vw, 44px)' : 'clamp(32px, 5.5vw, 80px)',
-            color: '#0D0D0D',
+            color: '#F7F7F5',
             letterSpacing: '0.05em',
             lineHeight: 1,
             marginBottom: '0.45em',
-            filter: 'drop-shadow(2px 3px 0px rgba(0,0,0,0.25))',
+            textShadow: '3px 3px 0 #0D0D0D, -1px -1px 0 #FF4FA3',
           }}
         >
           SCR!PTS
@@ -88,7 +90,7 @@ export default function StartScreen({
           className={pressStart.className}
           style={{
             fontSize: mobile ? 'clamp(5px, 1.8vw, 8px)' : 'clamp(6px, 0.65vw, 10px)',
-            color: '#666',
+            color: '#FFB9DC',
             letterSpacing: '0.14em',
             marginBottom: mobile ? '2em' : '2.2em',
           }}
@@ -100,14 +102,14 @@ export default function StartScreen({
           className={pressStart.className}
           style={{
             fontSize: mobile ? 'clamp(7px, 2.2vw, 11px)' : 'clamp(8px, 0.95vw, 14px)',
-            color: '#888',
+            color: '#F7F7F5',
             letterSpacing: '0.2em',
             opacity: blink ? 1 : 0,
             transition: 'opacity 0.08s',
             display: 'flex', alignItems: 'center', gap: '0.5em',
           }}
         >
-          <span style={{ color: '#777' }}>›</span>
+          <span style={{ color: '#FF8AC7' }}>›</span>
           PRESS START
         </div>
       </div>
@@ -118,7 +120,7 @@ export default function StartScreen({
         zIndex: 6, textAlign: 'center',
       }}>
         <span className={pressStart.className} style={{
-          fontSize: mobile ? 5 : 7, color: '#999', letterSpacing: '0.12em',
+          fontSize: mobile ? 5 : 7, color: '#BEB9B2', letterSpacing: '0.12em',
         }}>
           © SCR!PTS 2026
         </span>
