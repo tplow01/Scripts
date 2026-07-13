@@ -109,6 +109,8 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "cashier", hiresCharacters.cashier);
   bakePixelArt(scene, "cashier-walk-a", hiresCharacters["cashier-walk-a"]);
   bakePixelArt(scene, "cashier-walk-b", hiresCharacters["cashier-walk-b"]);
+  bakePixelArt(scene, "cashier-walk-c", hiresCharacters["cashier-walk-c"]);
+  bakePixelArt(scene, "cashier-walk-d", hiresCharacters["cashier-walk-d"]);
   bakePixelArt(scene, "couch", hiresCouchArt);
   bakePixelArt(scene, "crates", hiresCratesArt);
   bakePixelArt(scene, "rug", hiresRugArt);

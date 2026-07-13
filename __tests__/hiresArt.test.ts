@@ -20,8 +20,10 @@ describe("32px production art", () => {
 
   it("ships every directional Scribbs frame and animated Heath frame", () => {
     for (const key of [
-      "scribbs-down-a", "scribbs-down-b", "scribbs-up-a", "scribbs-up-b",
-      "scribbs-side-a", "scribbs-side-b", "cashier", "cashier-walk-a", "cashier-walk-b",
+      "scribbs-down-a", "scribbs-down-b", "scribbs-down-c", "scribbs-down-d",
+      "scribbs-up-a", "scribbs-up-b", "scribbs-up-c", "scribbs-up-d",
+      "scribbs-side-a", "scribbs-side-b", "scribbs-side-c", "scribbs-side-d",
+      "cashier", "cashier-walk-a", "cashier-walk-b", "cashier-walk-c", "cashier-walk-d",
     ] as const) {
       expect(hiresCharacters[key]).toBeDefined();
     }
@@ -30,8 +32,14 @@ describe("32px production art", () => {
   it("uses distinct anatomy for every movement direction and stride", () => {
     const art = (key: keyof typeof hiresCharacters) => hiresCharacters[key].rows.join("\n");
     expect(art("scribbs-down-a")).not.toBe(art("scribbs-down-b"));
+    expect(art("scribbs-down-b")).not.toBe(art("scribbs-down-c"));
+    expect(art("scribbs-down-c")).not.toBe(art("scribbs-down-d"));
     expect(art("scribbs-up-a")).not.toBe(art("scribbs-up-b"));
+    expect(art("scribbs-up-b")).not.toBe(art("scribbs-up-c"));
+    expect(art("scribbs-up-c")).not.toBe(art("scribbs-up-d"));
     expect(art("scribbs-side-a")).not.toBe(art("scribbs-side-b"));
+    expect(art("scribbs-side-b")).not.toBe(art("scribbs-side-c"));
+    expect(art("scribbs-side-c")).not.toBe(art("scribbs-side-d"));
     expect(art("scribbs-down-a")).not.toBe(art("scribbs-up-a"));
     expect(art("scribbs-down-a")).not.toBe(art("scribbs-side-a"));
   });

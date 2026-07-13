@@ -104,9 +104,10 @@ export const mainRoom: Room = {
     // bottom. Non-solid so Scribbs can step onto the cushions ("sit").
     { tileX: C(1), tileY: R("c"), artKey: "couch", wTiles: 5, hTiles: 3, solid: false },
 
-    // SCR!PTS floor logo — 3×3 brand lockup, centred over the door (cols 7–9),
-    // two tiles above it (rows j–l, with y13–14 clear before the door at o).
-    { tileX: C(7), tileY: R("j"), artKey: "emblem", wTiles: 3, hTiles: 3 },
+    // SCR!PTS floor logo — 3×3 canonical brand lockup, centred over the door
+    // (cols 7–9, rows k–m). One row lower than the prototype so the full comet
+    // remains inside the short mobile camera viewport as Scribbs approaches.
+    { tileX: C(7), tileY: R("k"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
     // Entrance: a flat SCR!PTS-black wall (no doors sprite) with a pink
     // carpet marking the walk-in gap — Pokémon-style building exterior. The

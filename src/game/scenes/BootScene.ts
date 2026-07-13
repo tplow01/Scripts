@@ -12,6 +12,12 @@ export class BootScene extends Phaser.Scene {
     super("boot");
   }
 
+  preload() {
+    // Native 96px floor asset is a nearest-neighbour reduction of the canonical
+    // 480px (exact 5×) master. No runtime resampling or procedural approximation.
+    this.load.image("emblem", "/assets/logo-floor-96.png");
+  }
+
   create() {
     bakeAllTextures(this);
     this.scene.start("world");

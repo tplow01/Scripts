@@ -29,6 +29,10 @@ This branch is the isolated production-graphics overhaul. `main` remains clean.
   entrance mat as brand invariants; high-resolution art must not reinterpret them.
 - Refined anatomy with separated sleeves, visible hands, larger eyes, profile
   nose/ear details, back-facing construction, and directional arm/leg motion.
+- Added a PokeMMO-inspired (reference-only) four-phase cycle for every Scribbs
+  direction and Heath's scripted walk: lead, passing lift, opposite lead, idle.
+- The canonical 480px logo now has a native 96px nearest-neighbour floor asset,
+  eliminating both procedural geometry drift and browser-dependent resampling.
 
 ## Source map
 

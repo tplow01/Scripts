@@ -51,6 +51,7 @@ type Grid = string[][];
 type Facing = "down" | "up" | "side";
 type Hair = "star" | "curtains" | "wolf" | "curls" | "sweep" | "twists";
 type Outfit = "scribbs" | "heath" | "love" | "confusion" | "okay" | "rage" | "basement";
+type Pose = "idle" | "lead" | "pass" | "trail";
 
 const grid = (w: number, h: number, fill = "."): Grid =>
   Array.from({ length: h }, () => Array(w).fill(fill));
@@ -177,24 +178,28 @@ function outfitColors(outfit: Outfit): { top: string; shade: string; accent: str
   }
 }
 
-function drawOutfit(g: Grid, outfit: Outfit, facing: Facing, walk: boolean) {
+function drawOutfit(g: Grid, outfit: Outfit, facing: Facing, pose: Pose) {
   const o = outfitColors(outfit);
   const side = facing === "side";
+  const stride = pose === "lead" ? -1 : pose === "trail" ? 1 : 0;
+  const moving = pose !== "idle";
   const skinBase = (outfit === "love" || outfit === "rage" || outfit === "basement") ? "S" : "s";
   const skinShade = (outfit === "love" || outfit === "rage" || outfit === "basement") ? "n" : "S";
   // Oversized editorial silhouette with a dark under-arm gap. Sleeves and
   // hands are separate shapes instead of one rectangular torso silhouette.
   rect(g, side ? 10 : 9, 23, side ? 15 : 15, 14, o.top);
   rect(g, side ? 10 : 9, 33, side ? 15 : 15, 4, o.shade);
-  rect(g, side ? 8 : 6, walk ? 27 : 25, 3, 8, o.shade);
-  rect(g, side ? 25 : 25, walk ? 24 : 25, 3, 8, o.shade);
+  const leftArmY = stride < 0 ? 27 : stride > 0 ? 24 : 25;
+  const rightArmY = stride < 0 ? 24 : stride > 0 ? 27 : 25;
+  rect(g, side ? 8 : 6, leftArmY, 3, 8, o.shade);
+  rect(g, 25, rightArmY, 3, 8, o.shade);
   rect(g, side ? 9 : 8, 25, 1, 10, "k");
   rect(g, 24, 25, 1, 10, "k");
   // Exposed hands make the arm direction readable at game zoom.
-  rect(g, side ? 8 : 6, walk ? 35 : 33, 3, 3, skinShade);
-  rect(g, side ? 25 : 25, walk ? 32 : 33, 3, 3, skinBase);
-  put(g, side ? 8 : 6, walk ? 37 : 35, skinBase);
-  put(g, side ? 27 : 27, walk ? 34 : 35, skinShade);
+  rect(g, side ? 8 : 6, leftArmY + 8, 3, 3, skinShade);
+  rect(g, 25, rightArmY + 8, 3, 3, skinBase);
+  put(g, side ? 8 : 6, leftArmY + 10, skinBase);
+  put(g, 27, rightArmY + 10, skinShade);
   if (facing !== "up" && outfit === "scribbs") {
     rect(g, 9, 22, 15, 2, "q"); // headphone cord / collar flash
     rect(g, 12, 27, 9, 5, "p"); rect(g, 14, 28, 5, 3, "P");
@@ -214,18 +219,30 @@ function drawOutfit(g: Grid, outfit: Outfit, facing: Facing, walk: boolean) {
   }
 
   if (side) {
-    // Profile legs overlap when idle and separate into a long stride.
-    rect(g, walk ? 8 : 11, 37, 7, walk ? 8 : 7, o.trouser);
-    rect(g, walk ? 20 : 18, 37, 7, walk ? 8 : 7, o.trouser);
-    rect(g, walk ? 6 : 10, walk ? 44 : 43, 10, 3, "k");
-    rect(g, walk ? 20 : 18, walk ? 44 : 43, 10, 3, "k");
+    // A four-phase lateral walk: long leading stride, compressed passing pose,
+    // then the opposite leg leads. The torso stays stable on the grid.
+    if (!moving) {
+      rect(g, 11, 37, 7, 7, o.trouser); rect(g, 18, 37, 7, 7, o.trouser);
+      rect(g, 10, 43, 9, 3, "k"); rect(g, 18, 43, 9, 3, "k");
+    } else if (pose === "pass") {
+      rect(g, 12, 37, 6, 8, o.trouser); rect(g, 18, 38, 6, 7, o.trouser);
+      rect(g, 10, 44, 9, 3, "k"); rect(g, 18, 44, 8, 3, "k");
+    } else if (stride < 0) {
+      rect(g, 8, 37, 7, 8, o.trouser); rect(g, 20, 36, 7, 9, o.trouser);
+      rect(g, 6, 44, 10, 3, "k"); rect(g, 20, 44, 11, 3, "k");
+    } else {
+      rect(g, 10, 36, 7, 9, o.trouser); rect(g, 22, 38, 6, 7, o.trouser);
+      rect(g, 8, 44, 10, 3, "k"); rect(g, 22, 44, 9, 3, "k");
+    }
   } else {
-    const leftOffset = walk ? -2 : 0;
-    const rightOffset = walk ? 2 : 0;
-    rect(g, 10 + leftOffset, 37, 6, walk ? 8 : 7, o.trouser);
-    rect(g, 18 + rightOffset, 37, 6, walk ? 8 : 7, o.trouser);
-    rect(g, 9 + leftOffset, walk ? 44 : 43, 8, 3, "k");
-    rect(g, 18 + rightOffset, walk ? 44 : 43, 8, 3, "k");
+    const leftOffset = stride * 2;
+    const rightOffset = stride * -2;
+    const leftY = pose === "pass" ? 36 : 37;
+    const rightY = pose === "pass" ? 38 : 37;
+    rect(g, 10 + leftOffset, leftY, 6, moving ? 8 : 7, o.trouser);
+    rect(g, 18 + rightOffset, rightY, 6, moving ? 8 : 7, o.trouser);
+    rect(g, 9 + leftOffset, moving ? 44 : 43, 8, 3, "k");
+    rect(g, 18 + rightOffset, moving ? 44 : 43, 8, 3, "k");
   }
   // Back-facing frames show the garment's rear seam/label, not a front print.
   if (facing === "up") {
@@ -233,7 +250,7 @@ function drawOutfit(g: Grid, outfit: Outfit, facing: Facing, walk: boolean) {
   }
 }
 
-function character(style: Hair, outfit: Outfit, facing: Facing, walk = false, skin: "light" | "deep" = "light"): PixelArt {
+function character(style: Hair, outfit: Outfit, facing: Facing, pose: Pose = "idle", skin: "light" | "deep" = "light"): PixelArt {
   const g = grid(32, 48);
   if (facing === "up") {
     drawFace(g, facing, skin);
@@ -255,25 +272,39 @@ function character(style: Hair, outfit: Outfit, facing: Facing, walk = false, sk
     ellipse(g, 16, 7, 8, 5, "w"); rect(g, 8, 8, 17, 4, "W");
     for (let x = 10; x <= 22; x += 3) rect(g, x, 8, 1, 4, "g");
   }
-  drawOutfit(g, outfit, facing, walk);
+  drawOutfit(g, outfit, facing, pose);
+  // Passing pose rises by one pixel, adding the head/torso bounce that makes
+  // Gen 4/5-style overworld walks feel alive without sub-pixel interpolation.
+  if (pose === "pass") {
+    for (let y = 0; y < g.length - 1; y++) g[y] = [...g[y + 1]];
+    g[g.length - 1] = Array(g[0].length).fill(".");
+  }
   return { rows: rows(g), palette: P, outline: "#100E14" };
 }
 
 export const hiresCharacters = {
   "scribbs-down-a": character("star", "scribbs", "down"),
-  "scribbs-down-b": character("star", "scribbs", "down", true),
+  "scribbs-down-b": character("star", "scribbs", "down", "lead"),
+  "scribbs-down-c": character("star", "scribbs", "down", "pass"),
+  "scribbs-down-d": character("star", "scribbs", "down", "trail"),
   "scribbs-up-a": character("star", "scribbs", "up"),
-  "scribbs-up-b": character("star", "scribbs", "up", true),
+  "scribbs-up-b": character("star", "scribbs", "up", "lead"),
+  "scribbs-up-c": character("star", "scribbs", "up", "pass"),
+  "scribbs-up-d": character("star", "scribbs", "up", "trail"),
   "scribbs-side-a": character("star", "scribbs", "side"),
-  "scribbs-side-b": character("star", "scribbs", "side", true),
+  "scribbs-side-b": character("star", "scribbs", "side", "lead"),
+  "scribbs-side-c": character("star", "scribbs", "side", "pass"),
+  "scribbs-side-d": character("star", "scribbs", "side", "trail"),
   cashier: character("curls", "heath", "down"),
   "cashier-walk-a": character("curls", "heath", "side"),
-  "cashier-walk-b": character("curls", "heath", "side", true),
-  npcRail: character("curtains", "love", "down", false, "deep"),
+  "cashier-walk-b": character("curls", "heath", "side", "lead"),
+  "cashier-walk-c": character("curls", "heath", "side", "pass"),
+  "cashier-walk-d": character("curls", "heath", "side", "trail"),
+  npcRail: character("curtains", "love", "down", "idle", "deep"),
   npcGazer: character("sweep", "confusion", "down"),
   npcSitter: character("wolf", "okay", "down"),
-  npcShopper: character("twists", "rage", "down", false, "deep"),
-  npc: character("wolf", "basement", "down", false, "deep"),
+  npcShopper: character("twists", "rage", "down", "idle", "deep"),
+  npc: character("wolf", "basement", "down", "idle", "deep"),
 } as const;
 
 function buildFloor(dark = false): PixelArt {

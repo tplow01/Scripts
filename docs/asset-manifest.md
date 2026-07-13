@@ -15,6 +15,8 @@ The active production implementation is now `src/game/art/hiresArt.ts`:
 - original hair families: star spikes, curtains, wolf cut, curls, sweep, twists;
 - outfit-specific character graphics for Scribbs, Heath, LOVE, CONFUSION,
   ARE YOU OKAY, RAGE, and the Basement;
+- 12 Scribbs movement frames (idle/lead/pass/trail × down/up/side) and four
+  profile-walk phases for Heath;
 - high-resolution floor, Basement floor, wall variants, racks, checkout, stairs,
   speakers, boxes, vinyl desk, crates, couch, and entrance mat;
 - no third-party character frames are loaded by `BootScene`.
@@ -22,6 +24,10 @@ The active production implementation is now `src/game/art/hiresArt.ts`:
 Brand-locked exceptions: `emblem` and `mat` deliberately use the exact
 pre-overhaul `sprites.ts` definitions. The emblem is the approved comet plus
 `scr!pts` wordmark; the entrance is plain pink and carries no invented mark.
+
+Runtime update: `emblem` now preloads `public/assets/logo-floor-96.png`, a
+nearest-neighbour 96px derivative of the canonical 480px master. The older
+code-authored emblem remains a fallback only.
 
 The older 16px tables below remain useful as historical footprint contracts.
 Their `placeholder` labels do not describe the active high-resolution overrides.

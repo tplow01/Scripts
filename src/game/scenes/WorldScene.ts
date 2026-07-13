@@ -11,6 +11,7 @@ type Facing = "down" | "up" | "side";
 
 const FADE_MS = 260;
 const STEP_MS = 130;
+const PLAYER_STEP_MS = 120;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
 const INTRO_FALLBACK_MS = 15000;
 /** Tiles of flat black void drawn around the main room, and how far the
@@ -50,7 +51,6 @@ export class WorldScene extends Phaser.Scene {
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
   private facing: Facing = "down";
-  private stepToggle = false;
   private lastInteractionId: string | null = null;
 
   /**
@@ -151,7 +151,7 @@ export class WorldScene extends Phaser.Scene {
       this.tileY = resume.tileY;
       this.facing = resume.facing;
       this.scribbs.setFlipX(resume.flip);
-      this.setFrame(false);
+      this.setFrame("a");
       this.syncScribbs();
       this.cameras.main.centerOn(this.scribbs.x, this.scribbs.y);
     }
@@ -287,8 +287,12 @@ export class WorldScene extends Phaser.Scene {
     if (roomId === "main") {
       const a = EXTERIOR_APRON * ts;
       this.cameras.main.setBounds(-a, -a, this.room.width * ts + 2 * a, this.room.height * ts + 2 * a);
+      // Classic overworld composition: keep the player in the lower third so
+      // more of the shop (including the complete floor logo) is visible ahead.
+      this.cameras.main.setFollowOffset(0, ts * 2.35);
     } else {
       this.cameras.main.setBounds(0, 0, this.room.width * ts, this.room.height * ts);
+      this.cameras.main.setFollowOffset(0, ts * 0.45);
     }
     this.updateZoom();
     this.lastInteractionId = null;
@@ -438,7 +442,6 @@ export class WorldScene extends Phaser.Scene {
     const ts = this.room.tileSize;
     return new Promise((resolve) => {
       let i = 0;
-      let walkPhase = false;
       const step = () => {
         if (i >= path.length || !img.active) {
           if (img.active && img.texture.key.startsWith("cashier-walk")) img.setTexture("cashier");
@@ -451,8 +454,8 @@ export class WorldScene extends Phaser.Scene {
         const targetX = t.x * ts + ts / 2;
         if (targetX !== img.x) img.setFlipX(targetX < img.x);
         if (img.texture.key === "cashier" || img.texture.key.startsWith("cashier-walk")) {
-          walkPhase = !walkPhase;
-          img.setTexture(walkPhase ? "cashier-walk-b" : "cashier-walk-a");
+          const phase = (["b", "c", "d"] as const)[(i - 1) % 3];
+          img.setTexture(`cashier-walk-${phase}`);
         }
         this.tweens.add({
           targets: img,
@@ -475,7 +478,7 @@ export class WorldScene extends Phaser.Scene {
   private async playHeathIntro() {
     this.transitioning = true;
     this.facing = "up";
-    this.setFrame(false);
+    this.setFrame("a");
 
     const ts = this.room.tileSize;
     const start = HEATH_INTRO_PATH[0];
@@ -641,33 +644,38 @@ export class WorldScene extends Phaser.Scene {
     const ny = this.tileY + dy;
 
     if (!canStep(this.room, this.tileX, this.tileY, nx, ny)) {
-      this.setFrame(false); // turn-in-place (wall, fixture, or wrong-side seat)
+      this.setFrame("a"); // turn-in-place (wall, fixture, or wrong-side seat)
       return;
     }
 
     this.moving = true;
-    this.stepToggle = !this.stepToggle;
-    this.setFrame(this.stepToggle);
+    this.setFrame("b");
+    this.time.delayedCall(PLAYER_STEP_MS / 3, () => {
+      if (this.moving) this.setFrame("c");
+    });
+    this.time.delayedCall((PLAYER_STEP_MS * 2) / 3, () => {
+      if (this.moving) this.setFrame("d");
+    });
 
     const ts = this.room.tileSize;
     this.tweens.add({
       targets: this.scribbsShadow,
       x: nx * ts + ts / 2,
       y: (ny + 1) * ts - ts * 0.08,
-      duration: 120,
+      duration: PLAYER_STEP_MS,
       ease: "Linear",
     });
     this.tweens.add({
       targets: this.scribbs,
       x: nx * ts + ts / 2,
       y: (ny + 1) * ts,
-      duration: 120,
+      duration: PLAYER_STEP_MS,
       ease: "Linear",
       onComplete: () => {
         this.tileX = nx;
         this.tileY = ny;
         this.moving = false;
-        this.setFrame(false);
+        this.setFrame("a");
         this.saveSession();
         this.checkInteraction();
       },
@@ -686,8 +694,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Pick the texture for the current facing + walk phase. */
-  private setFrame(stepping: boolean) {
-    const phase = stepping ? "b" : "a";
+  private setFrame(phase: "a" | "b" | "c" | "d") {
     this.scribbs.setTexture(`scribbs-${this.facing}-${phase}`);
   }
 
