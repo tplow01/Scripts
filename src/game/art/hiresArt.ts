@@ -4,7 +4,7 @@ import type { Palette, PixelArt } from "./pixelArt";
  * SCR!PTS high-resolution pixel art.
  *
  * The launch prototype used 16px GBA-sized drawings. This module establishes
- * the production art bar at 32px per tile and 32×48px for people. The character
+ * the production art bar at 32px per tile and compact 32×40px people. The character
  * language takes only broad inspiration from stylish monster-RPG overworld
  * silhouettes: every hairstyle, outfit, palette and frame here is original.
  */
@@ -282,29 +282,169 @@ function character(style: Hair, outfit: Outfit, facing: Facing, pose: Pose = "id
   return { rows: rows(g), palette: P, outline: "#100E14" };
 }
 
+/**
+ * Compact Gen-4-overworld construction used by the production characters.
+ * The supplied reference sheet is proportion inspiration only: these are
+ * original SCR!PTS silhouettes, hair, clothing and animation frames.
+ */
+function compactCharacter(
+  style: Hair,
+  outfit: Outfit,
+  facing: Facing,
+  pose: Pose = "idle",
+  skin: "light" | "deep" = "light",
+): PixelArt {
+  const g = grid(32, 40);
+  const hairBase = style === "curls" ? "C" : "K";
+  const hairMid = style === "curls" ? "c" : "d";
+  const hairHi = style === "curls" ? "y" : "H";
+  const skinBase = skin === "deep" ? "S" : "s";
+  const skinShade = skin === "deep" ? "n" : "S";
+  const o = outfitColors(outfit);
+  const stride = pose === "lead" ? -1 : pose === "trail" ? 1 : 0;
+
+  // Hair mass first: a large round head with one readable silhouette feature.
+  ellipse(g, facing === "side" ? 17 : 16, 11, facing === "side" ? 8 : 9, 10, hairBase);
+  if (style === "star") {
+    [[6, 8], [8, 4], [11, 2], [15, 1], [20, 2], [24, 5], [26, 9]].forEach(([x, y], i) =>
+      rect(g, x, y, i % 2 ? 3 : 2, 6, i < 3 ? hairMid : hairBase),
+    );
+    rect(g, 10, 5, 5, 3, hairHi); rect(g, 16, 3, 3, 3, hairHi);
+  } else if (style === "curtains") {
+    rect(g, 7, 5, 7, 14, hairBase); rect(g, 19, 5, 7, 14, hairBase);
+    rect(g, 13, 2, 7, 6, hairMid); rect(g, 10, 5, 4, 5, hairHi);
+  } else if (style === "wolf") {
+    rect(g, 7, 5, 19, 9, hairBase); rect(g, 6, 10, 5, 13, hairBase); rect(g, 23, 9, 5, 14, hairMid);
+    rect(g, 10, 2, 5, 6, hairMid); rect(g, 18, 1, 5, 7, hairBase); rect(g, 9, 6, 3, 9, hairHi);
+  } else if (style === "curls") {
+    [[9, 6], [14, 3], [19, 4], [24, 7], [8, 12], [24, 13], [11, 18], [21, 18]].forEach(([x, y], i) => {
+      ellipse(g, x, y, 3, 3, i % 2 ? hairMid : hairBase); put(g, x - 1, y - 1, hairHi);
+    });
+  } else if (style === "sweep") {
+    rect(g, 7, 6, 19, 10, hairBase); rect(g, 11, 3, 17, 6, hairMid); rect(g, 17, 1, 12, 5, hairBase);
+    rect(g, 12, 4, 10, 2, hairHi);
+  } else {
+    rect(g, 8, 4, 17, 10, hairBase); rect(g, 11, 2, 11, 5, hairMid);
+    for (const x of [7, 10, 13, 20, 23, 26]) {
+      rect(g, x, 11, 2, 13 + (x % 3), x % 4 ? hairBase : hairMid);
+      for (let y = 13; y < 23; y += 4) put(g, x + 1, y, hairHi);
+    }
+  }
+
+  if (facing === "up") {
+    // Back view: broad hair cap, small neck, and a strong centre highlight.
+    rect(g, 9, 9, 15, 12, hairBase); rect(g, 13, 5, 5, 12, hairMid); rect(g, 14, 5, 2, 8, hairHi);
+    rect(g, 14, 20, 5, 3, skinShade);
+  } else if (facing === "side") {
+    ellipse(g, 18, 13, 7, 8, skinBase); rect(g, 12, 15, 3, 5, skinShade);
+    rect(g, 22, 11, 2, 2, "k"); put(g, 23, 12, "w");
+    rect(g, 24, 14, 3, 2, skinBase); put(g, 24, 17, "n");
+    rect(g, 11, 13, 2, 3, skinShade); put(g, 11, 15, "q");
+    // Profile fringe and rear hair are deliberately asymmetric.
+    rect(g, 9, 7, 8, 5, hairBase); rect(g, 15, 6, 9, 4, hairMid); rect(g, 10, 9, 4, 8, hairBase);
+    rect(g, 14, 20, 5, 3, skinShade);
+  } else {
+    ellipse(g, 16, 13, 8, 8, skinBase); rect(g, 9, 16, 15, 4, skinShade);
+    rect(g, 10, 11, 5, 2, "k"); rect(g, 19, 11, 5, 2, "k");
+    rect(g, 11, 12, 4, 3, "k"); rect(g, 19, 12, 4, 3, "k");
+    put(g, 13, 12, "w"); put(g, 21, 12, "w"); put(g, 16, 15, skinShade); rect(g, 15, 17, 3, 1, "n");
+    // Style-specific fringe sits over the forehead, never over the eyes.
+    if (style === "curtains") { rect(g, 9, 7, 6, 5, hairBase); rect(g, 19, 7, 6, 5, hairBase); }
+    else if (style === "curls") { ellipse(g, 11, 8, 3, 3, hairBase); ellipse(g, 17, 7, 3, 3, hairMid); ellipse(g, 22, 8, 3, 3, hairBase); }
+    else if (style === "wolf") { rect(g, 8, 7, 10, 4, hairBase); rect(g, 17, 6, 9, 4, hairMid); }
+    else if (style === "sweep") { rect(g, 8, 7, 15, 4, hairBase); rect(g, 18, 5, 8, 5, hairMid); }
+    else { rect(g, 8, 7, 18, 3, hairBase); rect(g, 11, 9, 5, 3, hairMid); }
+    rect(g, 14, 20, 5, 3, skinShade);
+  }
+
+  // Character-specific headwear/accessory layer.
+  if (outfit === "scribbs") {
+    rect(g, facing === "side" ? 9 : 6, 11, 2, 8, "p"); rect(g, 25, 11, 2, 8, "P"); rect(g, 10, 5, 14, 2, "p");
+  } else if (outfit === "heath") {
+    ellipse(g, 16, 5, 9, 5, "w"); rect(g, 7, 6, 19, 4, "W");
+    for (let x = 9; x <= 23; x += 3) rect(g, x, 6, 1, 4, "g");
+  }
+
+  // Compact body: roughly half the full character height, like the reference.
+  rect(g, facing === "side" ? 11 : 10, 22, facing === "side" ? 13 : 14, 10, o.top);
+  rect(g, facing === "side" ? 11 : 10, 30, facing === "side" ? 13 : 14, 2, o.shade);
+  const leftArmY = stride < 0 ? 25 : stride > 0 ? 23 : 24;
+  const rightArmY = stride < 0 ? 23 : stride > 0 ? 25 : 24;
+  rect(g, facing === "side" ? 9 : 7, leftArmY, 3, 6, o.shade); rect(g, 24, rightArmY, 3, 6, o.shade);
+  rect(g, facing === "side" ? 9 : 7, leftArmY + 6, 3, 2, skinShade); rect(g, 24, rightArmY + 6, 3, 2, skinBase);
+
+  if (facing === "up") {
+    rect(g, 13, 23, 8, 2, o.shade); rect(g, 16, 25, 2, 5, o.shade); put(g, 17, 24, "p");
+  } else if (outfit === "scribbs") {
+    rect(g, 12, 25, 9, 5, "p"); rect(g, 14, 26, 5, 3, "P");
+  } else if (outfit === "heath") {
+    rect(g, 15, 24, 2, 4, "y"); rect(g, 14, 27, 5, 3, "k"); put(g, 16, 28, "w");
+  } else if (outfit === "love") {
+    rect(g, 14, 25, 2, 2, "p"); rect(g, 18, 25, 2, 2, "p"); rect(g, 15, 27, 4, 2, "p");
+  } else if (outfit === "confusion") {
+    rect(g, 15, 24, 4, 2, "P"); rect(g, 18, 26, 2, 2, "P"); put(g, 16, 29, "P");
+  } else if (outfit === "okay") {
+    rect(g, 16, 24, 2, 6, "p"); rect(g, 13, 26, 8, 2, "p");
+  } else if (outfit === "rage") {
+    rect(g, 12, 25, 10, 2, "p"); rect(g, 15, 28, 5, 2, "b");
+  } else {
+    rect(g, 12, 24, 10, 6, "p"); rect(g, 15, 26, 4, 2, "k");
+  }
+
+  // Short legs and large shoes make the pose readable in a tiny footprint.
+  if (facing === "side") {
+    if (pose === "idle") {
+      rect(g, 12, 32, 5, 5, o.trouser); rect(g, 18, 32, 5, 5, o.trouser);
+      rect(g, 11, 36, 7, 3, "k"); rect(g, 18, 36, 8, 3, "k");
+    } else if (pose === "pass") {
+      rect(g, 13, 32, 5, 6, o.trouser); rect(g, 18, 33, 5, 5, o.trouser);
+      rect(g, 11, 37, 8, 3, "k"); rect(g, 18, 37, 7, 3, "k");
+    } else if (stride < 0) {
+      rect(g, 8, 32, 6, 6, o.trouser); rect(g, 20, 31, 6, 7, o.trouser);
+      rect(g, 6, 37, 9, 3, "k"); rect(g, 20, 37, 10, 3, "k");
+    } else {
+      rect(g, 10, 31, 6, 7, o.trouser); rect(g, 22, 33, 5, 5, o.trouser);
+      rect(g, 8, 37, 9, 3, "k"); rect(g, 22, 37, 8, 3, "k");
+    }
+  } else {
+    const leftOffset = stride * 2;
+    const rightOffset = stride * -2;
+    rect(g, 11 + leftOffset, pose === "pass" ? 31 : 32, 5, pose === "idle" ? 5 : 6, o.trouser);
+    rect(g, 18 + rightOffset, pose === "pass" ? 33 : 32, 5, pose === "idle" ? 5 : 6, o.trouser);
+    rect(g, 10 + leftOffset, pose === "idle" ? 36 : 37, 7, 3, "k");
+    rect(g, 18 + rightOffset, pose === "idle" ? 36 : 37, 7, 3, "k");
+  }
+
+  if (pose === "pass") {
+    for (let y = 0; y < g.length - 1; y++) g[y] = [...g[y + 1]];
+    g[g.length - 1] = Array(g[0].length).fill(".");
+  }
+  return { rows: rows(g), palette: P, outline: "#100E14" };
+}
+
 export const hiresCharacters = {
-  "scribbs-down-a": character("star", "scribbs", "down"),
-  "scribbs-down-b": character("star", "scribbs", "down", "lead"),
-  "scribbs-down-c": character("star", "scribbs", "down", "pass"),
-  "scribbs-down-d": character("star", "scribbs", "down", "trail"),
-  "scribbs-up-a": character("star", "scribbs", "up"),
-  "scribbs-up-b": character("star", "scribbs", "up", "lead"),
-  "scribbs-up-c": character("star", "scribbs", "up", "pass"),
-  "scribbs-up-d": character("star", "scribbs", "up", "trail"),
-  "scribbs-side-a": character("star", "scribbs", "side"),
-  "scribbs-side-b": character("star", "scribbs", "side", "lead"),
-  "scribbs-side-c": character("star", "scribbs", "side", "pass"),
-  "scribbs-side-d": character("star", "scribbs", "side", "trail"),
-  cashier: character("curls", "heath", "down"),
-  "cashier-walk-a": character("curls", "heath", "side"),
-  "cashier-walk-b": character("curls", "heath", "side", "lead"),
-  "cashier-walk-c": character("curls", "heath", "side", "pass"),
-  "cashier-walk-d": character("curls", "heath", "side", "trail"),
-  npcRail: character("curtains", "love", "down", "idle", "deep"),
-  npcGazer: character("sweep", "confusion", "down"),
-  npcSitter: character("wolf", "okay", "down"),
-  npcShopper: character("twists", "rage", "down", "idle", "deep"),
-  npc: character("wolf", "basement", "down", "idle", "deep"),
+  "scribbs-down-a": compactCharacter("star", "scribbs", "down"),
+  "scribbs-down-b": compactCharacter("star", "scribbs", "down", "lead"),
+  "scribbs-down-c": compactCharacter("star", "scribbs", "down", "pass"),
+  "scribbs-down-d": compactCharacter("star", "scribbs", "down", "trail"),
+  "scribbs-up-a": compactCharacter("star", "scribbs", "up"),
+  "scribbs-up-b": compactCharacter("star", "scribbs", "up", "lead"),
+  "scribbs-up-c": compactCharacter("star", "scribbs", "up", "pass"),
+  "scribbs-up-d": compactCharacter("star", "scribbs", "up", "trail"),
+  "scribbs-side-a": compactCharacter("star", "scribbs", "side"),
+  "scribbs-side-b": compactCharacter("star", "scribbs", "side", "lead"),
+  "scribbs-side-c": compactCharacter("star", "scribbs", "side", "pass"),
+  "scribbs-side-d": compactCharacter("star", "scribbs", "side", "trail"),
+  cashier: compactCharacter("curls", "heath", "down"),
+  "cashier-walk-a": compactCharacter("curls", "heath", "side"),
+  "cashier-walk-b": compactCharacter("curls", "heath", "side", "lead"),
+  "cashier-walk-c": compactCharacter("curls", "heath", "side", "pass"),
+  "cashier-walk-d": compactCharacter("curls", "heath", "side", "trail"),
+  npcRail: compactCharacter("curtains", "love", "down", "idle", "deep"),
+  npcGazer: compactCharacter("sweep", "confusion", "down"),
+  npcSitter: compactCharacter("wolf", "okay", "down"),
+  npcShopper: compactCharacter("twists", "rage", "down", "idle", "deep"),
+  npc: compactCharacter("wolf", "basement", "down", "idle", "deep"),
 } as const;
 
 function buildFloor(dark = false): PixelArt {
@@ -499,4 +639,4 @@ export const hiresExtVoidArt: PixelArt = {
 };
 
 export const HIRES_NATIVE_SIZE = 32;
-export const HIRES_CHARACTER_HEIGHT = 48;
+export const HIRES_CHARACTER_HEIGHT = 40;

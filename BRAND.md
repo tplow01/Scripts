@@ -89,10 +89,10 @@ interface inspired by the AWGE website**. That interface uses the SCRIPTS typefa
 ### Pixel character and world direction
 
 The production game art uses a **32px-per-tile native grid** with characters
-authored at approximately **32×48px**. Characters should read as stylish young
-creative models first and retro-RPG overworld figures second: taller proportions,
-strong silhouettes, oversized fashion fits, visible garment graphics, headphones,
-jewellery, and confident poses.
+authored at approximately **32×40px**. Characters use compact Gen 4-overworld
+proportions: large identity-led heads, short bodies and limbs, strong silhouettes,
+oversized fashion fits, visible garment graphics, headphones, jewellery, and
+confident poses.
 
 Hair is a primary identity signal. Use original anime-inspired shapes such as
 graphic spikes, centre-part curtains, wolf cuts, sculpted curls, swept fringes,

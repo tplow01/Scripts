@@ -18,7 +18,7 @@ const INTRO_FALLBACK_MS = 15000;
  * camera bounds expand to reveal it. */
 const EXTERIOR_APRON = 4;
 const CHARACTER_KEYS = new Set(["scribbs", "npc", "npcRail", "npcSitter", "npcGazer", "npcShopper", "cashier"]);
-const CHARACTER_HEIGHT_TILES = 1.5;
+const CHARACTER_HEIGHT_TILES = 1.25;
 
 /**
  * Renders the current room from world data + baked pixel-art textures, drives

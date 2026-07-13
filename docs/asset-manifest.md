@@ -11,7 +11,7 @@
 The active production implementation is now `src/game/art/hiresArt.ts`:
 
 - environment tiles: **32×32 native**;
-- characters: **32×48 native**, bottom-centred on a 1×1 collision tile;
+- characters: **32×40 native**, bottom-centred on a 1×1 collision tile;
 - original hair families: star spikes, curtains, wolf cut, curls, sweep, twists;
 - outfit-specific character graphics for Scribbs, Heath, LOVE, CONFUSION,
   ARE YOU OKAY, RAGE, and the Basement;
@@ -34,7 +34,7 @@ Their `placeholder` labels do not describe the active high-resolution overrides.
 
 ## Conventions
 
-- **Tile:** 32px on screen and **author at 32px logical** for production tiles/props; **characters 32×48**
+- **Tile:** 32px on screen and **author at 32px logical** for production tiles/props; **characters 32×40**
   (FireRed head-overhang), **anchored bottom-center**.
 - **Palette:** brand only ([`src/theme/tokens.ts`](../src/theme/tokens.ts)) — ink `#0D0D0D`,
   paper `#F7F7F5`, pink `#FF8AC7`, pinkDeep `#FF4FA3`, grey `#6F6F73`. Indexed, no anti-aliasing

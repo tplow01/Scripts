@@ -15,7 +15,7 @@ characters remain original.
 
 ## Transferable construction principles
 
-1. **32×48 overworld proportion.** Large shaped head, compact torso, short but
+1. **Compact 32×40 overworld proportion.** Large shaped head, compact torso, short but
    articulated limbs, and a consistent bottom-centre anchor.
 2. **Direction-specific anatomy.** Front, back, and profile are separately
    constructed; side frames are not flattened front sprites.
