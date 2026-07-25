@@ -9,6 +9,7 @@ import StartScreen from "@/components/StartScreen";
 import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt";
 import { useCart } from "@/lib/cart";
 import { gameSession } from "@/lib/gameSession";
+import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
 
 // In-world fixtures that open a Yes/No prompt, and what "Yes" does. Keyed by
 // interaction id first, then type — so the basement NPC routes differently from
@@ -19,10 +20,12 @@ type PromptKind = "inventory" | "cart" | "basement";
 // pages that END in a Yes/No choice (the basement NPC's secretive pitch).
 // `speaker` names the nameplate tab above the box — omitted for system prompts
 // (rack/checkout) and anonymous floor shoppers, who stay untagged.
+type PromptPage = string | (() => string);
+
 type PromptDef =
   | { variant: "choice"; question: string; kind: PromptKind; speaker?: string }
-  | { variant: "message"; pages: string[]; speaker?: string }
-  | { variant: "messageChoice"; pages: string[]; question: string; kind: PromptKind; speaker?: string };
+  | { variant: "message"; pages: PromptPage[]; speaker?: string }
+  | { variant: "messageChoice"; pages: PromptPage[]; question: string; kind: PromptKind; speaker?: string };
 
 // Open prompt state (paged prompts also track the current page via `page`;
 // a messageChoice at page === pages.length is in its choice phase).
@@ -32,7 +35,14 @@ const PROMPTS: Record<string, PromptDef> = {
   // Lobby (by type)
   rack: { variant: "choice", question: "View the inventory?", kind: "inventory" },
   // Heath physically walks over to ask this one (see WorldScene.playHeathCheckout).
-  checkout: { variant: "choice", question: "Are you ready to checkout?", kind: "cart", speaker: "Heath" },
+  // A quick word, then the Yes/No.
+  checkout: {
+    variant: "messageChoice",
+    speaker: "Heath",
+    pages: ["You find some dope pieces?"],
+    question: "Checkout?",
+    kind: "cart",
+  },
   // Lobby cashier NPC (by id) — the cashier IS Heath. Speech, no navigation.
   cashier: {
     variant: "message",
@@ -42,29 +52,33 @@ const PROMPTS: Record<string, PromptDef> = {
   // Floor shoppers (by id) — flavour speech, no navigation.
   "npc-rail": {
     variant: "message",
-    pages: ["These just dropped this morning.", "Heavier than they look — there's proper weight to 'em."],
+    pages: ["These just dropped this morning.", "I think there's only a few pairs left though."],
   },
   "npc-gazer": {
     variant: "message",
-    pages: ["Green or white… I genuinely can't choose.", "…might just get both. Don't tell my bank."],
+    pages: [
+      "There's so many sick pieces, I can't choose which one to get… might js have to get a few, don't tell my bank.",
+    ],
   },
   "npc-sofa": {
     variant: "message",
-    pages: [
-      "Best seat in the house.",
-      "Throw a record on and take a load off.",
-      "…they say the right record opens more than your ears. Try the decks.",
-    ],
+    pages: ["This pretty sick store huh? I'd check out the vinyls — some of my favorites in there."],
   },
   "npc-checkout": {
     variant: "message",
-    pages: ["Just copped the RAGE tee.", "Staff here are sound — the line moves quick."],
+    pages: [
+      () => {
+        const p = CYBER_LOVE_PRODUCTS[Math.floor(Math.random() * CYBER_LOVE_PRODUCTS.length)];
+        return `Just copped the ${p.emotion} tee.`;
+      },
+      "This spot is sweeeeeet! The staff is awesome and the pieces are sick!",
+    ],
   },
   // Basement (by id — overrides the "rack" type so it routes to the pieces page)
   // Down here the tone is hushed — you found the secret, after all.
   "basement-npc": {
     variant: "messageChoice",
-    pages: ["Shhh… how did you find this place?", "…Well. Since you're already down here —"],
+    pages: ["Shhh… how did you find this place?", "You have to check these pieces out, they are insane!"],
     question: "Check out my favourite pieces?",
     kind: "basement",
   },
@@ -76,9 +90,9 @@ const PROMPTS: Record<string, PromptDef> = {
 // Heath's greeting on genuine first entry — he walks over from the counter to
 // deliver it. {A} becomes the platform's interact button (A on mobile, Z on web).
 const HEATH_INTRO_PAGES = [
-  "Yo! Welcome to SCR!PTS — a home for creative culture. I'm Heath.",
-  "Walk up to anything and press {A} to check it out.",
-  "When you're ready, bring your pieces to the counter. I'll sort you out.",
+  "… Yooo. My name is Heath. I'm the founder of SCR!PTS. Welcome to our world!",
+  "Walk up to anything and press {A} to check it out — {B} to go back.",
+  "When you're ready, come back up — I'll check you out!",
 ];
 
 // Routes reachable from the game — prefetched on start so navigation is instant.
@@ -123,6 +137,7 @@ export default function Home() {
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
   const [page, setPage] = useState(0); // current page of an open message prompt
+  const [muted, setMuted] = useState(false);
 
   // Set once the Phaser game exists; forwards on-screen buttons into the scene
   // with press/release semantics so a held D-pad arm keeps Scribbs walking.
@@ -330,8 +345,14 @@ export default function Home() {
     return <main className="h-dvh w-screen bg-ink" />;
   }
 
-  // Swap {A} for the platform's interact button (mobile A button / desktop Z key).
-  const btnify = (s: string) => s.replaceAll("{A}", mobile ? "A" : "Z");
+  // Swap {A}/{B} for the platform's interact/cancel buttons (mobile A/B buttons
+  // / desktop Z/X keys).
+  const btnify = (s: string) =>
+    s.replaceAll("{A}", mobile ? "A" : "Z").replaceAll("{B}", mobile ? "B" : "X");
+
+  // Resolve a page's text — plain string, or a function evaluated at render
+  // time (e.g. npc-checkout's random product line).
+  const pageText = (p: PromptPage) => (typeof p === "function" ? p() : p);
 
   const screen = started ? (
     <>
@@ -351,7 +372,7 @@ export default function Home() {
           <DialogPrompt
             ref={dialogRef}
             variant="message"
-            text={btnify(prompt.pages[page])}
+            text={btnify(pageText(prompt.pages[page]))}
             speaker={prompt.speaker}
             onAdvance={advanceMessage}
           />
@@ -363,7 +384,15 @@ export default function Home() {
 
   return (
     <main className="h-dvh w-screen overflow-hidden">
-      <GameBoyShell mobile={mobile} screen={screen} onPress={handlePress} onRelease={handleRelease} />
+      <GameBoyShell
+        mobile={mobile}
+        screen={screen}
+        onPress={handlePress}
+        onRelease={handleRelease}
+        onInventory={() => router.push("/inventory")}
+        muted={muted}
+        onToggleMute={() => setMuted((m) => !m)}
+      />
     </main>
   );
 }
