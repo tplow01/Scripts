@@ -10,6 +10,7 @@ import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt
 import { useCart } from "@/lib/cart";
 import { gameSession } from "@/lib/gameSession";
 import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
+import { useShellLayout } from "@/lib/useShellLayout";
 
 // In-world fixtures that open a Yes/No prompt, and what "Yes" does. Keyed by
 // interaction id first, then type — so the basement NPC routes differently from
@@ -112,25 +113,9 @@ const CODE: Partial<Record<Btn, string>> = {
   START: "Enter",
 };
 
-/**
- * True when the on-screen Game Boy controls should show: any touch-input device
- * (phones, tablets, touch laptops) or a viewport ≤1024px. Mouse-driven desktops
- * keep the full-bleed bezel. null until mounted.
- */
-function useIsMobile(): boolean | null {
-  const [mobile, setMobile] = useState<boolean | null>(null);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1024px), (pointer: coarse)");
-    const update = () => setMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return mobile;
-}
-
 export default function Home() {
-  const mobile = useIsMobile();
+  const layout = useShellLayout();
+  const mobile = layout === null ? null : layout !== "desktop";
   const router = useRouter();
   const { openCart, isOpen: cartIsOpen } = useCart();
   const [started, setStarted] = useState(false);
