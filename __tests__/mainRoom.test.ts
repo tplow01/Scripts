@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mainRoom } from "@/game/world/mainRoom";
 import { isWalkableIn as isWalkable } from "@/game/world/rooms";
-import { footprint, buildBlockedSet } from "@/game/world/types";
+import { footprint, buildBlockedSet, propActive } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
   it("has a tile grid matching its declared dimensions", () => {
@@ -63,6 +63,25 @@ describe("mainRoom world data", () => {
     // Once the entrance flag is revealed, the cover lifts and the tile opens.
     const revealed = buildBlockedSet(mainRoom, new Set(["basement-entrance"]));
     expect(revealed.has(`${stairs.tileX},${stairs.tileY}`)).toBe(false);
+  });
+
+  it("keeps the record crate in the world after the reveal, parked right of the stairs", () => {
+    const crate = (mainRoom.decorations ?? []).find((d) => d.artKey === "crates")!;
+    expect(crate.tileX).toBe(6); // beside the right speaker (c5)
+    expect(crate.slideTo).toEqual({ tileX: 7, tileY: 2 }); // against the wall (c8+ is wall)
+    const revealed = new Set(["basement-entrance"]);
+    // Still active (slid, not despawned)…
+    expect(propActive(crate, revealed)).toBe(true);
+    // …and blocks its NEW tile, while the stairs tile (c6) is walkable.
+    const blocked = buildBlockedSet(mainRoom, revealed);
+    expect(blocked.has("7,2")).toBe(true);
+    expect(blocked.has("6,2")).toBe(false);
+  });
+
+  it("stairs sit under the crate at c6", () => {
+    const stairs = mainRoom.interactions.find((i) => i.type === "stairs")!;
+    expect(stairs.tileX).toBe(6);
+    expect(stairs.tileY).toBe(2);
   });
 
   it("includes the core shop interaction types", () => {

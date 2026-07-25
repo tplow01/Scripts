@@ -46,9 +46,9 @@ export const mainRoom: Room = {
   // Spawn on the centre door (bottom). WorldScene walks Scribbs up on entry.
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
-    // Basement entrance — SECRET stairs (top, b7). Hidden behind record crates
+    // Basement entrance — SECRET stairs (top, b6). Hidden behind record crates
     // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
-    { id: "stairs", type: "stairs", tileX: C(7), tileY: R("b"), artKey: "stairs", solid: false,
+    { id: "stairs", type: "stairs", tileX: C(6), tileY: R("b"), artKey: "stairs", solid: false,
       revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
 
     // Music alcove (row b): vinyl deck (2 wide) — the reveal switch. Speakers are decorations.
@@ -96,9 +96,11 @@ export const mainRoom: Room = {
     { tileX: C(2), tileY: R("b"), artKey: "speaker", solid: true },
     { tileX: C(5), tileY: R("b"), artKey: "speaker", solid: true },
 
-    // Record crates concealing the secret stairs (b7). Solid + visible until the
-    // "basement-entrance" flag is revealed, then they slide away.
-    { tileX: C(7), tileY: R("b"), artKey: "crates", solid: true, concealing: "basement-entrance" },
+    // Record crate concealing the secret stairs (b6, snug against the right
+    // speaker). Playing the vinyl slides it right to b7, parking it against
+    // the wall — it stays visible and solid there.
+    { tileX: C(6), tileY: R("b"), artKey: "crates", solid: true, concealing: "basement-entrance",
+      slideTo: { tileX: C(7), tileY: R("b") } },
 
     // Couch — single L footprint (5×3), arm down the left + base along the
     // bottom. Non-solid so Scribbs can step onto the cushions ("sit").

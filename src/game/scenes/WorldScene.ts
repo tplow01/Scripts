@@ -239,7 +239,10 @@ export class WorldScene extends Phaser.Scene {
       // Concealing covers (crates over the secret stairs) sit above floor props
       // and are tracked so the reveal can slide them away.
       if (deco.concealing) {
-        this.coverObjects.push(this.placeProp(deco, 2.2, false));
+        const slid = deco.slideTo && gameSession.revealed.has(deco.concealing);
+        const at = slid ? { ...deco, ...deco.slideTo } : deco;
+        const img = this.placeProp(at, 2.2, false);
+        if (!slid) this.coverObjects.push(img);
         continue;
       }
       if (deco.artKey === "emblem") this.placeProp(deco, 0.4, false);
@@ -402,14 +405,24 @@ export class WorldScene extends Phaser.Scene {
     const covers = this.coverObjects;
     this.coverObjects = [];
     covers.forEach((c) => {
-      this.tweens.add({
-        targets: c,
-        x: c.x - ts * 1.5,
-        alpha: 0,
-        duration: 420,
-        ease: "Cubic.easeIn",
-        onComplete: () => c.destroy(),
-      });
+      const deco = (this.room.decorations ?? []).find(
+        (d) => d.concealing === flag && d.slideTo,
+      );
+      if (deco?.slideTo) {
+        // Park the cover at its slid tile — stays visible and solid.
+        const w = deco.wTiles ?? 1;
+        this.tweens.add({
+          targets: c,
+          x: deco.slideTo.tileX * ts + (w * ts) / 2,
+          duration: 420,
+          ease: "Cubic.easeOut",
+        });
+      } else {
+        this.tweens.add({
+          targets: c, x: c.x - ts * 1.5, alpha: 0, duration: 420,
+          ease: "Cubic.easeIn", onComplete: () => c.destroy(),
+        });
+      }
     });
 
     // Draw any interactions this flag has just made active (the hidden stairs).

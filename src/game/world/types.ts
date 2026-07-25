@@ -43,12 +43,18 @@ interface Placed {
    */
   revealedBy?: string;
   concealing?: string;
+  /**
+   * Where a `concealing` prop parks after its flag reveals. With `slideTo` the
+   * prop STAYS in the world post-reveal (drawn + solid at the new tile) instead
+   * of despawning — e.g. the record crate sliding off the secret stairs.
+   */
+  slideTo?: { tileX: number; tileY: number };
 }
 
 /** Whether a flag-gated prop is currently present in the world. */
 export function propActive(p: Placed, revealed: Set<string>): boolean {
   if (p.revealedBy && !revealed.has(p.revealedBy)) return false;
-  if (p.concealing && revealed.has(p.concealing)) return false;
+  if (p.concealing && !p.slideTo && revealed.has(p.concealing)) return false;
   return true;
 }
 
@@ -119,8 +125,11 @@ export function buildBlockedSet(room: Room, revealed: Set<string> = new Set()): 
   const blocked = new Set<string>();
   const add = (p: Placed) => {
     if (!p.solid || !propActive(p, revealed)) return;
-    const holes = new Set((p.holes ?? []).map((h) => `${p.tileX + h.dx},${p.tileY + h.dy}`));
-    for (const t of footprint(p)) {
+    const slid = p.concealing && p.slideTo && revealed.has(p.concealing)
+      ? { ...p, tileX: p.slideTo.tileX, tileY: p.slideTo.tileY }
+      : p;
+    const holes = new Set((slid.holes ?? []).map((h) => `${slid.tileX + h.dx},${slid.tileY + h.dy}`));
+    for (const t of footprint(slid)) {
       const key = `${t.x},${t.y}`;
       if (!holes.has(key)) blocked.add(key);
     }
