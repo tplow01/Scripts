@@ -370,13 +370,14 @@ export default function Home() {
   return (
     <main className="h-dvh w-screen overflow-hidden">
       <GameBoyShell
-        mobile={mobile}
+        layout={layout!}
         screen={screen}
         onPress={handlePress}
         onRelease={handleRelease}
         onInventory={() => router.push("/inventory")}
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
+        onOverlayChange={(open) => gameRef.current?.events.emit("dialog", open)}
       />
     </main>
   );

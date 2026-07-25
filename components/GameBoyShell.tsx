@@ -1,165 +1,211 @@
 'use client'
 
 import { Press_Start_2P } from 'next/font/google'
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import DPad, { type Btn } from './shell/DPad'
+import RoundBtn from './shell/RoundBtn'
+import PillBtn from './shell/PillBtn'
+import ConsoleUtilityStrip from './shell/ConsoleUtilityStrip'
+import SystemOverlay from './shell/SystemOverlay'
+import type { ShellLayout } from '@/lib/useShellLayout'
+
+export type { Btn }
 
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 
 const BODY = `linear-gradient(160deg, #D4D4C8 0%, #BCBCB0 25%, #A8A89C 55%, #989890 75%, #8C8C84 100%)`
+const SHEEN = `
+  linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 3px, transparent 10px),
+  linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
+`
 
-export type Btn = 'up' | 'down' | 'left' | 'right' | 'A' | 'B' | 'MENU' | 'SELECT' | 'START'
-
-const pill: React.CSSProperties = {
-  width: 44, height: 13,
-  background: 'linear-gradient(180deg, #969690 0%, #808080 100%)',
-  borderRadius: 7,
-  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.08)',
-}
-const pillLbl: React.CSSProperties = { fontSize: 5, color: '#555', letterSpacing: 0.5 }
-
-/** The LCD module — bezel + the recessed grey screen that hosts `children`. */
-function ScreenModule({
-  children,
-  mobile = false,
-  style = {},
-}: {
-  children: ReactNode
-  mobile?: boolean
-  style?: React.CSSProperties
-}) {
+/** Speaker-grille dot pattern (Delta landscape flank filler). */
+function Grille({ width, height }: { width: number; height: number }) {
   return (
     <div style={{
-      background: '#111111',
-      display: 'flex', flexDirection: 'column',
-      overflow: 'visible', position: 'relative',
-      ...style,
-    }}>
-      {/* Screen light bleed */}
-      <div style={{
-        position: 'absolute',
-        top: mobile ? 14 : 18, left: mobile ? 14 : 18, right: mobile ? 14 : 18, bottom: mobile ? 30 : 38,
-        borderRadius: 4,
-        boxShadow: '0 0 24px 4px rgba(220,220,210,0.18)',
-        pointerEvents: 'none', zIndex: 0,
-      }} />
-
-      {/* The LCD itself — content (start screen or game canvas) clips inside. */}
-      <div style={{
-        flex: 1,
-        margin: mobile ? '14px 14px 0 14px' : '18px 18px 0 18px',
-        background: '#DCDCDA',
-        borderRadius: 4,
-        position: 'relative',
-        overflow: 'hidden',
-        zIndex: 1,
-      }}>
-        {children}
-      </div>
-
-      <div style={{
-        height: mobile ? 30 : 38,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, zIndex: 1,
-      }}>
-        <span className={pressStart.className} style={{
-          fontSize: mobile ? 6 : 8, color: '#3A3A3A', letterSpacing: 4,
-        }}>
-          SCR!PTS
-        </span>
-      </div>
-    </div>
+      width, height,
+      backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.35) 1.5px, transparent 1.5px)',
+      backgroundSize: '9px 9px',
+    }} />
   )
 }
 
-/** A pill button (MENU / SELECT / START) with its label. */
-function PillBtn({ label, onPress }: { label: Btn; onPress: (b: Btn) => void }) {
+/** The LCD module — bezel + recessed screen hosting `children` (+ overlay). */
+function ScreenModule({
+  children, overlay, compact = false, wordmarkBelow = false, style = {},
+}: {
+  children: ReactNode
+  overlay: ReactNode
+  compact?: boolean
+  wordmarkBelow?: boolean
+  style?: React.CSSProperties
+}) {
+  const inset = compact ? 8 : 18
+  const label = (
+    <div style={{
+      height: compact ? 22 : 38, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, zIndex: 1,
+    }}>
+      <span className={pressStart.className} style={{ fontSize: compact ? 6 : 8, color: '#3A3A3A', letterSpacing: 4 }}>
+        SCR!PTS
+      </span>
+    </div>
+  )
   return (
-    <div
-      onPointerDown={(e) => { e.preventDefault(); onPress(label) }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', touchAction: 'none' }}
-    >
-      <div style={pill} />
-      <span className={pressStart.className} style={pillLbl}>{label}</span>
+    <div style={{ background: '#111111', display: 'flex', flexDirection: 'column', position: 'relative', ...style }}>
+      <div style={{
+        flex: 1, margin: `${inset}px ${inset}px 0 ${inset}px`,
+        background: '#DCDCDA', borderRadius: 4, position: 'relative', overflow: 'hidden', zIndex: 1,
+      }}>
+        {children}
+        {overlay}
+      </div>
+      {wordmarkBelow || !compact ? label : <div style={{ height: inset }} />}
     </div>
   )
 }
 
 export default function GameBoyShell({
-  screen,
-  onPress,
-  onRelease,
-  mobile,
+  screen, onPress, onRelease, layout, onInventory, muted, onToggleMute, onOverlayChange,
 }: {
   screen: ReactNode
   onPress: (b: Btn) => void
   /** Fired when a held button is let go (D-pad hold-to-walk). */
   onRelease?: (b: Btn) => void
-  mobile: boolean
+  layout: ShellLayout
+  onInventory: () => void
+  muted: boolean
+  onToggleMute: () => void
+  /** SystemOverlay open/close — the page freezes Phaser input while open. */
+  onOverlayChange?: (open: boolean) => void
 }) {
+  const [overlayKind, setOverlayKind] = useState<'social' | 'keys' | null>(null)
+
+  const setOverlay = useCallback((k: 'social' | 'keys' | null) => {
+    setOverlayKind((prev) => {
+      const next = prev === k ? null : k
+      onOverlayChange?.(next !== null)
+      return next
+    })
+  }, [onOverlayChange])
+
+  const closeOverlay = useCallback(() => {
+    setOverlayKind((prev) => {
+      if (prev !== null) onOverlayChange?.(false)
+      return null
+    })
+  }, [onOverlayChange])
+
+  // Desktop keys close an open overlay (X / Escape), matching B on touch.
+  useEffect(() => {
+    if (!overlayKind) return
+    const onKey = (e: KeyboardEvent) => {
+      if (['KeyX', 'Escape'].includes(e.code)) { e.preventDefault(); closeOverlay() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [overlayKind, closeOverlay])
+
   const press = (b: Btn) => (e: React.PointerEvent) => {
     e.preventDefault()
-    // Capture the pointer so the release always lands on this zone, even if
-    // the finger drifts off it mid-hold. (Can throw for already-gone pointers.)
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    if (overlayKind && (b === 'B' || b === 'A' || b === 'START')) { closeOverlay(); return }
     onPress(b)
   }
   const release = (b: Btn) => (e: React.PointerEvent) => { e.preventDefault(); onRelease?.(b) }
-  /** Press/release handler set for a holdable zone (the D-pad arms). */
   const hold = (b: Btn) => ({
     onPointerDown: press(b),
     onPointerUp: release(b),
     onPointerCancel: release(b),
   })
+  const pressPlain = (b: Btn) => {
+    if (overlayKind && (b === 'B' || b === 'A' || b === 'START')) { closeOverlay(); return }
+    onPress(b)
+  }
 
-  // ── DESKTOP: full-bleed bezel, keyboard-driven (no on-screen buttons).
-  if (!mobile) {
+  const onUtility = (a: 'social' | 'inventory' | 'mute' | 'keys') => {
+    if (a === 'inventory') { closeOverlay(); onInventory(); return }
+    if (a === 'mute') { onToggleMute(); return }
+    setOverlay(a)
+  }
+
+  const overlay = overlayKind
+    ? <SystemOverlay kind={overlayKind} mobile={layout !== 'desktop'} onClose={closeOverlay} />
+    : null
+
+  const rootStyle: React.CSSProperties = {
+    background: BODY, userSelect: 'none', WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none',
+  }
+
+  // ── DESKTOP: full-bleed bezel; utility strip molded into the bottom edge.
+  if (layout === 'desktop') {
     return (
-      <div className="h-dvh w-screen" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
-        <div className="flex items-center justify-center w-full h-full" style={{ position: 'relative' }}>
+      <div className="h-dvh w-screen flex flex-col" style={rootStyle}>
+        <div style={{ flex: 1, position: 'relative', padding: '40px 40px 0 40px', display: 'flex' }}>
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
           <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            background: `
-              linear-gradient(135deg, rgba(255,255,255,0.22) 0px, transparent 160px),
-              linear-gradient(315deg, rgba(0,0,0,0.18) 0px, transparent 160px)
-            `,
-          }} />
-          <div style={{
-            position: 'relative',
-            width: 'calc(100vw - 80px)', height: 'calc(100vh - 80px)',
-            borderRadius: 16, overflow: 'hidden',
+            position: 'relative', flex: 1, borderRadius: 16, overflow: 'hidden',
             boxShadow: '0 2px 0 rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5)',
           }}>
-            <ScreenModule style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+            <ScreenModule overlay={overlay} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
             <div style={{
               position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16,
               boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.95), inset 0 -3px 8px rgba(0,0,0,0.6), inset 5px 0 12px rgba(0,0,0,0.6), inset -5px 0 12px rgba(0,0,0,0.6)',
             }} />
-            <div style={{
-              position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16,
-              background: `
-                linear-gradient(90deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.05) 3px, transparent 10px),
-                linear-gradient(180deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.04) 3px, transparent 10px)
-              `,
-            }} />
           </div>
+        </div>
+        <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ConsoleUtilityStrip muted={muted} active={overlayKind} onAction={onUtility} />
         </div>
       </div>
     )
   }
 
-  // ── MOBILE: split — LCD on top, Delta-style controls below.
+  // ── LANDSCAPE: LCD centre, D-pad left flank, A/B + grille right flank.
+  if (layout === 'landscape') {
+    return (
+      <div className="h-dvh w-screen flex" style={rootStyle}>
+        {/* Left flank */}
+        <div style={{ width: 150, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', padding: '10px 12px' }}>
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
+          <div style={{ alignSelf: 'flex-start' }}><PillBtn label="MENU" onPress={pressPlain} /></div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <DPad size={110} hold={hold} />
+          </div>
+        </div>
+        {/* Centre: screen + SELECT/START + wordmark below */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <ScreenModule overlay={overlay} compact wordmarkBelow style={{ flex: 1, minHeight: 0 }}>{screen}</ScreenModule>
+          <div style={{ height: 34, display: 'flex', gap: 22, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <PillBtn label="SELECT" onPress={pressPlain} />
+            <PillBtn label="START" onPress={pressPlain} />
+          </div>
+        </div>
+        {/* Right flank */}
+        <div style={{ width: 150, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 12px' }}>
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
+          <Grille width={70} height={54} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+            {/* A upper-right, B lower-left (Delta diagonal) */}
+            <div style={{ position: 'relative', width: 118, height: 108, touchAction: 'none' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={52} /></div>
+              <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={52} /></div>
+            </div>
+          </div>
+          <ConsoleUtilityStrip compact muted={muted} active={overlayKind} onAction={onUtility} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── PORTRAIT: LCD top, molded control panel below, utility strip on the
+  // bottom edge. All rows flex — nothing overlaps down to 320x568.
   return (
-    <div className="h-dvh w-screen flex flex-col" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
-      {/* Top: screen */}
-      <div style={{ height: '50%', background: BODY, padding: '16px 16px 0 16px', display: 'flex', alignItems: 'stretch', position: 'relative' }}>
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `
-            linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 3px, transparent 10px),
-            linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
-          `,
-        }} />
-        <ScreenModule mobile style={{
+    <div className="h-dvh w-screen flex flex-col" style={rootStyle}>
+      <div style={{ height: '50%', padding: '16px 16px 0 16px', display: 'flex', alignItems: 'stretch', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
+        <ScreenModule overlay={overlay} compact style={{
           flex: 1, borderRadius: '10px 10px 0 0', overflow: 'hidden',
           boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.8), inset 2px 0 6px rgba(0,0,0,0.4), inset -2px 0 6px rgba(0,0,0,0.4)',
         }}>
@@ -167,79 +213,32 @@ export default function GameBoyShell({
         </ScreenModule>
       </div>
 
-      {/* Bottom: controls */}
-      <div style={{ height: '50%', background: BODY, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '12px 28px 20px 28px', position: 'relative' }}>
-        <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `
-            linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 3px, transparent 10px),
-            linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
-          `,
-        }} />
-        <div style={{ height: 1, background: 'rgba(0,0,0,0.12)' }} />
+      <div style={{ height: '50%', display: 'flex', flexDirection: 'column', padding: '12px 28px 10px 28px', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.12)', flexShrink: 0 }} />
 
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, marginTop: 12 }}>
-
-          {/* Row 1: D-pad + A/B */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {/* D-Pad — arms are individual touch zones */}
-            <div style={{ position: 'relative', width: 110, height: 110, touchAction: 'none' }}>
-              <div style={{
-                position: 'absolute', top: '33%', left: 0, right: 0, height: '34%',
-                background: 'linear-gradient(180deg, #969690 0%, #808080 100%)', borderRadius: 6,
-                boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.08)',
-              }} />
-              <div style={{
-                position: 'absolute', left: '33%', top: 0, bottom: 0, width: '34%',
-                background: 'linear-gradient(90deg, #969690 0%, #808080 100%)', borderRadius: 6,
-                boxShadow: 'inset 2px 0 5px rgba(0,0,0,0.55), inset -1px 0 2px rgba(255,255,255,0.08)',
-              }} />
-              <div style={{ position: 'absolute', top: '33%', left: '33%', width: '34%', height: '34%', background: '#7A7A74', borderRadius: 3 }} />
-              {/* touch zones */}
-              <div {...hold('up')} style={{ position: 'absolute', top: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div {...hold('down')} style={{ position: 'absolute', bottom: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div {...hold('left')} style={{ position: 'absolute', left: 0, top: '28%', width: '40%', height: '44%' }} />
-              <div {...hold('right')} style={{ position: 'absolute', right: 0, top: '28%', width: '40%', height: '44%' }} />
-            </div>
-
-            {/* A / B — B lower-left, A upper-right (Delta diagonal) */}
-            <div style={{ position: 'relative', width: 120, height: 110, touchAction: 'none' }}>
-              <div
-                onPointerDown={press('B')}
-                style={{
-                  position: 'absolute', bottom: 0, left: 0, width: 56, height: 56, borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #C0396A 0%, #8B1A42 100%)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 3px rgba(0,0,0,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                }}
-              >
-                <span className={pressStart.className} style={{ fontSize: 12, color: '#fff' }}>B</span>
-              </div>
-              <div
-                onPointerDown={press('A')}
-                style={{
-                  position: 'absolute', top: 0, right: 0, width: 56, height: 56, borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #C0396A 0%, #8B1A42 100%)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 3px rgba(0,0,0,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                }}
-              >
-                <span className={pressStart.className} style={{ fontSize: 12, color: '#fff' }}>A</span>
-              </div>
-            </div>
+        {/* Row 1: D-pad + A/B — flexes to absorb short viewports */}
+        <div style={{ flex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 0 }}>
+          <DPad size={110} hold={hold} />
+          <div style={{ position: 'relative', width: 120, height: 110, touchAction: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} /></div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} /></div>
           </div>
+        </div>
 
-          {/* Row 2: MENU · SELECT · START (Delta placement) */}
-          <div style={{ position: 'relative', height: 26, marginBottom: 2, touchAction: 'none' }}>
-            <div style={{ position: 'absolute', left: 0, bottom: 0 }}>
-              <PillBtn label="MENU" onPress={onPress} />
-            </div>
-            <div style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translateX(-50%)', display: 'flex', gap: 22 }}>
-              <PillBtn label="SELECT" onPress={onPress} />
-              <PillBtn label="START" onPress={onPress} />
-            </div>
+        {/* Row 2: MENU · SELECT · START */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', minHeight: 30 }}>
+          <div style={{ flex: 1 }}><PillBtn label="MENU" onPress={pressPlain} /></div>
+          <div style={{ display: 'flex', gap: 22 }}>
+            <PillBtn label="SELECT" onPress={pressPlain} />
+            <PillBtn label="START" onPress={pressPlain} />
           </div>
+          <div style={{ flex: 1 }} />
+        </div>
 
+        {/* Row 3: utility strip on the bottom edge of the body */}
+        <div style={{ flexShrink: 0, paddingTop: 6, paddingBottom: 4 }}>
+          <ConsoleUtilityStrip compact muted={muted} active={overlayKind} onAction={onUtility} />
         </div>
       </div>
     </div>
