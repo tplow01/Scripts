@@ -155,6 +155,42 @@ visible and solid afterwards. `WorldScene`'s reveal handler animates the slide
 - Manual walkthrough of every changed conversation, the checkout choice flow,
   and the crate-slide reveal (first play + revisit idle line).
 
+---
+
+## Workstream C — Scribbs 3-frame walk cycle
+
+New hand-labelled source frames exist in `~/Documents` (12 PNGs, 6667×6667,
+character in the upper-left corner on transparent/white ground):
+`scribbs_<Dir>_<Foot>.png` where Dir ∈ Front, Back, Right, Side(+Left_2_Feet)
+and Foot ∈ Left_Foot, 2_Feet, Right_Foot. "Side"/"Left" names are assumed to be
+the left-facing set — **verify visually during import** and correct mapping if
+wrong.
+
+### Asset pipeline
+
+Each source is cropped to content, then nearest-neighbour downscaled to the
+game's 64px sprite frame, preserving the existing baseline alignment (feet at
+the same y as the current scribbs PNGs). Output overwrites/extends
+`public/assets/scribbs/` with a consistent scheme:
+`scribbs-<down|up|left|right>-<left|both|right>.png` (12 files). The old
+`-a/-b` files and the side-flip hack are retired: left and right now have
+distinct authored art, so `setFlipX` is no longer used for facing.
+
+### Animation
+
+Classic GBA 4-step walk loop from 3 unique frames per direction:
+
+```
+left foot → both feet → right foot → both feet → (repeat)
+```
+
+- Idle / standing: `both` frame of the current facing.
+- One step tile-move plays one walk phase and advances the cycle counter, so
+  continuous held-walking alternates feet naturally (matches the current
+  4-phase timer in `WorldScene` — the a/b/c/d aliases in `BootScene` collapse
+  into real distinct frames: a=left, b=both, c=right, d=both).
+- NPC/cashier walk animation logic is untouched (separate texture family).
+
 ### Out of scope
 
 Real audio (mute is state-only until a music system exists), tablet-specific
