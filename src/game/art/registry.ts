@@ -122,10 +122,8 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "mat", matArt);
   bakePixelArt(scene, "ext-void", hiresExtVoidArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
-  for (const [key, art] of Object.entries(hiresCharacters)) {
-    if (!key.startsWith("scribbs-")) continue;
-    bakePixelArt(scene, key, art);
-  }
+  // Scribbs (player) textures are loaded from authored PNGs in BootScene.preload
+  // rather than baked procedurally — do not overwrite them here.
 }
 
 /** Resolve a world artKey (or wall-variant key) to its baked texture key. */

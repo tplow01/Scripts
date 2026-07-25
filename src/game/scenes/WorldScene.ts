@@ -7,7 +7,7 @@ import type { Interaction, Decoration, Room } from "@/game/world/types";
 import { HEATH_INTRO_PATH, HEATH_HOME, heathPathAlongCounter } from "@/game/world/mainRoom";
 import { gameSession } from "@/lib/gameSession";
 
-type Facing = "down" | "up" | "side";
+type Facing = "down" | "up" | "left" | "right";
 
 const FADE_MS = 260;
 const STEP_MS = 130;
@@ -51,6 +51,8 @@ export class WorldScene extends Phaser.Scene {
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
   private facing: Facing = "down";
+  /** Alternates which foot leads each step: false → right foot, true → left. */
+  private stepParity = false;
   private lastInteractionId: string | null = null;
 
   /**
@@ -77,7 +79,7 @@ export class WorldScene extends Phaser.Scene {
 
     // Scribbs + shadow persist across rooms (so camera-follow stays valid).
     this.scribbsShadow = this.add.image(0, 0, SHADOW_KEY).setDepth(9);
-    this.scribbs = this.add.image(0, 0, "scribbs-down-a").setOrigin(0.5, 1).setDepth(10);
+    this.scribbs = this.add.image(0, 0, "scribbs-down-both").setOrigin(0.5, 1).setDepth(10);
     this.cameras.main.roundPixels = true;
     this.cameras.main.startFollow(this.scribbs, true, 0.18, 0.18);
     this.scale.on("resize", this.updateZoom, this);
@@ -150,8 +152,7 @@ export class WorldScene extends Phaser.Scene {
       this.tileX = resume.tileX;
       this.tileY = resume.tileY;
       this.facing = resume.facing;
-      this.scribbs.setFlipX(resume.flip);
-      this.setFrame("a");
+      this.setFrame("both");
       this.syncScribbs();
       this.cameras.main.centerOn(this.scribbs.x, this.scribbs.y);
     }
@@ -175,7 +176,6 @@ export class WorldScene extends Phaser.Scene {
     const dir = this.dirFor(code);
     if (!dir) return;
     this.facing = dir.facing;
-    this.scribbs.setFlipX(dir.flip);
     this.tryMove(dir.dx, dir.dy);
   }
 
@@ -478,7 +478,7 @@ export class WorldScene extends Phaser.Scene {
   private async playHeathIntro() {
     this.transitioning = true;
     this.facing = "up";
-    this.setFrame("a");
+    this.setFrame("both");
 
     const ts = this.room.tileSize;
     const start = HEATH_INTRO_PATH[0];
@@ -618,20 +618,20 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Map a key code to a grid direction + facing (null for non-movement keys). */
-  private dirFor(code: string): { dx: number; dy: number; facing: Facing; flip: boolean } | null {
+  private dirFor(code: string): { dx: number; dy: number; facing: Facing } | null {
     switch (code) {
       case "ArrowLeft":
       case "KeyA":
-        return { dx: -1, dy: 0, facing: "side", flip: true };
+        return { dx: -1, dy: 0, facing: "left" };
       case "ArrowRight":
       case "KeyD":
-        return { dx: 1, dy: 0, facing: "side", flip: false };
+        return { dx: 1, dy: 0, facing: "right" };
       case "ArrowUp":
       case "KeyW":
-        return { dx: 0, dy: -1, facing: "up", flip: false };
+        return { dx: 0, dy: -1, facing: "up" };
       case "ArrowDown":
       case "KeyS":
-        return { dx: 0, dy: 1, facing: "down", flip: false };
+        return { dx: 0, dy: 1, facing: "down" };
       default:
         return null;
     }
@@ -644,17 +644,15 @@ export class WorldScene extends Phaser.Scene {
     const ny = this.tileY + dy;
 
     if (!canStep(this.room, this.tileX, this.tileY, nx, ny)) {
-      this.setFrame("a"); // turn-in-place (wall, fixture, or wrong-side seat)
+      this.setFrame("both"); // turn-in-place (wall, fixture, or wrong-side seat)
       return;
     }
 
     this.moving = true;
-    this.setFrame("b");
-    this.time.delayedCall(PLAYER_STEP_MS / 3, () => {
-      if (this.moving) this.setFrame("c");
-    });
-    this.time.delayedCall((PLAYER_STEP_MS * 2) / 3, () => {
-      if (this.moving) this.setFrame("d");
+    this.setFrame(this.stepParity ? "left" : "right");
+    this.stepParity = !this.stepParity;
+    this.time.delayedCall(PLAYER_STEP_MS / 2, () => {
+      if (this.moving) this.setFrame("both");
     });
 
     const ts = this.room.tileSize;
@@ -675,7 +673,7 @@ export class WorldScene extends Phaser.Scene {
         this.tileX = nx;
         this.tileY = ny;
         this.moving = false;
-        this.setFrame("a");
+        this.setFrame("both");
         this.saveSession();
         this.checkInteraction();
       },
@@ -689,13 +687,12 @@ export class WorldScene extends Phaser.Scene {
       tileX: this.tileX,
       tileY: this.tileY,
       facing: this.facing,
-      flip: this.scribbs.flipX,
     };
   }
 
-  /** Pick the texture for the current facing + walk phase. */
-  private setFrame(phase: "a" | "b" | "c" | "d") {
-    this.scribbs.setTexture(`scribbs-${this.facing}-${phase}`);
+  /** Pick the texture for the current facing + walk frame. */
+  private setFrame(foot: "left" | "both" | "right") {
+    this.scribbs.setTexture(`scribbs-${this.facing}-${foot}`);
   }
 
   /** Step onto an interaction tile: transition (stairs) or fire a stub event. */
@@ -725,7 +722,7 @@ export class WorldScene extends Phaser.Scene {
     let dy = 0;
     if (this.facing === "down") dy = 1;
     else if (this.facing === "up") dy = -1;
-    else dx = this.scribbs.flipX ? -1 : 1;
+    else dx = this.facing === "left" ? -1 : 1;
     const fx = this.tileX + dx;
     const fy = this.tileY + dy;
 
