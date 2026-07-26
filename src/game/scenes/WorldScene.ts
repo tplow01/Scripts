@@ -11,7 +11,8 @@ type Facing = "down" | "up" | "left" | "right";
 
 const FADE_MS = 260;
 const STEP_MS = 130;
-const PLAYER_STEP_MS = 120;
+// Slow enough that each stride frame reads (FireRed walks ~250ms/tile).
+const PLAYER_STEP_MS = 210;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
 const INTRO_FALLBACK_MS = 15000;
 /** Tiles of flat black void drawn around the main room, and how far the
@@ -676,7 +677,9 @@ export class WorldScene extends Phaser.Scene {
     this.moving = true;
     this.setFrame(this.stepParity ? "left" : "right");
     this.stepParity = !this.stepParity;
-    this.time.delayedCall(PLAYER_STEP_MS / 2, () => {
+    // Hold the stride frame for most of the step so it visibly lands, then
+    // settle onto both feet just before the tile move completes.
+    this.time.delayedCall(PLAYER_STEP_MS * 0.65, () => {
       if (this.moving) this.setFrame("both");
     });
 

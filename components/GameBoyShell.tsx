@@ -19,6 +19,27 @@ const SHEEN = `
   linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
 `
 
+/**
+ * Scale factor for the molded controls, so tablets get proportionally larger
+ * hardware instead of phone-sized controls floating in empty plastic.
+ * 1 at phone size (390w portrait / 750h landscape reference), up to 1.7 on
+ * iPad-class viewports.
+ */
+function useControlScale(layout: ShellLayout): number {
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    const update = () => {
+      const { innerWidth: w, innerHeight: h } = window
+      const raw = layout === 'landscape' ? Math.min(w / 844, h / 390) : Math.min(w / 390, h / 750)
+      setScale(Math.min(1.7, Math.max(1, raw)))
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [layout])
+  return scale
+}
+
 /** Speaker-grille dot pattern (Delta landscape flank filler). */
 function Grille({ width, height }: { width: number; height: number }) {
   return (
@@ -80,6 +101,7 @@ export default function GameBoyShell({
   onOverlayChange?: (open: boolean) => void
 }) {
   const [overlayKind, setOverlayKind] = useState<'social' | 'keys' | null>(null)
+  const s = useControlScale(layout)
 
   const setOverlay = useCallback((k: 'social' | 'keys' | null) => {
     setOverlayKind((prev) => {
@@ -167,11 +189,11 @@ export default function GameBoyShell({
     return (
       <div className="h-dvh w-screen flex" style={rootStyle}>
         {/* Left flank */}
-        <div style={{ width: 150, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', padding: '10px 12px' }}>
+        <div style={{ width: 150 * s, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', padding: '10px 12px' }}>
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
           <div style={{ alignSelf: 'flex-start' }}><PillBtn label="MENU" onPress={pressPlain} /></div>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <DPad size={110} hold={hold} />
+            <DPad size={110 * s} hold={hold} />
           </div>
         </div>
         {/* Centre: screen + SELECT/START + wordmark below */}
@@ -183,14 +205,14 @@ export default function GameBoyShell({
           </div>
         </div>
         {/* Right flank */}
-        <div style={{ width: 150, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 12px' }}>
+        <div style={{ width: 150 * s, flexShrink: 0, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 12px' }}>
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
-          <Grille width={70} height={54} />
+          <Grille width={70 * s} height={54 * s} />
           <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
             {/* A upper-right, B lower-left (Delta diagonal) */}
-            <div style={{ position: 'relative', width: 118, height: 108, touchAction: 'none' }}>
-              <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={52} /></div>
-              <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={52} /></div>
+            <div style={{ position: 'relative', width: 118 * s, height: 108 * s, touchAction: 'none' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={52 * s} /></div>
+              <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={52 * s} /></div>
             </div>
           </div>
           <ConsoleUtilityStrip compact muted={muted} active={overlayKind} onAction={onUtility} />
@@ -217,12 +239,13 @@ export default function GameBoyShell({
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SHEEN }} />
         <div style={{ height: 1, background: 'rgba(0,0,0,0.12)', flexShrink: 0 }} />
 
-        {/* Row 1: D-pad + A/B — flexes to absorb short viewports */}
-        <div style={{ flex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 0 }}>
-          <DPad size={110} hold={hold} />
-          <div style={{ position: 'relative', width: 120, height: 110, touchAction: 'none' }}>
-            <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} /></div>
-            <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} /></div>
+        {/* Row 1: D-pad + A/B — flexes to absorb short viewports; controls
+            scale up on tablets so they don't float in empty plastic. */}
+        <div style={{ flex: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 0, padding: `0 ${28 * (s - 1)}px` }}>
+          <DPad size={110 * s} hold={hold} />
+          <div style={{ position: 'relative', width: 120 * s, height: 110 * s, touchAction: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={56 * s} /></div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={56 * s} /></div>
           </div>
         </div>
 
