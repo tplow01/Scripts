@@ -29,8 +29,23 @@ type PromptDef =
   | { variant: "messageChoice"; pages: PromptPage[]; question: string; kind: PromptKind; speaker?: string };
 
 // Open prompt state (paged prompts also track the current page via `page`;
-// a messageChoice at page === pages.length is in its choice phase).
-type ActivePrompt = PromptDef;
+// a messageChoice at page === pages.length is in its choice phase). Unlike
+// PromptDef, an ActivePrompt's pages are always plain strings — any
+// function-valued page (e.g. npc-checkout's random product line) is resolved
+// ONCE, when the prompt opens, so an unrelated re-render (tapping MUTE while
+// reading) can't re-roll it or restart the typewriter.
+type ActivePrompt =
+  | { variant: "choice"; question: string; kind: PromptKind; speaker?: string }
+  | { variant: "message"; pages: string[]; speaker?: string }
+  | { variant: "messageChoice"; pages: string[]; question: string; kind: PromptKind; speaker?: string };
+
+// Resolve a page's text — plain string, or a function evaluated once here.
+const pageText = (p: PromptPage) => (typeof p === "function" ? p() : p);
+
+// Materialize a PromptDef into an ActivePrompt, resolving any function pages
+// at open time rather than at render time.
+const materialize = (p: PromptDef): ActivePrompt =>
+  p.variant === "choice" ? p : { ...p, pages: p.pages.map(pageText) };
 
 const PROMPTS: Record<string, PromptDef> = {
   // Lobby (by type)
@@ -143,15 +158,17 @@ export default function Home() {
       setPage(0);
       if (!revealed) {
         gameRef.current?.events.emit("reveal", "basement-entrance");
-        setPrompt({
-          variant: "message",
-          pages: [
-            "You thumb through a crate of records…",
-            "One sticks. You pull it — and a panel by the wall slides aside.",
-          ],
-        });
+        setPrompt(
+          materialize({
+            variant: "message",
+            pages: [
+              "You thumb through a crate of records…",
+              "One sticks. You pull it — and a panel by the wall slides aside.",
+            ],
+          }),
+        );
       } else {
-        setPrompt({ variant: "message", pages: ["The record's still spinning."] });
+        setPrompt(materialize({ variant: "message", pages: ["The record's still spinning."] }));
       }
       gameRef.current?.events.emit("dialog", true);
       return;
@@ -160,7 +177,7 @@ export default function Home() {
     if (!p) return;
     setSel("yes");
     setPage(0);
-    setPrompt(p);
+    setPrompt(materialize(p));
     gameRef.current?.events.emit("dialog", true);
   };
 
@@ -168,7 +185,7 @@ export default function Home() {
   const welcomeRef = useRef<() => void>(() => {});
   welcomeRef.current = () => {
     setPage(0);
-    setPrompt({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" });
+    setPrompt(materialize({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" }));
     gameRef.current?.events.emit("dialog", true);
   };
 
@@ -180,6 +197,7 @@ export default function Home() {
     // Handshake: a fresh game (e.g. remounted after the inventory detour) must
     // never inherit a stale "dialog open" flag from a prompt the old game saw.
     game.events.emit("dialog", false);
+    game.events.emit("overlay", false);
     game.events.emit("cart", false);
   }, []);
 
@@ -335,10 +353,6 @@ export default function Home() {
   const btnify = (s: string) =>
     s.replaceAll("{A}", mobile ? "A" : "Z").replaceAll("{B}", mobile ? "B" : "X");
 
-  // Resolve a page's text — plain string, or a function evaluated at render
-  // time (e.g. npc-checkout's random product line).
-  const pageText = (p: PromptPage) => (typeof p === "function" ? p() : p);
-
   const screen = started ? (
     <>
       <PhaserGame onGame={onGame} />
@@ -357,7 +371,7 @@ export default function Home() {
           <DialogPrompt
             ref={dialogRef}
             variant="message"
-            text={btnify(pageText(prompt.pages[page]))}
+            text={btnify(prompt.pages[page])}
             speaker={prompt.speaker}
             onAdvance={advanceMessage}
           />
@@ -377,7 +391,7 @@ export default function Home() {
         onInventory={() => router.push("/inventory")}
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
-        onOverlayChange={(open) => gameRef.current?.events.emit("dialog", open)}
+        onOverlayChange={(open) => gameRef.current?.events.emit("overlay", open)}
       />
     </main>
   );

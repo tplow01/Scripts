@@ -39,6 +39,7 @@ export class WorldScene extends Phaser.Scene {
   private moving = false;
   private transitioning = false;
   private dialogOpen = false;
+  private overlayOpen = false;
   private introPlayed = false;
   /** True while the Heath intro owns the room (suppresses the static cashier). */
   private introPending = false;
@@ -75,6 +76,7 @@ export class WorldScene extends Phaser.Scene {
     this.moving = false;
     this.transitioning = false;
     this.dialogOpen = false;
+    this.overlayOpen = false;
     this.held = [];
 
     // Scribbs + shadow persist across rooms (so camera-follow stays valid).
@@ -112,6 +114,15 @@ export class WorldScene extends Phaser.Scene {
     };
     this.game.events.on("dialog", onDialog);
 
+    // The Game Boy utility overlay (System menu) freezes movement while it's
+    // open too, but must never touch pendingDialogClose — that's reserved for
+    // the real in-world dialogue box (Heath's scripted intro/checkout waits).
+    const onOverlay = (open: boolean) => {
+      this.overlayOpen = open;
+      if (open) this.held = [];
+    };
+    this.game.events.on("overlay", onOverlay);
+
     // Cart drawer open/closed — Heath's till sequence waits on this.
     const onCart = (open: boolean) => {
       this.cartOpen = open;
@@ -130,6 +141,7 @@ export class WorldScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off("vbutton", onVButton);
       this.game.events.off("dialog", onDialog);
+      this.game.events.off("overlay", onOverlay);
       this.game.events.off("cart", onCart);
       this.game.events.off("reveal", onReveal);
       this.game.events.off(Phaser.Core.Events.BLUR, this.clearHeld, this);
@@ -172,7 +184,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Face + step in a direction if the scene allows movement right now. */
   private stepToward(code: string) {
-    if (this.moving || this.transitioning || this.dialogOpen) return;
+    if (this.moving || this.transitioning || this.dialogOpen || this.overlayOpen) return;
     const dir = this.dirFor(code);
     if (!dir) return;
     this.facing = dir.facing;
@@ -614,7 +626,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private onKey(event: KeyboardEvent) {
-    if (this.transitioning || this.dialogOpen) return;
+    if (this.transitioning || this.dialogOpen || this.overlayOpen) return;
     if (event.code === "KeyZ" || event.code === "Space" || event.code === "Enter") {
       this.interactAhead();
       return;
