@@ -28,13 +28,18 @@ function Dots({ width, height }: { width: number | string; height: number | stri
   )
 }
 
-/** LCD in its black bezel with the flat SCR!PTS strip as the bezel's bottom band. */
-function ScreenModule({ children, overlay, stripHeight = 26, style = {} }: {
-  children: ReactNode; overlay: ReactNode; stripHeight?: number; style?: React.CSSProperties
+/**
+ * LCD in its black bezel with the flat SCR!PTS strip as the bezel's bottom band.
+ * `bezelPad` is the black border shown around the LCD (CSS padding shorthand):
+ * desktop frames every edge, landscape only left/right, portrait none — the
+ * strip itself is always the bottom border.
+ */
+function ScreenModule({ children, overlay, stripHeight = 26, bezelPad = '0', lcdRadius = 0, style = {} }: {
+  children: ReactNode; overlay: ReactNode; stripHeight?: number; bezelPad?: string; lcdRadius?: number; style?: React.CSSProperties
 }) {
   return (
-    <div style={{ background: '#000', display: 'flex', flexDirection: 'column', ...style }}>
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+    <div style={{ background: '#000', display: 'flex', flexDirection: 'column', padding: bezelPad, paddingBottom: 0, ...style }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
         {children}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
         {overlay}
@@ -158,7 +163,7 @@ export default function GameBoyShell({
           margin: '2.5% 1.6% 0', flex: 1, borderRadius: 14, overflow: 'hidden',
           boxShadow: '0 10px 26px rgba(0,0,0,0.55)',
         }}>
-          <ScreenModule overlay={overlay} stripHeight={26} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+          <ScreenModule overlay={overlay} stripHeight={26} bezelPad="14px" lcdRadius={6} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
         </div>
         <div style={{
           display: 'flex', justifyContent: 'center', gap: 18,
@@ -186,7 +191,7 @@ export default function GameBoyShell({
           position: 'absolute', left: flankW, right: flankW, top: 0, bottom: '4%',
           borderRadius: '0 0 16px 16px', overflow: 'hidden',
         }}>
-          <ScreenModule overlay={overlay} stripHeight={22} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+          <ScreenModule overlay={overlay} stripHeight={22} bezelPad="0 14px" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
         </div>
         {/* Left flank */}
         <div style={{
