@@ -171,19 +171,23 @@ export default function GameBoyShell({
   if (layout === 'landscape') {
     const dpadSize = Math.max(96, Math.min(0.20 * vh, 0.115 * vw))
     const absSize = Math.max(56, Math.min(0.13 * vh, 0.075 * vw))
+    // Flank must be wide enough to actually contain the clamped D-pad and
+    // A/B cluster — on small viewports the clamp floors win over 13vw, so
+    // the flank has to grow past 13% to avoid clipping into the bezel.
+    const flankW = Math.max(0.13 * vw, dpadSize + 12, absSize * 2.1 + 12)
     return (
       <div style={{ ...rootStyle, position: 'relative', height: '100dvh' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: INK_CREASES }} />
         {/* Bezel */}
         <div style={{
-          position: 'absolute', left: '13%', right: '13%', top: 0, bottom: '4%',
+          position: 'absolute', left: flankW, right: flankW, top: 0, bottom: '4%',
           borderRadius: '0 0 16px 16px', overflow: 'hidden',
         }}>
           <ScreenModule overlay={overlay} stripHeight={22} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
         </div>
         {/* Left flank */}
         <div style={{
-          position: 'absolute', left: 0, width: '13%', top: 0, bottom: 0,
+          position: 'absolute', left: 0, width: flankW, top: 0, bottom: 0,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           paddingTop: 'max(12px, env(safe-area-inset-top))', paddingLeft: 'env(safe-area-inset-left)',
         }}>
@@ -200,7 +204,7 @@ export default function GameBoyShell({
         </div>
         {/* Right flank */}
         <div style={{
-          position: 'absolute', right: 0, width: '13%', top: 0, bottom: 0,
+          position: 'absolute', right: 0, width: flankW, top: 0, bottom: 0,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           paddingTop: 'max(12px, env(safe-area-inset-top))', paddingRight: 'env(safe-area-inset-right)',
         }}>
@@ -224,7 +228,7 @@ export default function GameBoyShell({
 
   // ── PORTRAIT: LCD top, molded control deck below with absolute-positioned controls.
   const portraitDpadSize = Math.min(0.36 * vw, 150)
-  const portraitAbsSize = Math.min(0.24 * vw, 100)
+  const portraitAbsSize = Math.min(0.22 * vw, 96)
   const utilityHeight = Math.max(24, Math.min(0.075 * vw, 32))
   return (
     <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh' }}>
