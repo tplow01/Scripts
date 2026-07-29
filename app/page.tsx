@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type Phaser from "phaser";
 import GameBoyShell, { type Btn } from "@/components/GameBoyShell";
+import { KEY_TO_BTN } from "@/lib/controls";
 import StartScreen from "@/components/StartScreen";
 import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt";
 import { useCart } from "@/lib/cart";
@@ -117,6 +118,11 @@ const GAME_ROUTES = ["/inventory", "/basement", "/cart"];
 // Phaser is client-only — never server-rendered.
 const PhaserGame = dynamic(() => import("@/game/PhaserGame"), { ssr: false });
 
+// KEY_TO_BTN is keyed by KeyboardEvent.key; arrows are verbatim ("ArrowUp") but
+// letters are lowercase ("z"/"x"), so a Shift/CapsLock-held "Z" (e.key === "Z")
+// still resolves — try the raw key first, then its lowercase form.
+const keyToBtn = (e: KeyboardEvent): Btn | undefined => KEY_TO_BTN[e.key] ?? KEY_TO_BTN[e.key.toLowerCase()];
+
 // Semantic button → KeyboardEvent.code the WorldScene understands.
 const CODE: Partial<Record<Btn, string>> = {
   up: "ArrowUp",
@@ -125,7 +131,6 @@ const CODE: Partial<Record<Btn, string>> = {
   right: "ArrowRight",
   A: "KeyZ", // interact / confirm
   B: "KeyX", // cancel
-  START: "Enter",
 };
 
 export default function Home() {
@@ -244,11 +249,11 @@ export default function Home() {
       // Dialogue open: controls drive the prompt, not Scribbs.
       if (prompt) {
         if (inMessagePhase) {
-          // Speech: A / B / START advance pages. Arrows do nothing.
-          if (b === "A" || b === "B" || b === "START") advanceMessage();
+          // Speech: A / B advance pages. Arrows do nothing.
+          if (b === "A" || b === "B") advanceMessage();
         } else if (b === "up" || b === "down" || b === "left" || b === "right") {
           toggleSel();
-        } else if (b === "A" || b === "START") {
+        } else if (b === "A") {
           choose(sel);
         } else if (b === "B") {
           choose("no");
@@ -256,8 +261,8 @@ export default function Home() {
         return;
       }
       if (!started) {
-        // Pre-game: A / START (and a tap, handled by StartScreen) begin play.
-        if (b === "A" || b === "START") setStarted(true);
+        // Pre-game: A (and a tap, handled by StartScreen) begins play.
+        if (b === "A") setStarted(true);
         return;
       }
       const code = CODE[b];
@@ -299,11 +304,11 @@ export default function Home() {
     GAME_ROUTES.forEach((r) => router.prefetch(r));
   }, [started, router]);
 
-  // Desktop start gate: Enter / Space / Z begins play (Phaser owns keys after).
+  // Desktop start gate: Z begins play (Phaser owns keys after).
   useEffect(() => {
     if (started) return;
     const onKey = (e: KeyboardEvent) => {
-      if (["Enter", "Space", "KeyZ"].includes(e.code)) setStarted(true);
+      if (keyToBtn(e) === "A") setStarted(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -314,21 +319,22 @@ export default function Home() {
   useEffect(() => {
     if (!prompt) return;
     const onKey = (e: KeyboardEvent) => {
+      const b = keyToBtn(e);
       if (inMessagePhase) {
-        // Speech: confirm/cancel keys advance pages; arrows ignored.
-        if (["Enter", "KeyZ", "Space", "KeyX", "Escape"].includes(e.code)) {
+        // Speech: A / B advance pages; Escape too (mirrors B). Arrows ignored.
+        if (b === "A" || b === "B" || e.key === "Escape") {
           e.preventDefault();
           advanceMessage();
         }
         return;
       }
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+      if (b === "up" || b === "down" || b === "left" || b === "right") {
         e.preventDefault();
         toggleSel();
-      } else if (["Enter", "KeyZ", "Space"].includes(e.code)) {
+      } else if (b === "A") {
         e.preventDefault();
         choose(sel);
-      } else if (["KeyX", "Escape"].includes(e.code)) {
+      } else if (b === "B" || e.key === "Escape") {
         e.preventDefault();
         choose("no");
       }
