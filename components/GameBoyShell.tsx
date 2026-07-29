@@ -106,6 +106,9 @@ export default function GameBoyShell({
     return () => window.removeEventListener('keydown', onKey)
   }, [overlayKind, closeOverlay])
 
+  // Spec: overlays close on layout change (rotation would strand a stale overlay).
+  useEffect(() => { closeOverlay() }, [layout, closeOverlay])
+
   const press = (b: Btn) => (e: React.PointerEvent) => {
     e.preventDefault()
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* noop */ }

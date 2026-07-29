@@ -20,8 +20,8 @@ export default function SystemOverlay({
   kind, mobile, onClose,
 }: { kind: 'social' | 'help'; mobile: boolean; onClose: () => void }) {
   const keys: [string, string][] = mobile
-    ? [['D-PAD', 'Walk (hold)'], ['A', 'Interact / Confirm'], ['B', 'Run (hold) / Back']]
-    : [['ARROWS', 'Walk (hold)'], ['Z', 'Interact / Confirm'], ['X', 'Run (hold) / Back']]
+    ? [['D-PAD', 'Walk (hold)'], ['A', 'Interact / Confirm'], ['B', 'Back / Cancel']]
+    : [['ARROWS', 'Walk (hold)'], ['Z', 'Interact / Confirm'], ['X', 'Back / Cancel']]
   return (
     <div
       onClick={onClose}

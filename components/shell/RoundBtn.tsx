@@ -19,6 +19,7 @@ export default function RoundBtn({
       onPointerDown={(e) => { e.preventDefault(); setPressed(true); onPress(label) }}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
       style={{
         width: size, height: size, borderRadius: '50%',
         background: pink ? PINK_FACE : RUBBER_FACE,
