@@ -24,8 +24,15 @@ const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 
 function ScreenModule({ children, overlay, stripHeight = 26, framePad = '0', lcdRadius = 0, style = {} }: {
   children: ReactNode; overlay: ReactNode; stripHeight?: number; framePad?: string; lcdRadius?: number; style?: React.CSSProperties
 }) {
+  // Compute padding with bottom zeroed: convert shorthand to full form
+  const computePadding = (pad: string) => {
+    const parts = pad.split(' ')
+    if (parts.length === 1) return `${parts[0]} ${parts[0]} 0`
+    return `${parts[0]} ${parts[1]} 0`
+  }
+  const padding = computePadding(framePad)
   return (
-    <div style={{ background: STRIP_BLACK, display: 'flex', flexDirection: 'column', padding: framePad, paddingBottom: 0, ...style }}>
+    <div style={{ background: STRIP_BLACK, display: 'flex', flexDirection: 'column', padding, ...style }}>
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
         {children}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
@@ -148,7 +155,7 @@ export default function GameBoyShell({
     return (
       <div className="w-screen flex flex-col items-center justify-center" style={{ ...rootStyle, height: '100dvh', gap: 6 }}>
         <div style={{
-          background: STRIP_BLACK, borderRadius: 10, padding: frame, paddingBottom: 0,
+          background: STRIP_BLACK, borderRadius: 10, padding: `${frame}px ${frame}px 0`,
           boxShadow: '0 10px 26px rgba(0,0,0,0.35)',
         }}>
           <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
