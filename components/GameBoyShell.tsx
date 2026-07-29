@@ -142,11 +142,52 @@ export default function GameBoyShell({
     )
   }
 
-  // ── LANDSCAPE (Task 6 replaces this stub)
+  // ── LANDSCAPE: LCD centre with strip below; controls ride high on flat pink
+  // flanks, each flank's utility stack beneath its cluster.
   if (layout === 'landscape') {
+    const dpadSize = Math.max(96, Math.min(0.20 * vh, 0.115 * vw))
+    const absSize = Math.max(56, Math.min(0.13 * vh, 0.075 * vw))
+    // Flank must contain the clamped D-pad / A-B cluster — on small viewports
+    // the clamp floors win over 13vw, so the flank grows to avoid clipping.
+    const flankW = Math.max(0.13 * vw, dpadSize + 12, absSize * 2.1 + 12)
     return (
       <div style={{ ...rootStyle, position: 'relative', height: '100dvh' }}>
-        <ScreenModule overlay={overlay} stripHeight={22} framePad="0 14px" style={{ position: 'absolute', left: '15%', right: '15%', top: 0, bottom: 0 }}>{screen}</ScreenModule>
+        <div style={{ position: 'absolute', left: flankW, right: flankW, top: 0, bottom: 0 }}>
+          <ScreenModule overlay={overlay} stripHeight={22} framePad="0 14px" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+        </div>
+        {/* Left flank: D-pad high, SOCIALS + speaker below it */}
+        <div style={{
+          position: 'absolute', left: 0, width: flankW, top: 0, bottom: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          paddingTop: 'max(6vh, env(safe-area-inset-top))', paddingLeft: 'env(safe-area-inset-left)',
+          paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
+        }}>
+          <div style={{ flexBasis: '18%' }} />
+          <DPad size={dpadSize} hold={hold} />
+          <div style={{ flex: 1 }} />
+          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
+          <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+            <SpeakerIcon size={18} muted={muted} />
+          </FlatIconBtn>
+        </div>
+        {/* Right flank: A/B high, INVENTORY + ? below */}
+        <div style={{
+          position: 'absolute', right: 0, width: flankW, top: 0, bottom: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          paddingTop: 'max(6vh, env(safe-area-inset-top))', paddingRight: 'env(safe-area-inset-right)',
+          paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
+        }}>
+          <div style={{ flexBasis: '18%' }} />
+          <div style={{ position: 'relative', width: absSize * 2.1, height: absSize * 1.8, touchAction: 'none' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={absSize} /></div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={absSize} /></div>
+          </div>
+          <div style={{ flex: 1 }} />
+          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
+          <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+            <QuestionGlyph size={17} />
+          </FlatIconBtn>
+        </div>
       </div>
     )
   }
