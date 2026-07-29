@@ -133,11 +133,48 @@ export default function GameBoyShell({
     WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none',
   }
 
-  // ── DESKTOP (Task 7 replaces this stub with the framed 16:9 layout)
+  // ── DESKTOP: 16:9 LCD wrapped by the black strip on all four sides,
+  // wordmark in the bottom band, utility row below the frame on flat pink.
   if (layout === 'desktop') {
+    const stripH = 28
+    const frame = 16
+    const railH = 56
+    // Largest 16:9 screen that fits beside slim margins and the utility rail.
+    const margin = 0.025 * Math.min(vw, vh)
+    const maxW = vw - 2 * margin - 2 * frame
+    const maxH = vh - 2 * margin - railH - stripH - frame
+    const lcdW = Math.min(maxW, maxH * (16 / 9))
+    const lcdH = lcdW * (9 / 16)
     return (
-      <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh' }}>
-        <ScreenModule overlay={overlay} stripHeight={26} framePad="14px" style={{ flex: 1 }}>{screen}</ScreenModule>
+      <div className="w-screen flex flex-col items-center justify-center" style={{ ...rootStyle, height: '100dvh', gap: 6 }}>
+        <div style={{
+          background: STRIP_BLACK, borderRadius: 10, padding: frame, paddingBottom: 0,
+          boxShadow: '0 10px 26px rgba(0,0,0,0.35)',
+        }}>
+          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+            {screen}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
+            {overlay}
+          </div>
+          <div style={{ height: stripH, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className={pressStart.className} style={{
+              fontSize: Math.round(stripH * 0.34), color: WORDMARK_PINK, letterSpacing: 5,
+              textShadow: '0 0 6px rgba(255,138,199,0.35)',
+            }}>
+              SCR!PTS
+            </span>
+          </div>
+        </div>
+        <div style={{ height: railH, display: 'flex', alignItems: 'center', gap: 26 }}>
+          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} labelBeside onPress={() => onUtility('social')} />
+          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} labelBeside onPress={() => onUtility('inventory')} />
+          <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+            <SpeakerIcon size={19} muted={muted} />
+          </FlatIconBtn>
+          <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+            <QuestionGlyph size={18} />
+          </FlatIconBtn>
+        </div>
       </div>
     )
   }

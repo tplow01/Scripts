@@ -1,0 +1,31 @@
+export default [
+  {
+    ignores: ['.next/**', 'node_modules/**', 'dist/**', 'build/**'],
+    languageOptions: {
+      ecmaVersion: 2024,
+      sourceType: 'module',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        global: 'readonly',
+        Buffer: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        fetch: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearTimeout: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        KeyboardEvent: 'readonly',
+        React: 'readonly',
+        JSX: 'readonly',
+      },
+    },
+    rules: {},
+  },
+];
