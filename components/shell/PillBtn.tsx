@@ -1,7 +1,7 @@
 'use client'
 
 import { Press_Start_2P } from 'next/font/google'
-import type { Btn } from './DPad'
+import type { Btn } from '@/lib/controls'
 
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 

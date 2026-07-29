@@ -2,7 +2,8 @@
 
 import { Press_Start_2P } from 'next/font/google'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import DPad, { type Btn } from './shell/DPad'
+import type { Btn } from '@/lib/controls'
+import DPad from './shell/DPad'
 import RoundBtn from './shell/RoundBtn'
 import PillBtn from './shell/PillBtn'
 import ConsoleUtilityStrip from './shell/ConsoleUtilityStrip'
