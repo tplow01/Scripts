@@ -18,10 +18,10 @@ const SOCIALS = [
  */
 export default function SystemOverlay({
   kind, mobile, onClose,
-}: { kind: 'social' | 'keys'; mobile: boolean; onClose: () => void }) {
+}: { kind: 'social' | 'help'; mobile: boolean; onClose: () => void }) {
   const keys: [string, string][] = mobile
-    ? [['D-PAD', 'Move'], ['A', 'Interact'], ['B', 'Back'], ['START', 'Start']]
-    : [['ARROWS', 'Move'], ['Z', 'Interact'], ['X', 'Back'], ['ENTER', 'Start']]
+    ? [['D-PAD', 'Walk (hold)'], ['A', 'Interact / Confirm'], ['B', 'Run (hold) / Back']]
+    : [['ARROWS', 'Walk (hold)'], ['Z', 'Interact / Confirm'], ['X', 'Run (hold) / Back']]
   return (
     <div
       onClick={onClose}
@@ -40,7 +40,7 @@ export default function SystemOverlay({
         }}
       >
         <span className={pressStart.className} style={{ fontSize: 7, color: '#FF8AC7', letterSpacing: 1 }}>
-          {kind === 'social' ? 'SOCIALS' : 'CONTROLS'}
+          {kind === 'social' ? 'SOCIALS' : 'HOW TO PLAY'}
         </span>
         {kind === 'social'
           ? SOCIALS.map((s) => (
