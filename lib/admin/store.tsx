@@ -1,0 +1,118 @@
+'use client'
+
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { CYBER_LOVE_PRODUCTS } from '@/lib/products'
+import type { Product } from '@/types/product'
+import { MOCK_ORDERS } from './mockOrders'
+import type { AdminOrder, OrderStatus } from './types'
+
+export interface AdminState {
+  products: Product[]
+  orders: AdminOrder[]
+}
+
+const STORAGE_KEY = 'scripts-admin-v1'
+
+/** Shared physical-product fields inherited by drawer-created products (mirrors the catalog's SHARED block). */
+export const NEW_PRODUCT_DEFAULTS = {
+  fabric: '100% Cotton',
+  fabricWeight: '260 g/m²',
+  fit: 'Cropped and boxy fit.',
+  modelNote: 'Model is 6\'2", 168lbs in size Medium.',
+  careInstructions: [
+    'Machine wash at 30°C (gentle cycle)',
+    'Do not bleach',
+    'Tumble dry low',
+    'Iron at low temperature, avoid ironing on print',
+    'Do not dry clean',
+  ],
+} as const
+
+// ── Pure state transitions (unit-tested; the provider is a thin shell over these).
+
+export function seedState(): AdminState {
+  return { products: [...CYBER_LOVE_PRODUCTS], orders: [...MOCK_ORDERS] }
+}
+
+export function addProduct(s: AdminState, p: Product): AdminState {
+  return { ...s, products: [p, ...s.products] }
+}
+
+export function updateProduct(s: AdminState, p: Product): AdminState {
+  return { ...s, products: s.products.map((x) => (x.id === p.id ? p : x)) }
+}
+
+export function deleteProduct(s: AdminState, id: string): AdminState {
+  return { ...s, products: s.products.filter((x) => x.id !== id) }
+}
+
+/** available ↔ pre-order; a sold-out product is rescued back to available. */
+export function toggleProductStatus(s: AdminState, id: string): AdminState {
+  return {
+    ...s,
+    products: s.products.map((x) =>
+      x.id === id ? { ...x, status: x.status === 'available' ? 'pre-order' : 'available' } : x),
+  }
+}
+
+export function setOrderStatus(s: AdminState, orderId: string, status: OrderStatus): AdminState {
+  return { ...s, orders: s.orders.map((o) => (o.id === orderId ? { ...o, status } : o)) }
+}
+
+/** Rehydrate from localStorage; any malformed payload falls back to null (caller seeds). */
+export function parseStoredState(raw: string | null): AdminState | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw) as AdminState
+    if (!Array.isArray(parsed.products) || !Array.isArray(parsed.orders)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+// ── React context.
+
+interface AdminApi {
+  state: AdminState
+  add: (p: Product) => void
+  update: (p: Product) => void
+  remove: (id: string) => void
+  toggleStatus: (id: string) => void
+  setOrder: (orderId: string, status: OrderStatus) => void
+}
+
+const AdminContext = createContext<AdminApi | null>(null)
+
+export function AdminProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AdminState>(seedState)
+
+  // Rehydrate after mount (localStorage is client-only; seeds render on the server pass).
+  useEffect(() => {
+    const stored = parseStoredState(localStorage.getItem(STORAGE_KEY))
+    if (stored) setState(stored)
+  }, [])
+
+  // Persist on every change. Object-URL images won't survive reload — pages render a placeholder then.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch { /* storage full/blocked: demo continues in memory */ }
+  }, [state])
+
+  const add = useCallback((p: Product) => setState((s) => addProduct(s, p)), [])
+  const update = useCallback((p: Product) => setState((s) => updateProduct(s, p)), [])
+  const remove = useCallback((id: string) => setState((s) => deleteProduct(s, id)), [])
+  const toggleStatus = useCallback((id: string) => setState((s) => toggleProductStatus(s, id)), [])
+  const setOrder = useCallback((orderId: string, status: OrderStatus) => setState((s) => setOrderStatus(s, orderId, status)), [])
+
+  return (
+    <AdminContext.Provider value={{ state, add, update, remove, toggleStatus, setOrder }}>
+      {children}
+    </AdminContext.Provider>
+  )
+}
+
+export function useAdmin(): AdminApi {
+  const ctx = useContext(AdminContext)
+  if (!ctx) throw new Error('useAdmin must be used inside <AdminProvider>')
+  return ctx
+}
