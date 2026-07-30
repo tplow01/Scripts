@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { CYBER_LOVE_PRODUCTS } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { MOCK_ORDERS } from './mockOrders'
@@ -65,7 +65,14 @@ export function parseStoredState(raw: string | null): AdminState | null {
   try {
     const parsed = JSON.parse(raw) as AdminState
     if (!Array.isArray(parsed.products) || !Array.isArray(parsed.orders)) return null
-    return parsed
+    return {
+      ...parsed,
+      products: parsed.products.map((p) => ({
+        ...p,
+        image: typeof p.image === 'string' && p.image.startsWith('blob:') ? null : p.image,
+        backImage: typeof p.backImage === 'string' && p.backImage.startsWith('blob:') ? null : p.backImage,
+      })),
+    }
   } catch {
     return null
   }
@@ -86,6 +93,9 @@ const AdminContext = createContext<AdminApi | null>(null)
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AdminState>(seedState)
+  // True once the persist effect has run at least once. The very first render/commit uses
+  // seed state — persisting it before rehydration lands would clobber whatever was stored.
+  const persistedOnce = useRef(false)
 
   // Rehydrate after mount (localStorage is client-only; seeds render on the server pass).
   useEffect(() => {
@@ -95,6 +105,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Persist on every change. Object-URL images won't survive reload — pages render a placeholder then.
   useEffect(() => {
+    if (!persistedOnce.current) {
+      persistedOnce.current = true
+      return
+    }
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch { /* storage full/blocked: demo continues in memory */ }
   }, [state])
 

@@ -47,7 +47,7 @@ describe('admin store actions', () => {
     const target = base.orders[0].id
     const next = setOrderStatus(base, target, 'delivered')
     expect(next.orders.find((o) => o.id === target)?.status).toBe('delivered')
-    expect(next.orders.filter((o) => o.status === base.orders[1].status).length).toBeGreaterThan(0)
+    expect(next.orders.filter((o) => o.id !== target)).toEqual(base.orders.filter((o) => o.id !== target))
   })
 
   it('parseStoredState returns null on corrupt/absent payloads', () => {
@@ -56,5 +56,15 @@ describe('admin store actions', () => {
     expect(parseStoredState('{"products": "nope"}')).toBeNull()
     const good = JSON.stringify(seedState())
     expect(parseStoredState(good)?.orders.length).toBeGreaterThan(0)
+  })
+
+  it('parseStoredState nulls out stale blob: object URLs and keeps normal paths', () => {
+    const payload = JSON.stringify({
+      products: [sample({ image: 'blob:http://localhost/abc', backImage: '/products/test-back.png' })],
+      orders: [],
+    })
+    const result = parseStoredState(payload)
+    expect(result?.products[0].image).toBeNull()
+    expect(result?.products[0].backImage).toBe('/products/test-back.png')
   })
 })
