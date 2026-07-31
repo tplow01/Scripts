@@ -51,10 +51,10 @@ export default function OverviewPage() {
       </h1>
 
       <div className="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="Total Revenue" value={`$${revenue.toLocaleString()}`} icon={<DollarSign size={20} />} delta={revenueDelta} />
-        <StatCard label="Total Orders" value={String(state.orders.length)} icon={<ShoppingBag size={20} />} delta={ordersDelta} />
-        <StatCard label="Avg Order Value" value={`$${aov}`} icon={<Package size={20} />} delta={aovDelta} />
-        <StatCard label="Visitors · 14d" value={visitors.toLocaleString()} icon={<Users size={20} />} delta={visitorsDelta} />
+        <StatCard label="Total Revenue" value={`$${revenue.toLocaleString()}`} icon={<DollarSign size={20} />} delta={revenueDelta} href={adminPath('metrics/revenue')} />
+        <StatCard label="Total Orders" value={String(state.orders.length)} icon={<ShoppingBag size={20} />} delta={ordersDelta} href={adminPath('metrics/orders')} />
+        <StatCard label="Avg Order Value" value={`$${aov}`} icon={<Package size={20} />} delta={aovDelta} href={adminPath('metrics/aov')} />
+        <StatCard label="Visitors · 14d" value={visitors.toLocaleString()} icon={<Users size={20} />} delta={visitorsDelta} href={adminPath('metrics/visitors')} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
