@@ -33,6 +33,7 @@ export default function ProductDrawer({ product, onClose }: { product: Product |
   const [description, setDescription] = useState(product?.description ?? '')
   const [image, setImage] = useState<string | null>(product?.image ?? null)
   const [backImage, setBackImage] = useState<string | null>(product?.backImage ?? null)
+  const [galleryImages, setGalleryImages] = useState<string[]>(product?.galleryImages ?? [])
   const [errors, setErrors] = useState<{ name?: string; price?: string }>({})
 
   // Escape closes the drawer.
@@ -72,6 +73,7 @@ export default function ProductDrawer({ product, onClose }: { product: Product |
       description: description.trim(),
       image,
       backImage,
+      galleryImages,
     }
     if (product) update(built)
     else add(built)
@@ -159,6 +161,30 @@ export default function ProductDrawer({ product, onClose }: { product: Product |
           <div className="grid grid-cols-2 gap-3">
             <ImageDrop label="Front Image" value={image} onChange={setImage} />
             <ImageDrop label="Back Image" value={backImage} onChange={setBackImage} />
+          </div>
+          <div>
+            <span className={labelCls}>More images ({galleryImages.length}/6)</span>
+            <div className="grid grid-cols-3 gap-2">
+              {galleryImages.map((url, i) => (
+                <ImageDrop
+                  key={`${url}-${i}`}
+                  compact
+                  label={`Gallery image ${i + 1}`}
+                  value={url}
+                  onChange={(next) =>
+                    setGalleryImages((prev) =>
+                      next === null ? prev.filter((_, j) => j !== i) : prev.map((u, j) => (j === i ? next : u)))}
+                />
+              ))}
+              {galleryImages.length < 6 && (
+                <ImageDrop
+                  compact
+                  label="Add gallery image"
+                  value={null}
+                  onChange={(next) => { if (next) setGalleryImages((prev) => [...prev, next]) }}
+                />
+              )}
+            </div>
           </div>
           <div className="pt-2 flex gap-3">
             <button type="submit" className="flex-1 rounded-lg bg-pink text-ink font-bold text-[13px] py-2.5 hover:bg-pink-deep transition-colors">
