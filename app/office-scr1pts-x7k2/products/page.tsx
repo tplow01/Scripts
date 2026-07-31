@@ -31,7 +31,7 @@ export default function ProductsPage() {
           <thead>
             <tr className="text-[11px] uppercase tracking-[0.14em] text-grey border-b border-grey/25">
               <th className="px-5 py-3 font-medium">Product</th>
-              <th className="px-5 py-3 font-medium">Price</th>
+              <th className="px-5 py-3 font-medium text-right">Price</th>
               <th className="px-5 py-3 font-medium">Collection</th>
               <th className="px-5 py-3 font-medium">Status</th>
               <th className="px-5 py-3 font-medium text-right">Actions</th>
@@ -56,7 +56,7 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 </td>
-                <td className="px-5 py-3 text-paper/80">${p.price}</td>
+                <td className="px-5 py-3 text-paper/80 text-right tabular-nums">${p.price}</td>
                 <td className="px-5 py-3 text-grey">{p.collection}</td>
                 <td className="px-5 py-3">
                   <button
@@ -96,6 +96,9 @@ export default function ProductsPage() {
                 </td>
               </tr>
             ))}
+            {state.products.length === 0 && (
+              <tr><td colSpan={5} className="px-5 py-8 text-center text-grey">No products yet — add your first drop</td></tr>
+            )}
           </tbody>
         </table>
       </div>
