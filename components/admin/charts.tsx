@@ -42,7 +42,7 @@ function Readout({ count, hover, setHover, height, rows }: {
             key={i}
             className="flex-1 h-full"
             onMouseEnter={() => setHover(i)}
-            onPointerDown={() => setHover(hover === i ? null : i)}
+            onPointerDown={(e) => { if (e.pointerType !== 'mouse') setHover(hover === i ? null : i) }}
           />
         ))}
       </div>
@@ -54,7 +54,7 @@ function Readout({ count, hover, setHover, height, rows }: {
           <>
             <div className="absolute top-0 bottom-0 w-px bg-paper/25 pointer-events-none" style={{ left: `${centre}%` }} />
             <div
-              className="absolute -top-1 -translate-y-full pointer-events-none rounded-lg border border-grey/30 bg-[#0f0f0f] px-2.5 py-1.5 shadow-lg"
+              className="absolute -top-1 pointer-events-none rounded-lg border border-grey/30 bg-[#0f0f0f] px-2.5 py-1.5 shadow-lg"
               style={{ left: `${centre}%`, transform: `translate(${translate}, -100%)` }}
             >
               <p className="text-[8px] uppercase tracking-[0.08em] text-grey whitespace-nowrap">{label}</p>
