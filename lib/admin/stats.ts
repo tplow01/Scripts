@@ -1,6 +1,6 @@
 import type { AdminOrder, OrderStatus } from './types'
 
-// ── Stats (pure; consumed by the Overview).
+// ── Stats (pure; consumed by the Overview and the metric drill-down pages).
 
 function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T00:00:00Z`)

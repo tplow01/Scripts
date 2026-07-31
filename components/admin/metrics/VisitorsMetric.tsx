@@ -16,7 +16,6 @@ export default function VisitorsMetric() {
   const visitors = traffic.reduce((s, d) => s + d.visitors, 0)
   const prevVisitors = trafficPrevWindow(TRAFFIC_30D, range).reduce((s, d) => s + d.visitors, 0)
   const rangedOrders = ordersInRange(state.orders, range)
-  const totalViews = TOP_PAGES.reduce((s, p) => s + p.views, 0)
   const rangeShare = TRAFFIC_30D.reduce((s, d) => s + d.visitors, 0) > 0
     ? visitors / TRAFFIC_30D.reduce((s, d) => s + d.visitors, 0)
     : 0

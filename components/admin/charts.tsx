@@ -26,12 +26,13 @@ function Ticks({ ticks }: { ticks: string[] }) {
  * Hover/tap readout: invisible per-index hit columns + a tooltip and guide line.
  * `rows` = the readout lines for index i. Clamped so the tooltip never leaves the chart box.
  */
-function Readout({ count, hover, setHover, height, rows }: {
+function Readout({ count, hover, setHover, height, rows, pointAligned }: {
   count: number
   hover: number | null
   setHover: (i: number | null) => void
   height: number
   rows: (i: number) => { label: string; lines: string[] }
+  pointAligned?: boolean
 }) {
   if (count === 0) return null
   return (
@@ -48,7 +49,9 @@ function Readout({ count, hover, setHover, height, rows }: {
       </div>
       {hover !== null && (() => {
         const { label, lines } = rows(hover)
-        const centre = ((hover + 0.5) / count) * 100
+        const centre = pointAligned
+          ? (count === 1 ? 50 : (hover / (count - 1)) * 100)
+          : ((hover + 0.5) / count) * 100
         const translate = centre < 15 ? '0%' : centre > 85 ? '-100%' : '-50%'
         return (
           <>
@@ -94,6 +97,7 @@ export function LineChart({ series, height = 56, ticks, labels }: {
           <Readout
             count={count} hover={hover} setHover={setHover} height={height}
             rows={(i) => ({ label: labels[i], lines: series.map((s) => `${s.label}: ${s.points[i]?.toLocaleString() ?? '—'}`) })}
+            pointAligned={true}
           />
         )}
       </div>
