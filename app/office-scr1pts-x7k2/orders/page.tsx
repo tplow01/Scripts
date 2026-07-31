@@ -7,7 +7,7 @@ import { useAdmin } from '@/lib/admin/store'
 import type { AdminOrder } from '@/lib/admin/types'
 
 export default function OrdersPage() {
-  const { state } = useAdmin()
+  const { state, setOrder } = useAdmin()
   const [open, setOpen] = useState<AdminOrder | null>(null)
 
   return (
@@ -17,7 +17,7 @@ export default function OrdersPage() {
       </h1>
 
       <div className="mt-6">
-        <OrdersList orders={state.orders} onOpen={setOpen} title={`All orders · ${state.orders.length}`} />
+        <OrdersList orders={state.orders} onOpen={setOpen} title={`All orders · ${state.orders.length}`} onStatusChange={setOrder} />
       </div>
 
       {open && <OrderDrawer order={open} onClose={() => setOpen(null)} />}

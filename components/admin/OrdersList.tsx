@@ -1,7 +1,7 @@
 'use client'
 
 import { itemCountLabel } from '@/lib/admin/stats'
-import type { AdminOrder } from '@/lib/admin/types'
+import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 import Card from './Card'
 import StatusBadge from './StatusBadge'
 
@@ -10,11 +10,12 @@ import StatusBadge from './StatusBadge'
  * the tap target), the table at `sm`+. Card is `!p-0 overflow-hidden` so the
  * table's horizontal scroll happens INSIDE the rounded border.
  */
-export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'Orders in range' }: {
+export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'Orders in range', onStatusChange }: {
   orders: AdminOrder[]
   onOpen: (o: AdminOrder) => void
   sortBy?: 'date' | 'total'
   title?: string
+  onStatusChange?: (orderId: string, status: OrderStatus) => void
 }) {
   const sorted = [...orders].sort((a, b) =>
     sortBy === 'total' ? b.total - a.total : b.date.localeCompare(a.date))
@@ -53,7 +54,7 @@ export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'O
 
       {/* Tablet and desktop: table */}
       <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-left text-[13px] min-w-[560px]">
+        <table className="w-full text-left text-[13px] min-w-[680px]">
           <thead>
             <tr className="text-[11px] uppercase tracking-[0.14em] text-grey border-b border-grey/25">
               <th className="px-5 py-3 font-medium">Order</th>
@@ -77,7 +78,26 @@ export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'O
                 <td className="px-5 py-3 text-paper/80 max-w-[200px] truncate">{o.customer.name}</td>
                 <td className="px-5 py-3 text-grey tabular-nums whitespace-nowrap">{o.date}</td>
                 <td className="px-5 py-3 text-paper/80 text-right tabular-nums whitespace-nowrap">${o.total}</td>
-                <td className="px-5 py-3"><StatusBadge status={o.status} /></td>
+                <td className="px-5 py-3">
+                  {onStatusChange ? (
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={o.status} />
+                      <select
+                        aria-label={`Change status for ${o.id}`}
+                        value={o.status}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => onStatusChange(o.id, e.target.value as OrderStatus)}
+                        className="rounded-lg border border-grey/30 bg-[#101010] px-2 py-1.5 text-[12px] text-paper focus:outline-none focus:border-pink"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="delivered">Delivered</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <StatusBadge status={o.status} />
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
