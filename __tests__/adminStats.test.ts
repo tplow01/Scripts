@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  aovPoints, avgItemsPerOrder, conversionRate, countByDay, delta, minMaxOrders,
+  aovPoints, avgItemsPerOrder, conversionRate, countByDay, delta, itemCountLabel, minMaxOrders,
   newestOrderDate, ordersInRange, paymentSplit, prevWindowDelta, revenueByProduct,
   trafficInRange, trafficPrevWindow,
 } from '@/lib/admin/stats'
@@ -89,5 +89,25 @@ describe('deltas and traffic', () => {
   })
   it('delta still lives here after the move', () => {
     expect(delta(110, 100).dir).toBe('up')
+  })
+})
+
+describe('itemCountLabel', () => {
+  const order = (qtys: number[]) => ({
+    ...orders[0],
+    lineItems: qtys.map((qty, i) => ({ productName: `p${i}`, size: 'M', qty, unitPrice: 44 })),
+  })
+
+  it('singularises exactly one item', () => {
+    expect(itemCountLabel(order([1]))).toBe('1 item')
+  })
+  it('pluralises multiple units on one line', () => {
+    expect(itemCountLabel(order([3]))).toBe('3 items')
+  })
+  it('sums quantities across line items', () => {
+    expect(itemCountLabel(order([1, 2]))).toBe('3 items')
+  })
+  it('handles an order with no line items', () => {
+    expect(itemCountLabel(order([]))).toBe('0 items')
   })
 })

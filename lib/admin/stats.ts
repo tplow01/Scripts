@@ -151,3 +151,9 @@ export function conversionRate(ordersCount: number, visitors: number): string {
   if (visitors <= 0) return '—'
   return `${((ordersCount / visitors) * 100).toFixed(1)}%`
 }
+
+/** "1 item" / "3 items" — total units across an order's line items. */
+export function itemCountLabel(order: AdminOrder): string {
+  const n = order.lineItems.reduce((s, li) => s + li.qty, 0)
+  return `${n} item${n === 1 ? '' : 's'}`
+}
