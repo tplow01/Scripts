@@ -88,7 +88,7 @@ export default function ProductDrawer({ product, onClose }: { product: Product |
           <h2 className="text-[22px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
             {product ? 'Edit Product' : 'Add Product'}
           </h2>
-          <button type="button" aria-label="Close" onClick={onClose} className="text-grey hover:text-paper"><X size={18} /></button>
+          <button type="button" aria-label="Close" onClick={onClose} className="-mr-2 p-2.5 text-grey hover:text-paper"><X size={18} /></button>
         </div>
 
         <form onSubmit={submit} className="p-5 space-y-4">

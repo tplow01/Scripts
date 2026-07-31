@@ -56,7 +56,7 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
               {pay.label}
             </span>
           </div>
-          <button type="button" aria-label="Close" onClick={onClose} className="text-grey hover:text-paper"><X size={18} /></button>
+          <button type="button" aria-label="Close" onClick={onClose} className="-mr-2 p-2.5 text-grey hover:text-paper"><X size={18} /></button>
         </div>
 
         <div className="p-5 space-y-4">

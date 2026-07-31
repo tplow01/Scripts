@@ -46,11 +46,11 @@ export default function OverviewPage() {
 
   return (
     <div>
-      <h1 className="text-[40px] leading-none uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
+      <h1 className="text-[32px] sm:text-[40px] leading-none uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
         Overview
       </h1>
 
-      <div className="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard label="Total Revenue" value={`$${revenue.toLocaleString()}`} icon={<DollarSign size={20} />} delta={revenueDelta} href={adminPath('metrics/revenue')} />
         <StatCard label="Total Orders" value={String(state.orders.length)} icon={<ShoppingBag size={20} />} delta={ordersDelta} href={adminPath('metrics/orders')} />
         <StatCard label="Avg Order Value" value={`$${aov}`} icon={<Package size={20} />} delta={aovDelta} href={adminPath('metrics/aov')} />
@@ -71,7 +71,7 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card title="Top products">
           {top.length === 0 && <p className="text-[12px] text-grey">No sales yet</p>}
           <ul className="space-y-2.5">
