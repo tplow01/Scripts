@@ -5,7 +5,7 @@ import Card from '@/components/admin/Card'
 import { LineChart } from '@/components/admin/charts'
 import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import OrderDrawer from '@/components/admin/OrderDrawer'
-import OrdersTable from '@/components/admin/OrdersTable'
+import OrdersList from '@/components/admin/OrdersList'
 import { useAdmin } from '@/lib/admin/store'
 import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { aovPoints, minMaxOrders, ordersInRange, prevWindowDelta } from '@/lib/admin/stats'
@@ -62,7 +62,7 @@ export default function AovMetric() {
         <ExtremeCard title="Highest order" order={max} onOpen={setOpen} />
         <ExtremeCard title="Lowest order" order={min} onOpen={setOpen} />
       </div>
-      <OrdersTable orders={ranged} onOpen={setOpen} sortBy="total" />
+      <OrdersList orders={ranged} onOpen={setOpen} sortBy="total" />
       {open && <OrderDrawer order={open} onClose={() => setOpen(null)} />}
     </MetricShell>
   )

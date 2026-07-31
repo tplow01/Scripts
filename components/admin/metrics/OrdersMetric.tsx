@@ -5,7 +5,7 @@ import Card from '@/components/admin/Card'
 import { BarChart } from '@/components/admin/charts'
 import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import OrderDrawer from '@/components/admin/OrderDrawer'
-import OrdersTable from '@/components/admin/OrdersTable'
+import OrdersList from '@/components/admin/OrdersList'
 import StatusBadge from '@/components/admin/StatusBadge'
 import { useAdmin } from '@/lib/admin/store'
 import { useIsPhone } from '@/lib/admin/useIsPhone'
@@ -60,7 +60,7 @@ export default function OrdersMetric() {
           <p className="mt-1.5 text-[11px] text-grey">across {ranged.length} order{ranged.length === 1 ? '' : 's'}</p>
         </Card>
       </div>
-      <OrdersTable orders={ranged} onOpen={setOpen} />
+      <OrdersList orders={ranged} onOpen={setOpen} />
       {open && <OrderDrawer order={open} onClose={() => setOpen(null)} />}
     </MetricShell>
   )

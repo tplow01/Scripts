@@ -5,7 +5,7 @@ import Card from '@/components/admin/Card'
 import { BarChart } from '@/components/admin/charts'
 import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import OrderDrawer from '@/components/admin/OrderDrawer'
-import OrdersTable from '@/components/admin/OrdersTable'
+import OrdersList from '@/components/admin/OrdersList'
 import { useAdmin } from '@/lib/admin/store'
 import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { ordersInRange, paymentSplit, prevWindowDelta, revenueByDay, revenueByProduct } from '@/lib/admin/stats'
@@ -70,7 +70,7 @@ export default function RevenueMetric() {
           </div>
         </Card>
       </div>
-      <OrdersTable orders={ranged} onOpen={setOpen} />
+      <OrdersList orders={ranged} onOpen={setOpen} />
       {open && <OrderDrawer order={open} onClose={() => setOpen(null)} />}
     </MetricShell>
   )
