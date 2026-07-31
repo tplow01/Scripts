@@ -30,7 +30,7 @@ inventory, purchase orders, and everything in sub-project B (orders).
 | --- | --- | --- |
 | Variant depth | Full options → variants | Per-size stock and SKU-on-order both depend on it |
 | Option axes | Size × Colorway | Matches how the catalog actually varies |
-| Existing catalog | Merge 12 products into 4 | One PDP per emotion, swatch picker; old slugs redirect |
+| Existing catalog | Merge 12 products into 6 | One PDP per emotion, swatch picker; all 12 old slugs redirect |
 | Editor shell | Full-page routes | A variant grid does not fit a slide-over |
 | Persistence | localStorage, real-shaped types | Store is a portfolio piece today, a real store later |
 
@@ -117,9 +117,13 @@ option values onto line items at purchase time. This extends the existing
 ### Migration
 
 `migrateV2toV3(state)` in `lib/admin/store.tsx` upgrades stored payloads and the
-seed catalog: group the 12 Cyber-Love products by emotion, fold colorways into
-an option axis, expand size arrays into variants with generated SKUs and seeded
-stock. Must be idempotent — running it on an already-migrated payload is a
+seed catalog: group products by collection + emotion, fold colorways into an
+option axis, expand size arrays into variants with generated SKUs and seeded
+stock. The real catalog is 8 Cyber-Love products (ANXIETY / LOVE / CONFUSION /
+RAGE x White, Army Green) and 4 Basement products (MJ White; ARE YOU OKAY x
+White, Army Green, Black), so 12 products fold into 6: four Cyber-Love with a
+2-value Colorway axis, MJ with a 1-value axis, and ARE YOU OKAY with a 3-value
+axis. Must be idempotent — running it on an already-migrated payload is a
 no-op. Slots into the existing `parseStoredState` fallback path, so a malformed
 or unmigratable payload still reseeds cleanly.
 
@@ -217,8 +221,8 @@ Phone keeps the existing card layout, with stock on the second line.
   unless backorder is on; low stock shows "Only 3 left".
 - `lib/cart.tsx` — stored items become `{variantId, quantity}`. Existing
   localStorage carts are migrated on read, not dropped.
-- `app/products/[slug]/page.tsx` — resolve the 4 merged slugs plus a redirect
-  map for the 12 old ones.
+- `app/products/[slug]/page.tsx` — resolve the 6 merged slugs plus a redirect
+  map for all 12 old ones.
 - `components/ProductCard.tsx`, `components/BasementProductCard.tsx` — link to
   merged slugs, optional colorway dot row.
 - `lib/admin/mockTraffic.ts` — paths updated to merged slugs.
@@ -231,7 +235,7 @@ before the UI exists, matching how `store.tsx` is already structured.
 - `reconcileVariants(options, existingVariants)` — all six cases in the table above
 - `generateSku(root, optionValues, overrides)` — abbreviation, collision
   suffixes, override preservation
-- `migrateV2toV3(state)` — the 12→4 catalog fold; idempotent on re-run
+- `migrateV2toV3(state)` — the 12→6 catalog fold; idempotent on re-run
 - `deriveAvailability(product)` — active / pre-order / sold-out from stock and
   backorder policy
 - `migrateCart(stored)` — old `{id, size}` entries resolving to variant ids
