@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addProduct, applyOrderStatus, customerStats, delta, deleteProduct,
-  parseStoredState, revenueByDay, seedState, setOrderStatus, statusCounts,
-  toggleProductStatus, topProducts, updateProduct,
+  addProduct, applyOrderStatus, deleteProduct,
+  parseStoredState, seedState, setOrderStatus,
+  toggleProductStatus, updateProduct,
 } from '@/lib/admin/store'
 import type { AdminState } from '@/lib/admin/store'
+import { customerStats, delta, revenueByDay, statusCounts, topProducts } from '@/lib/admin/stats'
 import type { Product } from '@/types/product'
 
 const NOW = '2026-07-31T12:00:00Z'

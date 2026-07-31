@@ -9,17 +9,19 @@ import OrderDrawer from '@/components/admin/OrderDrawer'
 import StatCard from '@/components/admin/StatCard'
 import StatusBadge from '@/components/admin/StatusBadge'
 import { adminPath } from '@/lib/admin/config'
-import { TRAFFIC_14D, TRAFFIC_PREV_TOTALS } from '@/lib/admin/mockTraffic'
-import { customerStats, delta, revenueByDay, statusCounts, topProducts, useAdmin } from '@/lib/admin/store'
+import { TRAFFIC_30D } from '@/lib/admin/mockTraffic'
+import { useAdmin } from '@/lib/admin/store'
+import { customerStats, delta, revenueByDay, statusCounts, topProducts, trafficInRange, trafficPrevWindow } from '@/lib/admin/stats'
 import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 
 export default function OverviewPage() {
   const { state } = useAdmin()
   const [open, setOpen] = useState<AdminOrder | null>(null)
 
+  const traffic14 = trafficInRange(TRAFFIC_30D, 14)
   const revenue = state.orders.reduce((sum, o) => sum + o.total, 0)
   const aov = state.orders.length > 0 ? Math.round(revenue / state.orders.length) : 0
-  const visitors = TRAFFIC_14D.reduce((s, d) => s + d.visitors, 0)
+  const visitors = traffic14.reduce((s, d) => s + d.visitors, 0)
 
   // Current vs previous 14-day windows, derived from order dates.
   const byDay = revenueByDay(state.orders, 28)
@@ -31,7 +33,7 @@ export default function OverviewPage() {
   const ordersDelta = delta(count(curWindow), count(prevWindow))
   const prevOrders = count(prevWindow)
   const aovDelta = delta(aov, prevOrders > 0 ? Math.round(sum(prevWindow) / prevOrders) : 0)
-  const visitorsDelta = delta(visitors, TRAFFIC_PREV_TOTALS.visitors)
+  const visitorsDelta = delta(visitors, trafficPrevWindow(TRAFFIC_30D, 14).reduce((s, d) => s + d.visitors, 0))
 
   const counts = statusCounts(state.orders)
   const customers = customerStats(state.orders)
@@ -58,8 +60,8 @@ export default function OverviewPage() {
       <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card title="Traffic — last 14 days">
           <LineChart series={[
-            { color: '#6F6F73', points: TRAFFIC_14D.map((d) => d.pageViews), label: 'Page views' },
-            { color: '#FF8AC7', points: TRAFFIC_14D.map((d) => d.visitors), label: 'Visitors' },
+            { color: '#6F6F73', points: traffic14.map((d) => d.pageViews), label: 'Page views' },
+            { color: '#FF8AC7', points: traffic14.map((d) => d.visitors), label: 'Visitors' },
           ]} />
         </Card>
         <Card title="Revenue — last 14 days">
