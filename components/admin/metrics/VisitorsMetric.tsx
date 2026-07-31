@@ -6,11 +6,13 @@ import { LineChart } from '@/components/admin/charts'
 import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import { DEVICE_SPLIT, TOP_PAGES, TRAFFIC_30D } from '@/lib/admin/mockTraffic'
 import { useAdmin } from '@/lib/admin/store'
+import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { conversionRate, delta, ordersInRange, trafficInRange, trafficPrevWindow } from '@/lib/admin/stats'
 
 export default function VisitorsMetric() {
   const { state } = useAdmin()
   const [range, setRange] = useState<MetricRange>(14)
+  const chartH = useIsPhone() ? 140 : 200
 
   const traffic = trafficInRange(TRAFFIC_30D, range)
   const visitors = traffic.reduce((s, d) => s + d.visitors, 0)
@@ -23,6 +25,7 @@ export default function VisitorsMetric() {
   return (
     <MetricShell
       title="Visitors"
+      headlineLabel={`Visitors · last ${range} days`}
       headline={visitors.toLocaleString()}
       delta={delta(visitors, prevVisitors)}
       range={range}
@@ -30,7 +33,7 @@ export default function VisitorsMetric() {
       chart={
         <Card title={`Traffic — last ${range} days`}>
           <LineChart
-            height={200}
+            height={chartH}
             series={[
               { color: '#6F6F73', points: traffic.map((d) => d.pageViews), label: 'Page views' },
               { color: '#FF8AC7', points: traffic.map((d) => d.visitors), label: 'Visitors' },
@@ -41,7 +44,7 @@ export default function VisitorsMetric() {
         </Card>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card title="Conversion rate">
           <p className="text-[36px] leading-none uppercase tracking-[0.04em] tabular-nums" style={{ fontFamily: 'var(--font-bebas)' }}>
             {conversionRate(rangedOrders.length, visitors)}

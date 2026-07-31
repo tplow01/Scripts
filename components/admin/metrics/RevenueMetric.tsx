@@ -7,6 +7,7 @@ import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import OrderDrawer from '@/components/admin/OrderDrawer'
 import OrdersTable from '@/components/admin/OrdersTable'
 import { useAdmin } from '@/lib/admin/store'
+import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { ordersInRange, paymentSplit, prevWindowDelta, revenueByDay, revenueByProduct } from '@/lib/admin/stats'
 import type { AdminOrder } from '@/lib/admin/types'
 
@@ -14,6 +15,7 @@ export default function RevenueMetric() {
   const { state } = useAdmin()
   const [range, setRange] = useState<MetricRange>(14)
   const [open, setOpen] = useState<AdminOrder | null>(null)
+  const chartH = useIsPhone() ? 140 : 200
 
   const ranged = ordersInRange(state.orders, range)
   const total = ranged.reduce((s, o) => s + o.total, 0)
@@ -25,6 +27,7 @@ export default function RevenueMetric() {
   return (
     <MetricShell
       title="Revenue"
+      headlineLabel={`Total revenue · last ${range} days`}
       headline={`$${total.toLocaleString()}`}
       delta={prevWindowDelta(state.orders, range, (o) => o.reduce((s, x) => s + x.total, 0))}
       range={range}
@@ -32,12 +35,12 @@ export default function RevenueMetric() {
       chart={
         <Card title={`Revenue — last ${range} days`}>
           {byDay.length > 0
-            ? <BarChart height={200} values={byDay.map((d) => ({ label: d.date, value: d.total }))} ticks={byDay.map((d) => d.date.slice(5))} />
+            ? <BarChart height={chartH} values={byDay.map((d) => ({ label: d.date, value: d.total }))} ticks={byDay.map((d) => d.date.slice(5))} />
             : <p className="text-[12px] text-grey py-8 text-center">No orders in this range</p>}
         </Card>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card title="Revenue by product">
           {byProduct.length === 0 && <p className="text-[12px] text-grey">No sales in this range</p>}
           <ul className="space-y-2.5">

@@ -7,6 +7,7 @@ import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
 import OrderDrawer from '@/components/admin/OrderDrawer'
 import OrdersTable from '@/components/admin/OrdersTable'
 import { useAdmin } from '@/lib/admin/store'
+import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { aovPoints, minMaxOrders, ordersInRange, prevWindowDelta } from '@/lib/admin/stats'
 import type { AdminOrder } from '@/lib/admin/types'
 
@@ -35,6 +36,7 @@ export default function AovMetric() {
   const { state } = useAdmin()
   const [range, setRange] = useState<MetricRange>(14)
   const [open, setOpen] = useState<AdminOrder | null>(null)
+  const chartH = useIsPhone() ? 140 : 200
 
   const ranged = ordersInRange(state.orders, range)
   const points = aovPoints(state.orders, range) // only days with orders — never dips to zero
@@ -43,6 +45,7 @@ export default function AovMetric() {
   return (
     <MetricShell
       title="Avg Order Value"
+      headlineLabel={`Average order value · last ${range} days`}
       headline={`$${aovOf(ranged)}`}
       delta={prevWindowDelta(state.orders, range, aovOf)}
       range={range}
@@ -50,12 +53,12 @@ export default function AovMetric() {
       chart={
         <Card title={`AOV by day — last ${range} days (order days only)`}>
           {points.length > 0
-            ? <LineChart height={200} series={[{ color: '#FF8AC7', points: points.map((p) => p.aov), label: 'AOV $' }]} labels={points.map((p) => p.date)} ticks={points.map((p) => p.date.slice(5))} />
+            ? <LineChart height={chartH} series={[{ color: '#FF8AC7', points: points.map((p) => p.aov), label: 'AOV $' }]} labels={points.map((p) => p.date)} ticks={points.map((p) => p.date.slice(5))} />
             : <p className="text-[12px] text-grey py-8 text-center">No orders in this range</p>}
         </Card>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <ExtremeCard title="Highest order" order={max} onOpen={setOpen} />
         <ExtremeCard title="Lowest order" order={min} onOpen={setOpen} />
       </div>

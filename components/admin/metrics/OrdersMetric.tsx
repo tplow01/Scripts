@@ -8,6 +8,7 @@ import OrderDrawer from '@/components/admin/OrderDrawer'
 import OrdersTable from '@/components/admin/OrdersTable'
 import StatusBadge from '@/components/admin/StatusBadge'
 import { useAdmin } from '@/lib/admin/store'
+import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { avgItemsPerOrder, countByDay, ordersInRange, prevWindowDelta, statusCounts } from '@/lib/admin/stats'
 import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 
@@ -15,6 +16,7 @@ export default function OrdersMetric() {
   const { state } = useAdmin()
   const [range, setRange] = useState<MetricRange>(14)
   const [open, setOpen] = useState<AdminOrder | null>(null)
+  const chartH = useIsPhone() ? 140 : 200
 
   const ranged = ordersInRange(state.orders, range)
   const byDay = countByDay(state.orders, range)
@@ -24,6 +26,7 @@ export default function OrdersMetric() {
   return (
     <MetricShell
       title="Orders"
+      headlineLabel={`Orders placed · last ${range} days`}
       headline={String(ranged.length)}
       delta={prevWindowDelta(state.orders, range, (o) => o.length)}
       range={range}
@@ -31,12 +34,12 @@ export default function OrdersMetric() {
       chart={
         <Card title={`Orders per day — last ${range} days`}>
           {byDay.length > 0
-            ? <BarChart height={200} values={byDay.map((d) => ({ label: d.date, value: d.count }))} ticks={byDay.map((d) => d.date.slice(5))} />
+            ? <BarChart height={chartH} values={byDay.map((d) => ({ label: d.date, value: d.count }))} ticks={byDay.map((d) => d.date.slice(5))} />
             : <p className="text-[12px] text-grey py-8 text-center">No orders in this range</p>}
         </Card>
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card title="Status mix">
           <ul className="space-y-2.5">
             {statusOrder.map((s) => (
