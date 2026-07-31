@@ -10,6 +10,8 @@ export interface Product {
   status: ProductStatus
   image: string | null
   backImage: string | null
+  /** Optional extra shots for the product page (admin-managed, max 6). */
+  galleryImages?: string[]
   slug: string
   description: string
   /** Estimated dispatch window shown in cart/checkout (pre-order drop). */
