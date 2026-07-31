@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ADMIN_SLUG, adminPath } from '@/lib/admin/config'
 import { MOCK_ORDERS } from '@/lib/admin/mockOrders'
-import { TRAFFIC_14D, TRAFFIC_PREV_TOTALS } from '@/lib/admin/mockTraffic'
+import { DEVICE_SPLIT, TOP_PAGES, TRAFFIC_30D } from '@/lib/admin/mockTraffic'
 
 describe('admin config', () => {
   it('slug and adminPath unchanged', () => {
@@ -34,14 +34,23 @@ describe('rich mock orders', () => {
 })
 
 describe('traffic seed', () => {
-  it('has exactly 14 consecutive days ending 2026-07-30 with plausible ratios', () => {
-    expect(TRAFFIC_14D).toHaveLength(14)
-    expect(TRAFFIC_14D[13].date).toBe('2026-07-30')
-    for (const d of TRAFFIC_14D) {
+  it('has exactly 30 consecutive days ending 2026-07-30 with plausible ratios', () => {
+    expect(TRAFFIC_30D).toHaveLength(30)
+    expect(TRAFFIC_30D[0].date).toBe('2026-07-01')
+    expect(TRAFFIC_30D[29].date).toBe('2026-07-30')
+    for (let i = 1; i < 30; i++) {
+      const prev = new Date(`${TRAFFIC_30D[i - 1].date}T00:00:00Z`)
+      prev.setUTCDate(prev.getUTCDate() + 1)
+      expect(TRAFFIC_30D[i].date).toBe(prev.toISOString().slice(0, 10))
+    }
+    for (const d of TRAFFIC_30D) {
       expect(d.visitors).toBeGreaterThan(0)
       expect(d.pageViews).toBeGreaterThan(d.visitors)
     }
-    expect(TRAFFIC_PREV_TOTALS.visitors).toBeGreaterThan(0)
-    expect(TRAFFIC_PREV_TOTALS.pageViews).toBeGreaterThan(0)
+  })
+  it('top pages: 5 entries, descending views; device split sums to 100', () => {
+    expect(TOP_PAGES).toHaveLength(5)
+    for (let i = 1; i < TOP_PAGES.length; i++) expect(TOP_PAGES[i].views).toBeLessThanOrEqual(TOP_PAGES[i - 1].views)
+    expect(DEVICE_SPLIT.mobile + DEVICE_SPLIT.desktop).toBe(100)
   })
 })
