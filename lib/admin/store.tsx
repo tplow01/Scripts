@@ -119,8 +119,9 @@ export function customerStats(orders: AdminOrder[]): { total: number; newThisWee
 /** Never NaN/∞: previous ≤ 0 → flat; |change| < 0.5% → flat. */
 export function delta(current: number, previous: number): { pct: number; dir: 'up' | 'down' | 'flat' } {
   if (previous <= 0) return { pct: 0, dir: 'flat' }
-  const pct = Math.round(((current - previous) / previous) * 100)
-  if (Math.abs(((current - previous) / previous) * 100) < 0.5) return { pct: 0, dir: 'flat' }
+  const raw = ((current - previous) / previous) * 100
+  const pct = Math.round(raw)
+  if (Math.abs(raw) < 0.5) return { pct: 0, dir: 'flat' }
   return { pct: Math.abs(pct), dir: current > previous ? 'up' : 'down' }
 }
 

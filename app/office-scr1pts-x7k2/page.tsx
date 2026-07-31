@@ -102,7 +102,9 @@ export default function OverviewPage() {
         </Card>
         <Card title="Customers">
           <p className="text-[36px] leading-none uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>{customers.total}</p>
-          <p className="mt-1.5 text-[11px]" style={{ color: '#5FA36B' }}>+{customers.newThisWeek} this week</p>
+          {customers.newThisWeek === 0
+            ? <p className="mt-1.5 text-[11px]" style={{ color: '#6F6F73' }}>— none this week</p>
+            : <p className="mt-1.5 text-[11px]" style={{ color: '#5FA36B' }}>+{customers.newThisWeek} this week</p>}
         </Card>
       </div>
 

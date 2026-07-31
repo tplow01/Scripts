@@ -11,7 +11,7 @@ export default function StatusBadge({ status }: { status: OrderStatus }) {
   const t = TONES[status]
   return (
     <span
-      className="inline-flex items-center rounded-full px-[10px] py-[3px] text-[11px] font-semibold tracking-[0.08em] uppercase"
+      className="inline-flex items-center justify-center min-w-[86px] rounded-full px-[10px] py-[3px] text-[11px] font-semibold tracking-[0.08em] uppercase"
       style={{ background: t.bg, color: t.text }}
     >
       {t.label}
