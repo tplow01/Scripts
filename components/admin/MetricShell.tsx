@@ -14,6 +14,7 @@ const RANGES: MetricRange[] = [7, 14, 30]
  * Shared SaaS drill-down frame. The sticky bar IS the page title — back control,
  * metric name and range pills stay reachable however far the page is scrolled.
  * Negative margins let it bleed to the viewport edges inside the padded <main>.
+ * Keep the negative margins in sync with the padding in `app/office-scr1pts-x7k2/layout.tsx`.
  */
 export default function MetricShell({ title, headlineLabel, headline, delta, range, onRange, chart, children }: {
   title: string

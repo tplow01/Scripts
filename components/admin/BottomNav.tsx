@@ -28,6 +28,7 @@ export default function BottomNav() {
           <Link
             key={href}
             href={href}
+            aria-current={active ? 'page' : undefined}
             className={`flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] uppercase tracking-[0.08em] transition-colors ${
               active ? 'text-pink' : 'text-grey hover:text-paper'
             }`}

@@ -83,7 +83,7 @@ export default function ProductDrawer({ product, onClose }: { product: Product |
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-[#141414] border-l border-grey/25 overflow-y-auto">
+      <div className="absolute right-0 top-0 h-full w-full max-w-none sm:max-w-md bg-[#141414] border-l border-grey/25 overflow-y-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-grey/25 sticky top-0 bg-[#141414]">
           <h2 className="text-[22px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
             {product ? 'Edit Product' : 'Add Product'}

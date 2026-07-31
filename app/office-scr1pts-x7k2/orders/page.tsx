@@ -17,7 +17,7 @@ export default function OrdersPage() {
       </h1>
 
       <div className="mt-6">
-        <OrdersList orders={state.orders} onOpen={setOpen} title={`All orders · ${state.orders.length}`} onStatusChange={setOrder} />
+        <OrdersList orders={state.orders} onOpen={setOpen} title={`All orders · ${state.orders.length}`} onStatusChange={setOrder} emptyLabel="No orders yet" />
       </div>
 
       {open && <OrderDrawer order={open} onClose={() => setOpen(null)} />}

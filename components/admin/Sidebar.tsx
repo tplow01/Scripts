@@ -31,6 +31,7 @@ export default function Sidebar() {
               key={href}
               href={href}
               title={label}
+              aria-current={active ? 'page' : undefined}
               className={`flex items-center justify-center lg:justify-start gap-3 px-4 lg:px-5 py-2.5 text-[13px] transition-colors ${
                 active ? 'text-pink bg-pink/10 border-r-2 border-pink' : 'text-paper/70 hover:text-paper'
               }`}

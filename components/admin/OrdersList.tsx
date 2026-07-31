@@ -10,12 +10,13 @@ import StatusBadge from './StatusBadge'
  * the tap target), the table at `sm`+. Card is `!p-0 overflow-hidden` so the
  * table's horizontal scroll happens INSIDE the rounded border.
  */
-export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'Orders in range', onStatusChange }: {
+export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'Orders in range', onStatusChange, emptyLabel = 'No orders in this range' }: {
   orders: AdminOrder[]
   onOpen: (o: AdminOrder) => void
   sortBy?: 'date' | 'total'
   title?: string
   onStatusChange?: (orderId: string, status: OrderStatus) => void
+  emptyLabel?: string
 }) {
   const sorted = [...orders].sort((a, b) =>
     sortBy === 'total' ? b.total - a.total : b.date.localeCompare(a.date))
@@ -29,7 +30,7 @@ export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'O
 
       {/* Phone: stacked cards */}
       <div className="sm:hidden p-3 space-y-2">
-        {empty && <p className="py-6 text-center text-[13px] text-grey">No orders in this range</p>}
+        {empty && <p className="py-6 text-center text-[13px] text-grey">{emptyLabel}</p>}
         {sorted.map((o) => (
           <button
             key={o.id}
@@ -66,7 +67,7 @@ export default function OrdersList({ orders, onOpen, sortBy = 'date', title = 'O
           </thead>
           <tbody>
             {empty && (
-              <tr><td colSpan={5} className="px-5 py-8 text-center text-grey">No orders in this range</td></tr>
+              <tr><td colSpan={5} className="px-5 py-8 text-center text-grey">{emptyLabel}</td></tr>
             )}
             {sorted.map((o) => (
               <tr

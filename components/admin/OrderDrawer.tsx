@@ -48,7 +48,7 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
   return (
     <div className="fixed inset-0 z-50">
       <div className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${shown ? 'opacity-100' : 'opacity-0'}`} onClick={onClose} />
-      <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-[#141414] border-l border-grey/25 overflow-y-auto transition-all duration-200 ease-out ${shown ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`}>
+      <div className={`absolute right-0 top-0 h-full w-full max-w-none sm:max-w-md bg-[#141414] border-l border-grey/25 overflow-y-auto transition-all duration-200 ease-out ${shown ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`}>
         <div className="flex items-center justify-between px-5 py-4 border-b border-grey/25 sticky top-0 bg-[#141414] z-10">
           <div className="flex items-center gap-3">
             <h2 className="text-[22px] uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>{live.id}</h2>
