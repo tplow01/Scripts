@@ -11,7 +11,7 @@ export interface AdminState {
   orders: AdminOrder[]
 }
 
-const STORAGE_KEY = 'scripts-admin-v1'
+const STORAGE_KEY = 'scripts-admin-v2'
 
 /** Shared physical-product fields inherited by drawer-created products (mirrors the catalog's SHARED block). */
 export const NEW_PRODUCT_DEFAULTS = {
@@ -55,8 +55,73 @@ export function toggleProductStatus(s: AdminState, id: string): AdminState {
   }
 }
 
-export function setOrderStatus(s: AdminState, orderId: string, status: OrderStatus): AdminState {
-  return { ...s, orders: s.orders.map((o) => (o.id === orderId ? { ...o, status } : o)) }
+/** Timeline stamping: forward transitions stamp now (keeping earlier stamps); backward transitions clear later stamps. */
+export function applyOrderStatus(order: AdminOrder, status: OrderStatus, nowIso: string): AdminOrder {
+  const t = { ...order.timeline }
+  if (status === 'pending') { t.shippedAt = null; t.deliveredAt = null }
+  else if (status === 'shipped') { t.shippedAt = t.shippedAt ?? nowIso; t.deliveredAt = null }
+  else { t.shippedAt = t.shippedAt ?? nowIso; t.deliveredAt = t.deliveredAt ?? nowIso }
+  return { ...order, status, timeline: t }
+}
+
+export function setOrderStatus(s: AdminState, orderId: string, status: OrderStatus, nowIso: string): AdminState {
+  return { ...s, orders: s.orders.map((o) => (o.id === orderId ? applyOrderStatus(o, status, nowIso) : o)) }
+}
+
+// ── Stats (pure; consumed by the Overview).
+
+function addDays(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Consecutive days ending at the newest order date; empty input → empty array. */
+export function revenueByDay(orders: AdminOrder[], days = 14): { date: string; total: number }[] {
+  if (orders.length === 0) return []
+  const newest = orders.reduce((m, o) => (o.date > m ? o.date : m), orders[0].date)
+  const out: { date: string; total: number }[] = []
+  for (let i = days - 1; i >= 0; i--) {
+    const date = addDays(newest, -i)
+    out.push({ date, total: orders.filter((o) => o.date === date).reduce((s, o) => s + o.total, 0) })
+  }
+  return out
+}
+
+export function topProducts(orders: AdminOrder[], limit = 3): { productName: string; units: number }[] {
+  const units = new Map<string, number>()
+  for (const o of orders) for (const li of o.lineItems) units.set(li.productName, (units.get(li.productName) ?? 0) + li.qty)
+  return [...units.entries()].map(([productName, n]) => ({ productName, units: n }))
+    .sort((a, b) => b.units - a.units).slice(0, limit)
+}
+
+export function statusCounts(orders: AdminOrder[]): Record<OrderStatus, number> {
+  const c: Record<OrderStatus, number> = { pending: 0, shipped: 0, delivered: 0 }
+  for (const o of orders) c[o.status]++
+  return c
+}
+
+/** Unique customers by email; "new" = first order within 7 days of the newest order date. */
+export function customerStats(orders: AdminOrder[]): { total: number; newThisWeek: number } {
+  if (orders.length === 0) return { total: 0, newThisWeek: 0 }
+  const first = new Map<string, string>()
+  for (const o of orders) {
+    const prev = first.get(o.customer.email)
+    if (!prev || o.date < prev) first.set(o.customer.email, o.date)
+  }
+  const newest = orders.reduce((m, o) => (o.date > m ? o.date : m), orders[0].date)
+  const cutoff = addDays(newest, -7)
+  let newThisWeek = 0
+  for (const d of first.values()) if (d >= cutoff) newThisWeek++
+  return { total: first.size, newThisWeek }
+}
+
+/** Never NaN/∞: previous ≤ 0 → flat; |change| < 0.5% → flat. */
+export function delta(current: number, previous: number): { pct: number; dir: 'up' | 'down' | 'flat' } {
+  if (previous <= 0) return { pct: 0, dir: 'flat' }
+  const pct = Math.round(((current - previous) / previous) * 100)
+  if (Math.abs(((current - previous) / previous) * 100) < 0.5) return { pct: 0, dir: 'flat' }
+  return { pct: Math.abs(pct), dir: current > previous ? 'up' : 'down' }
 }
 
 /** Rehydrate from localStorage; any malformed payload falls back to null (caller seeds). */
@@ -65,14 +130,15 @@ export function parseStoredState(raw: string | null): AdminState | null {
   try {
     const parsed = JSON.parse(raw) as AdminState
     if (!Array.isArray(parsed.products) || !Array.isArray(parsed.orders)) return null
-    return {
-      ...parsed,
-      products: parsed.products.map((p) => ({
-        ...p,
-        image: typeof p.image === 'string' && p.image.startsWith('blob:') ? null : p.image,
-        backImage: typeof p.backImage === 'string' && p.backImage.startsWith('blob:') ? null : p.backImage,
-      })),
-    }
+    if (parsed.orders.some((o) => !Array.isArray((o as AdminOrder).lineItems))) return null
+    const clean = (u: string | null | undefined) => (typeof u === 'string' && u.startsWith('blob:') ? null : u ?? null)
+    parsed.products = parsed.products.map((p) => ({
+      ...p,
+      image: clean(p.image),
+      backImage: clean(p.backImage),
+      galleryImages: p.galleryImages?.map(clean).filter((u): u is string => u !== null),
+    }))
+    return parsed
   } catch {
     return null
   }
@@ -116,7 +182,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const update = useCallback((p: Product) => setState((s) => updateProduct(s, p)), [])
   const remove = useCallback((id: string) => setState((s) => deleteProduct(s, id)), [])
   const toggleStatus = useCallback((id: string) => setState((s) => toggleProductStatus(s, id)), [])
-  const setOrder = useCallback((orderId: string, status: OrderStatus) => setState((s) => setOrderStatus(s, orderId, status)), [])
+  const setOrder = useCallback(
+    (orderId: string, status: OrderStatus) =>
+      setState((s) => setOrderStatus(s, orderId, status, new Date().toISOString())),
+    [])
 
   return (
     <AdminContext.Provider value={{ state, add, update, remove, toggleStatus, setOrder }}>
