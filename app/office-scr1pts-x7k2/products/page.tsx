@@ -245,9 +245,12 @@ export default function ProductsPage() {
                 <tr><td colSpan={7} className="px-5 py-8 text-center text-grey">No products match your filters</td></tr>
               )}
               {visible.map((p) => (
-                <tr key={p.id} className="border-b border-grey/15 last:border-b-0 hover:bg-white/[0.02]">
+                <tr key={p.id} className="relative border-b border-grey/15 last:border-b-0 hover:bg-white/[0.02]">
                   <td className="p-0">
-                    <Link href={adminPath(`products/${p.id}/edit`)} className="flex items-center gap-3 px-5 py-3">
+                    <Link
+                      href={adminPath(`products/${p.id}/edit`)}
+                      className="flex items-center gap-3 px-5 py-3 after:absolute after:inset-0"
+                    >
                       <Thumb product={p} />
                       <div className="min-w-0 max-w-[220px]">
                         <p className="text-paper/90 font-medium truncate">{p.name}</p>
@@ -256,23 +259,17 @@ export default function ProductsPage() {
                     </Link>
                   </td>
                   <td className="px-5 py-3"><StatusBadge status={p.publishedStatus} /></td>
-                  <td className="p-0">
-                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3">
-                      <InventoryCell product={p} />
-                    </Link>
-                  </td>
-                  <td className="p-0">
-                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3 text-grey max-w-[140px] truncate">
-                      {p.productType}
-                    </Link>
-                  </td>
-                  <td className="p-0">
-                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3 text-grey max-w-[140px] truncate">
-                      {p.vendor}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3"><PublishedToggle product={p} onToggle={() => togglePublished(p.id)} /></td>
                   <td className="px-5 py-3">
+                    <InventoryCell product={p} />
+                  </td>
+                  <td className="px-5 py-3 text-grey max-w-[140px] truncate">
+                    {p.productType}
+                  </td>
+                  <td className="px-5 py-3 text-grey max-w-[140px] truncate">
+                    {p.vendor}
+                  </td>
+                  <td className="relative z-10 px-5 py-3"><PublishedToggle product={p} onToggle={() => togglePublished(p.id)} /></td>
+                  <td className="relative z-10 px-5 py-3">
                     <div className="flex justify-end">
                       <DeleteControl
                         product={p}

@@ -174,6 +174,13 @@ describe('addOptionValue', () => {
     const p = withVariants()
     expect(addOptionValue(p, 0, 'S', DEFAULTS).variants).toHaveLength(2)
   })
+
+  it('rejects a case-variant duplicate, matching renameOptionValue', () => {
+    const p = withVariants()
+    const out = addOptionValue(p, 0, 's', DEFAULTS)
+    expect(out.options[0].values).toEqual(['S', 'M'])
+    expect(out.variants).toHaveLength(2)
+  })
 })
 
 describe('removeOptionValue', () => {

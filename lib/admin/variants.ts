@@ -102,7 +102,7 @@ const mapOption = (p: Product, i: number, fn: (o: ProductOption) => ProductOptio
 
 export function addOptionValue(p: Product, i: number, value: string, d: VariantDefaults): Product {
   const clean = value.trim()
-  if (!clean || p.options[i]?.values.includes(clean)) return p
+  if (!clean || p.options[i]?.values.some((v) => v.toLowerCase() === clean.toLowerCase())) return p
   return rebuild(p, mapOption(p, i, (o) => ({ ...o, values: [...o.values, clean] })), d)
 }
 
