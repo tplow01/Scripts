@@ -11,7 +11,7 @@
 
 **Status:** Canonical · Launch Version
 **Owner:** Heath (founder, SCR!PTS)
-**Last meaningful update:** 2026-06-25 (reconciled with locked UX decisions)
+**Last meaningful update:** 2026-08-01 (admin rebuilt around the Shopify-style product variant model)
 
 ---
 
@@ -234,6 +234,10 @@ Primary: **Vercel**. Alternative: Cloudflare Pages.
 ### Admin system
 Custom SCR!PTS dashboard at protected route **`/admin`**: add / edit / delete products, upload images, manage inventory, manage pricing, view orders, manage Basement products. **No developer needed for future product drops.**
 
+Products are modelled Shopify-style as **options → variants**: a product declares up to three options (e.g. Size, Colour), and every combination of option values generates a variant carrying its own SKU, stock count, and price/compare-at/cost. There is no hand-set "status" field on a product — **availability is derived** from the variants themselves (sellable stock present, or backorder allowed, falls through to sold-out). Editing options in the admin (add/remove/rename/reorder a value, add/remove an option) reconciles the variant list live, preserving stock and hand-edited SKUs on every surviving combination and seeding new ones at zero stock. The full product editor is a **dedicated full-page route** (`/admin/products/[id]/edit`), not a slide-over drawer — it holds the options editor, a variant table (desktop) / variant cards (mobile), and the product's other sections (media, pricing, organization, etc).
+
+The storefront catalog ships with **6 products**, each carrying a colour option; the product detail page shows a **colourway swatch picker** so shoppers pick a variant directly, with stock-aware size selection layered on top.
+
 ---
 
 ## Feasibility Report
@@ -297,3 +301,4 @@ Record meaningful changes to this playbook here so the project's direction has a
 - **2026-07-31** — **Admin v2 shipped.** Order detail drawer (customer contact/address, line items with thumbnails, totals, payment badge, status timeline with auto-stamping), product gallery images (front/back + up to 6), and Overview analytics (stat deltas, traffic + revenue SVG charts, top products, status and customer breakdowns) — still mock-data, localStorage v2 schema.
 - **2026-07-31** — **Admin metric drill-downs shipped.** Each Overview stat card opens a full SaaS-style detail page (/metrics/revenue·orders·aov·visitors): 7/14/30d range toggle, large charts with hover value readouts and day ticks, per-metric breakdowns (revenue by product, payment split, status mix, avg items, high/low orders, conversion rate, top pages, device split) and range-filtered drill-down tables. Stats logic extracted to lib/admin/stats.ts; traffic mock extended to 30 days.
 - **2026-07-31** — **Admin responsive UX pass.** Three breakpoints (phone <640 / tablet / desktop ≥1024): phone bottom nav replaces the sidebar, tables become stacked cards, and drill-downs gained a sticky header (back + metric + range pills) plus a dedicated headline stat card with a delta chip. Fixed tables bleeding past their card borders and values wrapping mid-token.
+- **2026-08-01** — **Admin rebuilt around a Shopify-style product variant model.** Products now declare options (e.g. Size, Colour) that expand into variants, each with its own SKU, stock, and pricing; the old hand-set product status field is gone — **availability is derived** from variant stock/backorder state. The product editor moved from a slide-over drawer to a **dedicated full-page route** with an options editor and a variant table/cards. The storefront catalog now ships **6 products**, and the product detail page gained a **colourway swatch picker** for choosing a variant directly. Products-list table rows were also consolidated to a single stretched-link click target per row (was four redundant links) for cleaner keyboard/screen-reader navigation.
