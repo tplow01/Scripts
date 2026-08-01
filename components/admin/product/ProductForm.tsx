@@ -6,14 +6,18 @@ import type React from 'react'
 import { adminPath } from '@/lib/admin/config'
 import { stableStringify } from '@/lib/admin/stableStringify'
 import { useAdmin } from '@/lib/admin/store'
+import { useIsPhone } from '@/lib/admin/useIsPhone'
 import type { Product } from '@/types/product'
 import InventorySection from './InventorySection'
 import MediaSection from './MediaSection'
+import OptionsEditor from './OptionsEditor'
 import PricingSection from './PricingSection'
 import SeoSection from './SeoSection'
 import ShippingSection from './ShippingSection'
 import SidebarSection from './SidebarSection'
 import TitleSection from './TitleSection'
+import VariantCards from './VariantCards'
+import VariantTable from './VariantTable'
 
 export interface SectionProps {
   product: Product
@@ -41,6 +45,7 @@ export default function ProductForm({ initial, mode }: { initial: Product; mode:
   const router = useRouter()
   const [product, setProduct] = useState<Product>(initial)
   const [errors, setErrors] = useState<{ name?: string }>({})
+  const isPhone = useIsPhone()
 
   const dirty = useMemo(
     () => stableStringify(product) !== stableStringify(initial),
@@ -92,7 +97,12 @@ export default function ProductForm({ initial, mode }: { initial: Product; mode:
           <MediaSection product={product} onChange={onChange} />
           <PricingSection product={product} onChange={onChange} />
           <InventorySection product={product} onChange={onChange} />
-          {/* VariantsSection mounts here in Task 11 */}
+          <Section title="Variants">
+            <OptionsEditor product={product} onChange={onChange} />
+            {isPhone
+              ? <VariantCards product={product} onChange={onChange} />
+              : <VariantTable product={product} onChange={onChange} />}
+          </Section>
           <ShippingSection product={product} onChange={onChange} />
           <SeoSection product={product} onChange={onChange} />
           {errors.name && <p className="text-[11px] text-pink-deep">{errors.name}</p>}
