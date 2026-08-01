@@ -3,9 +3,10 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
-import type { Product } from '@/types/product'
+import type { Product, Availability } from '@/types/product'
+import { deriveAvailability } from '@/lib/admin/variants'
 
-const STATUS_LABELS: Record<Product['status'], string> = {
+const STATUS_LABELS: Record<Availability, string> = {
   'pre-order': 'PRE-ORDER',
   'sold-out':  'SOLD OUT',
   'available': '',
@@ -17,6 +18,10 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const reduced = useReducedMotion()
+  const availability = deriveAvailability(product)
+  const image = product.media[0]?.url ?? null
+  const backImage = product.media[1]?.url ?? null
+  const price = product.variants[0]?.price ?? 0
 
   return (
     <Link href={`/products/${product.slug}`} className="group block w-full">
@@ -26,17 +31,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         whileHover={reduced ? {} : { scale: 1.02 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
-        {product.image && (
+        {image && (
           <Image
-            src={product.image}
+            src={image}
             alt={product.name}
             fill
             className="object-contain transition-opacity duration-300 group-hover:opacity-0"
           />
         )}
-        {product.backImage && (
+        {backImage && (
           <Image
-            src={product.backImage}
+            src={backImage}
             alt={`${product.name} — back`}
             fill
             className="absolute inset-0 object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
@@ -49,9 +54,9 @@ export default function ProductCard({ product }: ProductCardProps) {
         <span className="inline-flex items-center bg-[#0d0d0d] text-[#f7f7f5] text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]">
           {product.collection}
         </span>
-        {product.status !== 'available' && (
+        {availability !== 'available' && (
           <span className="inline-flex items-center bg-[#0d0d0d] text-[#f7f7f5] text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]">
-            {STATUS_LABELS[product.status]}
+            {STATUS_LABELS[availability]}
           </span>
         )}
       </div>
@@ -62,7 +67,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </p>
         <p className="text-[13px] font-bold text-[#0d0d0d] leading-snug mt-[4px]">
-          ${product.price}.00
+          ${price}.00
         </p>
       </div>
 

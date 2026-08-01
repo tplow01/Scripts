@@ -43,7 +43,7 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
   }, [onClose])
 
   const thumbFor = (productName: string): string | null =>
-    state.products.find((p) => p.name === productName)?.image ?? null
+    state.products.find((p) => p.name === productName)?.media[0]?.url ?? null
 
   return (
     <div className="fixed inset-0 z-50">

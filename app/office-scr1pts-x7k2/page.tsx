@@ -41,7 +41,8 @@ export default function OverviewPage() {
   const recent = [...state.orders].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)
   const revenue14 = revenueByDay(state.orders, 14)
 
-  const thumbFor = (name: string): string | null => state.products.find((p) => p.name === name)?.image ?? null
+  const thumbFor = (name: string): string | null =>
+    state.products.find((p) => p.name === name)?.media[0]?.url ?? null
   const statusOrder: OrderStatus[] = ['pending', 'shipped', 'delivered']
 
   return (
