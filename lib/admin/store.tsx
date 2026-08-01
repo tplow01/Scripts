@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { CYBER_LOVE_PRODUCTS } from '@/lib/products'
 import type { Product } from '@/types/product'
+import { reconcileVariants, type VariantDefaults } from './variants'
+import { isMigrated, migrateProducts, type LegacyProduct } from './migrate'
 import { MOCK_ORDERS } from './mockOrders'
 import type { AdminOrder, OrderStatus } from './types'
 
@@ -13,8 +15,14 @@ export interface AdminState {
 
 const STORAGE_KEY = 'scripts-admin-v2'
 
-/** Shared physical-product fields inherited by drawer-created products (mirrors the catalog's SHARED block). */
+/** Shared physical-product fields a brand-new product inherits. */
 export const NEW_PRODUCT_DEFAULTS = {
+  collection: '1-800-Cyber-Love',
+  productType: 'Tee',
+  vendor: 'SCR!PTS',
+  tags: [] as string[],
+  publishedStatus: 'draft' as const,
+  shipDate: '',
   fabric: '100% Cotton',
   fabricWeight: '260 g/m²',
   fit: 'Cropped and boxy fit.',
@@ -27,6 +35,25 @@ export const NEW_PRODUCT_DEFAULTS = {
     'Do not dry clean',
   ],
 } as const
+
+export const NEW_VARIANT_DEFAULTS: VariantDefaults = {
+  price: 44, compareAtPrice: null, cost: null, barcode: null,
+  trackInventory: true, allowBackorder: false, weightGrams: null,
+}
+
+/** A blank product with a Size axis already up, ready for the editor. */
+export function blankProduct(id: string): Product {
+  const options = [{ name: 'Size', values: ['S', 'M', 'L', 'XL'], position: 1 }]
+  const shell: Product = {
+    ...NEW_PRODUCT_DEFAULTS,
+    careInstructions: [...NEW_PRODUCT_DEFAULTS.careInstructions],
+    tags: [],
+    id, name: '', slug: '', emotion: '', description: '',
+    skuRoot: '', requiresShipping: true, seo: { title: '', description: '' },
+    options, variants: [], media: [],
+  }
+  return { ...shell, variants: reconcileVariants(id, '', options, [], NEW_VARIANT_DEFAULTS) }
+}
 
 // ── Pure state transitions (unit-tested; the provider is a thin shell over these).
 
@@ -46,12 +73,25 @@ export function deleteProduct(s: AdminState, id: string): AdminState {
   return { ...s, products: s.products.filter((x) => x.id !== id) }
 }
 
-/** available ↔ pre-order; a sold-out product is rescued back to available. */
-export function toggleProductStatus(s: AdminState, id: string): AdminState {
+/** Flip a product between draft and active from the list row. */
+export function togglePublished(s: AdminState, id: string): AdminState {
   return {
     ...s,
-    products: s.products.map((x) =>
-      x.id === id ? { ...x, status: x.status === 'available' ? 'pre-order' : 'available' } : x),
+    products: s.products.map((p) =>
+      p.id === id
+        ? { ...p, publishedStatus: p.publishedStatus === 'active' ? 'draft' : 'active' }
+        : p),
+  }
+}
+
+/** Set one variant's stock from an inline cell edit. */
+export function setVariantStock(s: AdminState, productId: string, variantId: string, stock: number): AdminState {
+  return {
+    ...s,
+    products: s.products.map((p) =>
+      p.id === productId
+        ? { ...p, variants: p.variants.map((v) => (v.id === variantId ? { ...v, stock: Math.max(0, stock) } : v)) }
+        : p),
   }
 }
 
@@ -75,12 +115,13 @@ export function parseStoredState(raw: string | null): AdminState | null {
     const parsed = JSON.parse(raw) as AdminState
     if (!Array.isArray(parsed.products) || !Array.isArray(parsed.orders)) return null
     if (parsed.orders.some((o) => !Array.isArray((o as AdminOrder).lineItems))) return null
-    const clean = (u: string | null | undefined) => (typeof u === 'string' && u.startsWith('blob:') ? null : u ?? null)
+    parsed.products = parsed.products.every(isMigrated)
+      ? parsed.products
+      : migrateProducts(parsed.products as unknown as LegacyProduct[])
     parsed.products = parsed.products.map((p) => ({
       ...p,
-      image: clean(p.image),
-      backImage: clean(p.backImage),
-      galleryImages: p.galleryImages?.map(clean).filter((u): u is string => u !== null),
+      media: (p.media ?? []).filter((m) => !m.url.startsWith('blob:')),
+      variants: (p.variants ?? []).map((v) => ({ ...v })),
     }))
     return parsed
   } catch {
@@ -95,7 +136,7 @@ interface AdminApi {
   add: (p: Product) => void
   update: (p: Product) => void
   remove: (id: string) => void
-  toggleStatus: (id: string) => void
+  togglePublished: (id: string) => void
   setOrder: (orderId: string, status: OrderStatus) => void
 }
 
@@ -125,14 +166,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const add = useCallback((p: Product) => setState((s) => addProduct(s, p)), [])
   const update = useCallback((p: Product) => setState((s) => updateProduct(s, p)), [])
   const remove = useCallback((id: string) => setState((s) => deleteProduct(s, id)), [])
-  const toggleStatus = useCallback((id: string) => setState((s) => toggleProductStatus(s, id)), [])
+  const togglePublishedCb = useCallback((id: string) => setState((s) => togglePublished(s, id)), [])
   const setOrder = useCallback(
     (orderId: string, status: OrderStatus) =>
       setState((s) => setOrderStatus(s, orderId, status, new Date().toISOString())),
     [])
 
   return (
-    <AdminContext.Provider value={{ state, add, update, remove, toggleStatus, setOrder }}>
+    <AdminContext.Provider value={{ state, add, update, remove, togglePublished: togglePublishedCb, setOrder }}>
       {children}
     </AdminContext.Provider>
   )

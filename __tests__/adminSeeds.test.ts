@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { ADMIN_SLUG, adminPath } from '@/lib/admin/config'
 import { MOCK_ORDERS } from '@/lib/admin/mockOrders'
 import { DEVICE_SPLIT, TOP_PAGES, TRAFFIC_30D } from '@/lib/admin/mockTraffic'
+import { ALL_PRODUCTS, BASEMENT_PRODUCTS, CYBER_LOVE_PRODUCTS, LEGACY_SLUG_REDIRECTS } from '@/lib/products'
+import { deriveAvailability, totalStock } from '@/lib/admin/variants'
 
 describe('admin config', () => {
   it('slug and adminPath unchanged', () => {
@@ -52,5 +54,47 @@ describe('traffic seed', () => {
     expect(TOP_PAGES).toHaveLength(5)
     for (let i = 1; i < TOP_PAGES.length; i++) expect(TOP_PAGES[i].views).toBeLessThanOrEqual(TOP_PAGES[i - 1].views)
     expect(DEVICE_SPLIT.mobile + DEVICE_SPLIT.desktop).toBe(100)
+  })
+})
+
+describe('migrated catalog', () => {
+  it('folds twelve legacy products into six', () => {
+    expect(CYBER_LOVE_PRODUCTS).toHaveLength(4)
+    expect(BASEMENT_PRODUCTS).toHaveLength(2)
+  })
+
+  it('gives every product options, variants and media', () => {
+    for (const p of ALL_PRODUCTS) {
+      expect(p.options.length).toBeGreaterThan(0)
+      expect(p.variants.length).toBeGreaterThan(0)
+      expect(p.media.length).toBeGreaterThan(0)
+    }
+  })
+
+  it('has unique slugs and globally unique variant skus', () => {
+    expect(new Set(ALL_PRODUCTS.map((p) => p.slug)).size).toBe(ALL_PRODUCTS.length)
+    const skus = ALL_PRODUCTS.flatMap((p) => p.variants.map((v) => v.sku))
+    expect(new Set(skus).size).toBe(skus.length)
+  })
+
+  it('redirects all twelve legacy slugs to a live product', () => {
+    const entries = Object.entries(LEGACY_SLUG_REDIRECTS)
+    expect(entries).toHaveLength(12)
+    for (const [, to] of entries) {
+      expect(ALL_PRODUCTS.some((p) => p.slug === to)).toBe(true)
+    }
+  })
+
+  it('ships stock, so nothing reads as sold out', () => {
+    for (const p of ALL_PRODUCTS) {
+      expect(totalStock(p)).toBeGreaterThan(0)
+      expect(deriveAvailability(p)).not.toBe('sold-out')
+    }
+  })
+
+  it('gives ARE YOU OKAY a three-value colorway axis', () => {
+    const p = BASEMENT_PRODUCTS.find((x) => x.emotion === 'ARE YOU OKAY')
+    expect(p?.options[1].values).toHaveLength(3)
+    expect(p?.variants).toHaveLength(12)
   })
 })

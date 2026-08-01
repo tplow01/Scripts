@@ -1,4 +1,6 @@
 import type { Product } from '@/types/product'
+import type { LegacyProduct } from '@/lib/admin/migrate'
+import { migrateProducts } from '@/lib/admin/migrate'
 
 const BACK_WHITE = '/products/cutout/back-white.png'
 const BACK_GREEN = '/products/cutout/back-green.png'
@@ -44,7 +46,7 @@ function description(emotion: string) {
   )
 }
 
-export const CYBER_LOVE_PRODUCTS: Product[] = [
+export const LEGACY_CYBER_LOVE: LegacyProduct[] = [
   {
     ...SHARED,
     id: '1',
@@ -135,7 +137,7 @@ export const CYBER_LOVE_PRODUCTS: Product[] = [
   },
 ]
 
-export const BASEMENT_PRODUCTS: Product[] = [
+export const LEGACY_BASEMENT: LegacyProduct[] = [
   {
     ...SHARED,
     id: 'b1',
@@ -185,3 +187,19 @@ export const BASEMENT_PRODUCTS: Product[] = [
     collection: 'Basement',
   },
 ]
+
+export const CYBER_LOVE_PRODUCTS: Product[] = migrateProducts(LEGACY_CYBER_LOVE)
+export const BASEMENT_PRODUCTS: Product[] = migrateProducts(LEGACY_BASEMENT)
+export const ALL_PRODUCTS: Product[] = [...CYBER_LOVE_PRODUCTS, ...BASEMENT_PRODUCTS]
+
+/** Every pre-merge slug → its merged destination. Drives the PDP redirects. */
+export const LEGACY_SLUG_REDIRECTS: Record<string, string> = Object.fromEntries(
+  [...LEGACY_CYBER_LOVE, ...LEGACY_BASEMENT].map((p) => [
+    p.slug,
+    p.emotion.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+  ]),
+)
+
+export function findProductBySlug(slug: string): Product | undefined {
+  return ALL_PRODUCTS.find((p) => p.slug === slug)
+}
