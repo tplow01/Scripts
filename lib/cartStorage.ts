@@ -23,6 +23,8 @@ export function buildLegacyIndex(products: Product[]): LegacyIndex {
     const sizeAxis = product.options.findIndex((o) => o.name === 'Size')
     if (sizeAxis < 0) continue
     for (const variant of product.variants) {
+      // '::' must never appear inside a product id or a size value — it is not an
+      // enforced invariant, just a data-shape assumption of the current catalog.
       const key = `${product.id}::${variant.optionValues[sizeAxis]}`
       if (!out.has(key)) out.set(key, variant.id)
     }

@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
 import type { CartItem } from '@/lib/cart'
+import { variantTitle } from '@/lib/admin/variants'
 
 const SHIPPING: number = 0 // free shipping for launch; Stripe will calculate tax at pay time
 
@@ -174,11 +175,11 @@ export default function CheckoutPage() {
           <div className="mt-[28px] w-full border border-[#ececec] rounded-[10px] p-[20px] text-left">
             <div className="flex flex-col divide-y divide-[#eee]">
               {order.items.map((it) => (
-                <div key={`${it.product.id}-${it.size}`} className="flex items-center justify-between gap-[12px] py-[12px] first:pt-0 last:pb-0">
+                <div key={it.variant.id} className="flex items-center justify-between gap-[12px] py-[12px] first:pt-0 last:pb-0">
                   <span className="text-[11px] font-extrabold uppercase tracking-[0.04em] leading-snug">
-                    {it.product.name} · {it.size} · ×{it.quantity}
+                    {it.product.name} · {variantTitle(it.variant.optionValues)} · ×{it.quantity}
                   </span>
-                  <span className="text-[12px] font-bold shrink-0">${(it.product.price * it.quantity).toFixed(2)}</span>
+                  <span className="text-[12px] font-bold shrink-0">${(it.variant.price * it.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -289,23 +290,29 @@ export default function CheckoutPage() {
           <h2 className="text-[18px] leading-none tracking-[0.04em] uppercase mb-[20px]" style={{ fontFamily: 'var(--font-bebas)' }}>Order summary</h2>
 
           <div className="flex flex-col divide-y divide-[#eee]">
-            {items.map((item) => (
-              <div key={`${item.product.id}-${item.size}`} className="flex gap-[14px] py-[16px] first:pt-0">
-                <div className="relative w-[60px] h-[60px] shrink-0 bg-[#f3f3f3] rounded overflow-hidden">
-                  {item.product.image && (
-                    <Image src={item.product.image} alt={item.product.name} fill className="object-contain" />
-                  )}
-                  <span className="absolute -top-[6px] -right-[6px] w-[18px] h-[18px] rounded-full bg-[#0d0d0d] text-white text-[9px] font-bold flex items-center justify-center">
-                    {item.quantity}
-                  </span>
+            {items.map((item) => {
+              const image =
+                item.product.media.find((m) => m.id === item.variant.imageId)?.url ??
+                item.product.media[0]?.url
+
+              return (
+                <div key={item.variant.id} className="flex gap-[14px] py-[16px] first:pt-0">
+                  <div className="relative w-[60px] h-[60px] shrink-0 bg-[#f3f3f3] rounded overflow-hidden">
+                    {image && (
+                      <Image src={image} alt={item.product.name} fill className="object-contain" />
+                    )}
+                    <span className="absolute -top-[6px] -right-[6px] w-[18px] h-[18px] rounded-full bg-[#0d0d0d] text-white text-[9px] font-bold flex items-center justify-center">
+                      {item.quantity}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-extrabold uppercase tracking-[0.04em] leading-snug">{item.product.name}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#6F6F73] mt-[3px]">{variantTitle(item.variant.optionValues)}</p>
+                  </div>
+                  <p className="text-[12px] font-bold shrink-0">${(item.variant.price * item.quantity).toFixed(2)}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-extrabold uppercase tracking-[0.04em] leading-snug">{item.product.name}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#6F6F73] mt-[3px]">Size {item.size}</p>
-                </div>
-                <p className="text-[12px] font-bold shrink-0">${(item.product.price * item.quantity).toFixed(2)}</p>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="mt-[20px] pt-[18px] border-t border-[#eee] flex flex-col gap-[10px]">

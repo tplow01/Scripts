@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
+import { variantTitle } from '@/lib/admin/variants'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
@@ -77,68 +78,74 @@ export default function CartDrawer() {
                 </div>
               ) : (
                 <AnimatePresence initial={false}>
-                  {items.map((item) => (
-                    <motion.div
-                      key={`${item.product.id}-${item.size}`}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: 24, transition: { duration: 0.2 } }}
-                      transition={{ duration: 0.28, ease: 'easeOut' }}
-                      className="flex gap-[20px] py-[24px]"
-                    >
-                      {/* Thumbnail */}
-                      <div className="relative w-[88px] h-[88px] shrink-0 bg-[#f5f5f5] rounded overflow-hidden">
-                        {item.product.image && (
-                          <Image src={item.product.image} alt={item.product.name} fill className="object-contain" />
-                        )}
-                      </div>
+                  {items.map((item) => {
+                    const image =
+                      item.product.media.find((m) => m.id === item.variant.imageId)?.url ??
+                      item.product.media[0]?.url
 
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-[12px]">
-                          <p className="text-[12px] font-extrabold uppercase tracking-[0.04em] leading-snug">
-                            {item.product.name}
-                          </p>
-                          <p className="text-[13px] font-bold shrink-0">${item.product.price}.00</p>
+                    return (
+                      <motion.div
+                        key={item.variant.id}
+                        layout
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 24, transition: { duration: 0.2 } }}
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        className="flex gap-[20px] py-[24px]"
+                      >
+                        {/* Thumbnail */}
+                        <div className="relative w-[88px] h-[88px] shrink-0 bg-[#f5f5f5] rounded overflow-hidden">
+                          {image && (
+                            <Image src={image} alt={item.product.name} fill className="object-contain" />
+                          )}
                         </div>
-                        <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#888] mt-[4px]">
-                          {item.size}
-                        </p>
-                        {item.product.shipDate && (
-                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6F6F73] mt-[4px]">
-                            Ships: {item.product.shipDate}
-                          </p>
-                        )}
 
-                        {/* Qty + trash */}
-                        <div className="flex items-center gap-[4px] mt-[12px]">
-                          <button
-                            onClick={() => decrement(item.product.id, item.size)}
-                            className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
-                          >
-                            −
-                          </button>
-                          <span className="w-[32px] text-center text-[13px] font-bold">{item.quantity}</span>
-                          <button
-                            onClick={() => increment(item.product.id, item.size)}
-                            className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
-                          >
-                            +
-                          </button>
-                          <button
-                            onClick={() => remove(item.product.id, item.size)}
-                            className="ml-[8px] hover:opacity-50 transition-opacity"
-                            aria-label="Remove item"
-                          >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#0d0d0d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-[12px]">
+                            <p className="text-[12px] font-extrabold uppercase tracking-[0.04em] leading-snug">
+                              {item.product.name}
+                            </p>
+                            <p className="text-[13px] font-bold shrink-0">${item.variant.price}.00</p>
+                          </div>
+                          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#888] mt-[4px]">
+                            {variantTitle(item.variant.optionValues)}
+                          </p>
+                          {item.product.shipDate && (
+                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6F6F73] mt-[4px]">
+                              Ships: {item.product.shipDate}
+                            </p>
+                          )}
+
+                          {/* Qty + trash */}
+                          <div className="flex items-center gap-[4px] mt-[12px]">
+                            <button
+                              onClick={() => decrement(item.variant.id)}
+                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="w-[32px] text-center text-[13px] font-bold">{item.quantity}</span>
+                            <button
+                              onClick={() => increment(item.variant.id)}
+                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() => remove(item.variant.id)}
+                              className="ml-[8px] hover:opacity-50 transition-opacity"
+                              aria-label="Remove item"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#0d0d0d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    )
+                  })}
                 </AnimatePresence>
               )}
             </div>
