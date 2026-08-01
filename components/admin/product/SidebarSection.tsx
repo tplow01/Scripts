@@ -75,8 +75,12 @@ export default function SidebarSection({ product, onChange }: SectionProps) {
       </div>
       <div>
         <label className={labelCls} htmlFor="p-ship-date">Ship date</label>
-        <input id="p-ship-date" type="date" className={inputCls} value={product.shipDate}
+        <input id="p-ship-date" type="text" className={inputCls} value={product.shipDate}
+          placeholder="July 2026"
           onChange={(e) => onChange({ ...product, shipDate: e.target.value })} />
+        <p className="mt-1 text-[11px] text-grey">
+          Free-text dispatch window shown to customers on pre-order products — not a calendar date.
+        </p>
       </div>
     </Section>
   )
