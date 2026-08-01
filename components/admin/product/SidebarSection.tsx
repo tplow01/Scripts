@@ -1,8 +1,11 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { Section, inputCls, labelCls, type SectionProps } from './ProductForm'
 import { deriveAvailability } from '@/lib/admin/variants'
 import { useAdmin } from '@/lib/admin/store'
 import type { PublishedStatus } from '@/types/product'
+
+const parseTags = (raw: string) => raw.split(',').map((t) => t.trim()).filter(Boolean)
 
 const AVAILABILITY_LABEL: Record<ReturnType<typeof deriveAvailability>, string> = {
   available: 'Available',
@@ -14,6 +17,18 @@ export default function SidebarSection({ product, onChange }: SectionProps) {
   const { state } = useAdmin()
   const collections = Array.from(new Set(state.products.map((p) => p.collection).filter(Boolean)))
   const availability = deriveAvailability(product)
+
+  // Buffered so a comma-separated tag list can be typed freely (with
+  // trailing spaces/commas mid-entry) while still committing every
+  // keystroke to `product.tags` — no blur required to save on-close.
+  const [tagsText, setTagsText] = useState(product.tags.join(', '))
+  useEffect(() => {
+    // Only resync from outside edits (discard/undo), not from our own commits.
+    if (parseTags(tagsText).join(',') !== product.tags.join(',')) {
+      setTagsText(product.tags.join(', '))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.tags])
 
   return (
     <Section title="Status">
@@ -52,11 +67,11 @@ export default function SidebarSection({ product, onChange }: SectionProps) {
       </div>
       <div>
         <label className={labelCls} htmlFor="p-tags">Tags</label>
-        <input id="p-tags" className={inputCls} defaultValue={product.tags.join(', ')}
-          onBlur={(e) => onChange({
-            ...product,
-            tags: e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
-          })} placeholder="anxiety, drop-1" />
+        <input id="p-tags" className={inputCls} value={tagsText}
+          onChange={(e) => {
+            setTagsText(e.target.value)
+            onChange({ ...product, tags: parseTags(e.target.value) })
+          }} placeholder="anxiety, drop-1" />
       </div>
       <div>
         <label className={labelCls} htmlFor="p-ship-date">Ship date</label>

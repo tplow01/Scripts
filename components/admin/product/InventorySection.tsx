@@ -1,6 +1,6 @@
 'use client'
 import { Section, inputCls, labelCls, type SectionProps } from './ProductForm'
-import { reconcileVariants } from '@/lib/admin/variants'
+import { generateSku } from '@/lib/admin/variants'
 import type { ProductVariant } from '@/types/product'
 
 export default function InventorySection({ product, onChange }: SectionProps) {
@@ -9,20 +9,22 @@ export default function InventorySection({ product, onChange }: SectionProps) {
     onChange({ ...product, variants: product.variants.map((v) => ({ ...v, ...patch })) })
 
   const regenerateSkus = () => {
-    if (!window.confirm('Regenerate every SKU from the root? Hand-edited SKUs will be replaced.')) return
-    const defaults = {
-      price: first?.price ?? 0,
-      compareAtPrice: first?.compareAtPrice ?? null,
-      cost: first?.cost ?? null,
-      barcode: first?.barcode ?? null,
-      trackInventory: first?.trackInventory ?? true,
-      allowBackorder: first?.allowBackorder ?? false,
-      weightGrams: first?.weightGrams ?? null,
-    }
-    onChange({
-      ...product,
-      variants: reconcileVariants(product.id, product.skuRoot, product.options, [], defaults),
-    })
+    if (!window.confirm('Regenerate every SKU from the root? Hand-edited SKUs will be replaced. Stock and prices are not affected.')) return
+    // SKU-only rebuild — the option grid is not changing, so this is not a
+    // reconciliation. Walk variants in position order and mint a fresh sku
+    // for each, with a `taken` set that starts empty and accumulates as we
+    // go so the regenerated set is internally unique. Every other field on
+    // the variant (stock, price, cost, barcode, imageId, position, ...)
+    // must survive untouched.
+    const taken = new Set<string>()
+    const variants = [...product.variants]
+      .sort((a, b) => a.position - b.position)
+      .map((v) => {
+        const sku = generateSku(product.skuRoot, v.optionValues, taken)
+        taken.add(sku)
+        return { ...v, sku }
+      })
+    onChange({ ...product, variants })
   }
 
   return (
