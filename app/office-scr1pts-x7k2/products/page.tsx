@@ -56,7 +56,7 @@ function PublishedToggle({ product, onToggle }: { product: Product; onToggle: ()
       role="switch"
       aria-checked={product.publishedStatus === 'active'}
       aria-label={`Published status: ${product.publishedStatus}. Toggle draft/active.`}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggle() }}
+      onClick={onToggle}
       className="flex items-center gap-2"
     >
       <span className={`w-9 h-5 rounded-full p-0.5 transition-colors ${product.publishedStatus === 'active' ? 'bg-pink' : 'bg-grey/40'}`}>
@@ -77,8 +77,8 @@ function DeleteControl({ product, confirming, onConfirm, onCancel, onAskDelete }
   if (confirming) {
     return (
       <div className="flex items-center gap-1">
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onConfirm() }} className="text-[11px] font-bold text-pink-deep px-2 py-2">Confirm</button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancel() }} className="text-[11px] text-grey px-2 py-2">Cancel</button>
+        <button type="button" onClick={onConfirm} className="text-[11px] font-bold text-pink-deep px-2 py-2">Confirm</button>
+        <button type="button" onClick={onCancel} className="text-[11px] text-grey px-2 py-2">Cancel</button>
       </div>
     )
   }
@@ -86,7 +86,7 @@ function DeleteControl({ product, confirming, onConfirm, onCancel, onAskDelete }
     <button
       type="button"
       aria-label={`Delete ${product.name}`}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAskDelete() }}
+      onClick={onAskDelete}
       className="p-2 text-grey hover:text-pink-deep"
     >
       <Trash2 size={15} />
@@ -196,16 +196,18 @@ export default function ProductsPage() {
           {visible.map((p) => {
             const stock = totalStock(p)
             const count = variantCount(p)
+            const price = p.variants[0]?.price
             return (
-              <Link key={p.id} href={adminPath(`products/${p.id}/edit`)} className="block rounded-lg border border-grey/20 bg-[#101010] p-3.5">
-                <div className="flex items-center gap-3">
+              <div key={p.id} className="rounded-lg border border-grey/20 bg-[#101010] p-3.5">
+                <Link href={adminPath(`products/${p.id}/edit`)} className="flex items-center gap-3">
                   <Thumb product={p} />
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] text-paper/90 font-medium truncate">{p.name}</p>
                     <p className={`text-[11px] truncate ${stockTone(stock)}`}>{stock} in stock · {count} variant{count === 1 ? '' : 's'}</p>
+                    <p className="text-grey text-[11px] truncate">{p.collection}{price !== undefined ? ` · $${price}` : ''}</p>
                   </div>
                   <StatusBadge status={p.publishedStatus} />
-                </div>
+                </Link>
                 <div className="mt-2.5 flex items-center justify-between gap-3">
                   <PublishedToggle product={p} onToggle={() => togglePublished(p.id)} />
                   <DeleteControl
@@ -216,7 +218,7 @@ export default function ProductsPage() {
                     onAskDelete={() => setConfirmId(p.id)}
                   />
                 </div>
-              </Link>
+              </div>
             )
           })}
         </div>
@@ -243,9 +245,9 @@ export default function ProductsPage() {
                 <tr><td colSpan={7} className="px-5 py-8 text-center text-grey">No products match your filters</td></tr>
               )}
               {visible.map((p) => (
-                <tr key={p.id} className="border-b border-grey/15 last:border-b-0 hover:bg-white/[0.02] relative">
-                  <td className="px-5 py-3">
-                    <Link href={adminPath(`products/${p.id}/edit`)} className="flex items-center gap-3">
+                <tr key={p.id} className="border-b border-grey/15 last:border-b-0 hover:bg-white/[0.02]">
+                  <td className="p-0">
+                    <Link href={adminPath(`products/${p.id}/edit`)} className="flex items-center gap-3 px-5 py-3">
                       <Thumb product={p} />
                       <div className="min-w-0 max-w-[220px]">
                         <p className="text-paper/90 font-medium truncate">{p.name}</p>
@@ -254,9 +256,21 @@ export default function ProductsPage() {
                     </Link>
                   </td>
                   <td className="px-5 py-3"><StatusBadge status={p.publishedStatus} /></td>
-                  <td className="px-5 py-3"><InventoryCell product={p} /></td>
-                  <td className="px-5 py-3 text-grey max-w-[140px] truncate">{p.productType}</td>
-                  <td className="px-5 py-3 text-grey max-w-[140px] truncate">{p.vendor}</td>
+                  <td className="p-0">
+                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3">
+                      <InventoryCell product={p} />
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3 text-grey max-w-[140px] truncate">
+                      {p.productType}
+                    </Link>
+                  </td>
+                  <td className="p-0">
+                    <Link href={adminPath(`products/${p.id}/edit`)} className="block px-5 py-3 text-grey max-w-[140px] truncate">
+                      {p.vendor}
+                    </Link>
+                  </td>
                   <td className="px-5 py-3"><PublishedToggle product={p} onToggle={() => togglePublished(p.id)} /></td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end">
