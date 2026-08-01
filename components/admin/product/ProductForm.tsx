@@ -1,15 +1,37 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import type React from 'react'
 import { adminPath } from '@/lib/admin/config'
+import { stableStringify } from '@/lib/admin/stableStringify'
 import { useAdmin } from '@/lib/admin/store'
 import type { Product } from '@/types/product'
+import InventorySection from './InventorySection'
+import MediaSection from './MediaSection'
+import PricingSection from './PricingSection'
+import SeoSection from './SeoSection'
+import ShippingSection from './ShippingSection'
+import SidebarSection from './SidebarSection'
+import TitleSection from './TitleSection'
 
 export interface SectionProps {
   product: Product
   onChange: (next: Product) => void
 }
+
+export function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-grey/25 bg-[#141414] p-5">
+      <h2 className="text-[13px] uppercase tracking-[0.14em] text-grey mb-4">{title}</h2>
+      <div className="space-y-4">{children}</div>
+    </section>
+  )
+}
+
+export const inputCls =
+  'w-full rounded-lg border border-grey/30 bg-[#101010] px-3 py-2 text-[13px] text-paper placeholder:text-grey/60 focus:outline-none focus:border-pink'
+export const labelCls = 'block text-[11px] uppercase tracking-[0.14em] text-grey mb-1.5'
 
 const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'product'
@@ -20,7 +42,22 @@ export default function ProductForm({ initial, mode }: { initial: Product; mode:
   const [product, setProduct] = useState<Product>(initial)
   const [errors, setErrors] = useState<{ name?: string }>({})
 
-  const dirty = useMemo(() => JSON.stringify(product) !== JSON.stringify(initial), [product, initial])
+  const dirty = useMemo(
+    () => stableStringify(product) !== stableStringify(initial),
+    [product, initial],
+  )
+
+  // Native "leave site?" guard for reload/close/back-nav while unsaved changes exist.
+  // Client-side <Link> navigation is intentionally not intercepted here.
+  useEffect(() => {
+    if (!dirty) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [dirty])
 
   const onChange = useCallback((next: Product) => setProduct(next), [])
 
@@ -51,11 +88,17 @@ export default function ProductForm({ initial, mode }: { initial: Product; mode:
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
         <div className="space-y-6">
-          {/* Sections 1-7 mount here in Tasks 10-11 */}
+          <TitleSection product={product} onChange={onChange} />
+          <MediaSection product={product} onChange={onChange} />
+          <PricingSection product={product} onChange={onChange} />
+          <InventorySection product={product} onChange={onChange} />
+          {/* VariantsSection mounts here in Task 11 */}
+          <ShippingSection product={product} onChange={onChange} />
+          <SeoSection product={product} onChange={onChange} />
           {errors.name && <p className="text-[11px] text-pink-deep">{errors.name}</p>}
         </div>
         <div className="space-y-6">
-          {/* SidebarSection mounts here in Task 10 */}
+          <SidebarSection product={product} onChange={onChange} />
         </div>
       </div>
 
