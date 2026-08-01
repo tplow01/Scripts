@@ -43,23 +43,40 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   const sellable = (v: ProductVariant | undefined) =>
     !!v && (!v.trackInventory || v.stock > 0 || v.allowBackorder)
 
-  // Gallery follows the chosen colorway.
+  // Gallery scoped to the selected colorway: that colorway's own image(s)
+  // (reachable via imageId from the variants matching it) come first, then
+  // any shared media no variant claims (back shots, gallery extras), which
+  // apply to every colorway. Media claimed by a *different* colorway's
+  // variants never appears. Both groups preserve `position` order.
+  const claimedIds = new Set(product.variants.map((v) => v.imageId).filter((id): id is string => id != null))
+  const colorwayImageIds = new Set(
+    product.variants
+      .filter((v) => colorAxis < 0 || v.optionValues[colorAxis] === colorway)
+      .map((v) => v.imageId)
+      .filter((id): id is string => id != null),
+  )
+  const gallery = [
+    ...product.media.filter((m) => colorwayImageIds.has(m.id)),
+    ...product.media.filter((m) => !claimedIds.has(m.id)),
+  ]
+  const images = gallery.map((m) => m.url)
+
   const heroUrl =
     product.media.find((m) => m.id === variantFor(size ?? product.options[sizeAxis]?.values[0] ?? '')?.imageId)?.url
-    ?? product.media[0]?.url
+    ?? images[0]
     ?? null
 
-  // Reset the size whenever the colorway changes, so a size that's sold out
-  // in the newly-chosen colorway is never left selected.
+  // Reset the size and re-sync the active image whenever the colorway
+  // changes, so a size that's sold out in the newly-chosen colorway is
+  // never left selected and the gallery always opens on the new colorway's
+  // own shot.
   useEffect(() => { setSize(null) }, [colorway])
-
-  const images = product.media.map((m) => m.url)
 
   useEffect(() => {
     const idx = heroUrl ? images.indexOf(heroUrl) : -1
     setActiveImage(idx >= 0 ? idx : 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroUrl])
+  }, [heroUrl, colorway])
 
   function handleAddToBag() {
     if (!selected || !sellable(selected)) return
@@ -283,7 +300,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                   onClick={handleAddToBag}
                   whileTap={reduced ? {} : { scale: 0.98 }}
                   transition={{ duration: 0.2, ease: 'easeOut' }}
-                  disabled={!selected}
+                  disabled={!selected || !sellable(selected)}
                   className={`w-full py-[14px] text-[13px] font-bold tracking-[0.06em] uppercase border rounded mb-[24px] transition-colors duration-200 ${
                     added ? btnAdded : selected ? btnActive : btnDisabled
                   }`}
