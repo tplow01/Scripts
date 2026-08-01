@@ -124,6 +124,7 @@ export function impactOfRemoval(p: Product, i: number, value: string): { variant
 export function renameOptionValue(p: Product, i: number, from: string, to: string, d: VariantDefaults): Product {
   const clean = to.trim()
   if (!clean || clean === from || !p.options[i]?.values.includes(from)) return p
+  if (p.options[i]?.values.some((v) => v !== from && v.toLowerCase() === clean.toLowerCase())) return p
   const renamed: Product = {
     ...p,
     options: mapOption(p, i, (o) => ({ ...o, values: o.values.map((v) => (v === from ? clean : v)) })),

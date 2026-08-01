@@ -36,7 +36,18 @@ export default function OptionsEditor({ product, onChange }: SectionProps) {
             {opt.values.map((v) =>
               editing?.axis === axis && editing.value === v ? (
                 <input key={v} autoFocus defaultValue={v} className={inputCls + ' w-32'}
-                  onBlur={(e) => { onChange(renameOptionValue(product, axis, v, e.target.value, D)); setEditing(null) }}
+                  onBlur={(e) => {
+                    const next = e.target.value.trim()
+                    const collides = next !== v && opt.values.some(
+                      (other) => other !== v && other.toLowerCase() === next.toLowerCase(),
+                    )
+                    if (collides) {
+                      window.alert(`"${next}" already exists on ${opt.name}. Choose a different name.`)
+                      return
+                    }
+                    onChange(renameOptionValue(product, axis, v, e.target.value, D))
+                    setEditing(null)
+                  }}
                   onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }} />
               ) : (
                 <span key={v} className="inline-flex items-center gap-1 rounded-full border border-grey/30 px-3 py-1 text-[12px]">

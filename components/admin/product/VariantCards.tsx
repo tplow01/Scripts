@@ -24,7 +24,7 @@ export default function VariantCards({ product, onChange }: SectionProps) {
               <input
                 className={`${inputCls} min-h-[44px] ${v.stock === 0 ? 'text-pink-deep' : v.stock <= LOW_STOCK_THRESHOLD ? 'text-amber-400' : ''}`}
                 inputMode="numeric" value={v.stock} aria-label={`Stock for ${variantTitle(v.optionValues)}`}
-                onChange={(e) => patch(v.id, { stock: Math.max(0, Number(e.target.value) || 0) })} />
+                onChange={(e) => patch(v.id, { stock: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
             </div>
             <div>
               <span className={labelCls}>Price</span>

@@ -38,7 +38,7 @@ export default function VariantTable({ product, onChange }: SectionProps) {
             <span>· {selected.size} selected</span>
             <button type="button" className="text-pink hover:underline" onClick={() => {
               const v = window.prompt('Set stock for selected variants')
-              if (v != null && !Number.isNaN(Number(v))) bulk({ stock: Math.max(0, Number(v)) })
+              if (v != null && !Number.isNaN(Number(v))) bulk({ stock: Math.max(0, Math.floor(Number(v))) })
             }}>Set stock</button>
             <button type="button" className="text-pink hover:underline" onClick={() => {
               const v = window.prompt('Set price for selected variants')
@@ -71,7 +71,7 @@ export default function VariantTable({ product, onChange }: SectionProps) {
                     onChange={(e) => patch(v.id, { sku: e.target.value })} />
                   <input className={`${inputCls} py-1 ${v.stock === 0 ? 'text-pink-deep' : v.stock <= LOW_STOCK_THRESHOLD ? 'text-amber-400' : ''}`}
                     inputMode="numeric" value={v.stock} aria-label={`Stock for ${variantTitle(v.optionValues)}`}
-                    onChange={(e) => patch(v.id, { stock: Math.max(0, Number(e.target.value) || 0) })} />
+                    onChange={(e) => patch(v.id, { stock: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} />
                   <input className={inputCls + ' py-1'} inputMode="decimal" value={v.price}
                     aria-label={`Price for ${variantTitle(v.optionValues)}`}
                     onChange={(e) => patch(v.id, { price: Math.max(0, Number(e.target.value) || 0) })} />

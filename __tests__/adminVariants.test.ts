@@ -213,6 +213,28 @@ describe('renameOptionValue', () => {
     const before = p.variants[0].sku
     expect(renameOptionValue(p, 0, 'Army Green', 'Olive', DEFAULTS).variants[0].sku).toBe(before)
   })
+
+  it('rejects a rename onto an existing sibling value, leaving the product unchanged', () => {
+    const p = stocked(withVariants({
+      options: [{ name: 'Colorway', values: ['White', 'Black'], position: 1 }],
+    }), { White: 12, Black: 4 })
+    const out = renameOptionValue(p, 0, 'White', 'Black', DEFAULTS)
+    expect(out).toBe(p)
+    expect(out.options[0].values).toEqual(['White', 'Black'])
+    expect(out.variants).toHaveLength(p.variants.length)
+    expect(new Set(out.variants.map((v) => v.id)).size).toBe(out.variants.length)
+    expect(out.variants.find((v) => v.optionValues[0] === 'White')?.stock).toBe(12)
+    expect(out.variants.find((v) => v.optionValues[0] === 'Black')?.stock).toBe(4)
+  })
+
+  it('treats a differently-cased sibling as a collision (case-insensitive match)', () => {
+    const p = stocked(withVariants({
+      options: [{ name: 'Colorway', values: ['White', 'black'], position: 1 }],
+    }), { White: 12, black: 4 })
+    const out = renameOptionValue(p, 0, 'White', 'Black', DEFAULTS)
+    expect(out).toBe(p)
+    expect(out.options[0].values).toEqual(['White', 'black'])
+  })
 })
 
 describe('reorderOptionValues', () => {
