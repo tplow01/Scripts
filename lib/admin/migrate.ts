@@ -41,15 +41,27 @@ const collectionCode = (collection: string) =>
 const seedStock = (index: number) => Math.max(0, 12 - (index % 5) * 3)
 
 export function migrateProducts(legacy: LegacyProduct[]): Product[] {
-  if (legacy.every(isMigrated)) return legacy as unknown as Product[]
+  // Partition into already-migrated and legacy subsets
+  const migrated: Product[] = []
+  const toMigrate: LegacyProduct[] = []
+  for (const item of legacy) {
+    if (isMigrated(item)) {
+      migrated.push(item as unknown as Product)
+    } else {
+      toMigrate.push(item)
+    }
+  }
+
+  // If nothing to migrate, return the already-migrated items unchanged
+  if (toMigrate.length === 0) return migrated
 
   const groups = new Map<string, LegacyProduct[]>()
-  for (const p of legacy) {
+  for (const p of toMigrate) {
     const key = `${p.collection}|${p.emotion}`
     groups.set(key, [...(groups.get(key) ?? []), p])
   }
 
-  return [...groups.values()].map((group) => {
+  const newProducts = [...groups.values()].map((group) => {
     const head = group[0]
     const colorways = [...new Set(group.map((p) => p.colorway))]
     const sizes = [...new Set(group.flatMap((p) => p.sizes))]
@@ -118,4 +130,7 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
 
     return { ...shell, variants }
   })
+
+  // Return newly migrated products followed by already-migrated ones
+  return [...newProducts, ...migrated]
 }

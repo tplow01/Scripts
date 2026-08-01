@@ -98,6 +98,21 @@ describe('migrateProducts', () => {
     const once = migrateProducts(CYBER)
     expect(migrateProducts(once as unknown as LegacyProduct[])).toEqual(once)
   })
+
+  it('handles mixed arrays: passes through migrated, migrates legacy, returns both', () => {
+    const migrated = migrateProducts(CYBER)[0]
+    const legacyItem = legacy({ id: 'new', emotion: 'NEW', slug: 'new-white' })
+    const mixed = [migrated, legacyItem] as unknown as LegacyProduct[]
+    const result = migrateProducts(mixed)
+
+    expect(result).toHaveLength(2)
+    // First should be the newly-migrated one
+    expect(result[1]).toEqual(migrated)
+    // Second should be the legacy one, now migrated
+    expect(result[0].emotion).toBe('NEW')
+    expect(result[0].slug).toBe('new')
+    expect(result[0].variants.length).toBeGreaterThan(0)
+  })
 })
 
 describe('isMigrated', () => {
