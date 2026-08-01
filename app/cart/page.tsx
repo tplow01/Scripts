@@ -8,6 +8,7 @@ import NavBar from '@/components/NavBar'
 import FooterLinks from '@/components/FooterLinks'
 import { useCart } from '@/lib/cart'
 import { fadeUp, stagger } from '@/lib/motion'
+import { variantTitle } from '@/lib/admin/variants'
 
 export default function CartPage() {
   const { items, remove, increment, decrement, total } = useCart()
@@ -66,66 +67,72 @@ export default function CartPage() {
               animate="show"
             >
               <AnimatePresence>
-                {items.map((item) => (
-                  <motion.div
-                    key={`${item.product.id}-${item.size}`}
-                    variants={itemVariants}
-                    exit={{ opacity: 0, x: -16, transition: { duration: 0.25, ease: 'easeOut' } }}
-                    className="flex gap-[24px] py-[24px]"
-                  >
-                    {/* Thumbnail */}
-                    <Link href={`/products/${item.product.slug}`} className="shrink-0">
-                      <div className="relative w-[100px] h-[100px] bg-[#f7f7f5] rounded overflow-hidden">
-                        {item.product.image && (
-                          <Image src={item.product.image} alt={item.product.name} fill className="object-contain" />
-                        )}
-                      </div>
-                    </Link>
+                {items.map((item) => {
+                  const image =
+                    item.product.media.find((m) => m.id === item.variant.imageId)?.url ??
+                    item.product.media[0]?.url
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <Link href={`/products/${item.product.slug}`}>
-                        <p className="text-[13px] font-bold uppercase tracking-[0.04em] leading-snug hover:opacity-60 transition-opacity">
-                          {item.product.name}
-                        </p>
+                  return (
+                    <motion.div
+                      key={item.variant.id}
+                      variants={itemVariants}
+                      exit={{ opacity: 0, x: -16, transition: { duration: 0.25, ease: 'easeOut' } }}
+                      className="flex gap-[24px] py-[24px]"
+                    >
+                      {/* Thumbnail */}
+                      <Link href={`/products/${item.product.slug}`} className="shrink-0">
+                        <div className="relative w-[100px] h-[100px] bg-[#f7f7f5] rounded overflow-hidden">
+                          {image && (
+                            <Image src={image} alt={item.product.name} fill className="object-contain" />
+                          )}
+                        </div>
                       </Link>
-                      <p className="text-[12px] font-bold text-[#6F6F73] uppercase tracking-[0.04em] mt-[4px]">
-                        Size: {item.size}
-                      </p>
-                      <p className="text-[13px] font-bold mt-[8px]">
-                        ${item.product.price}.00
-                      </p>
 
-                      {/* Qty controls */}
-                      <div className="flex items-center gap-[12px] mt-[12px]">
-                        <button
-                          onClick={() => decrement(item.product.id, item.size)}
-                          className="w-[28px] h-[28px] flex items-center justify-center border border-[#0d0d0d] rounded text-[14px] font-bold hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150"
-                        >
-                          −
-                        </button>
-                        <span className="text-[13px] font-bold w-[16px] text-center">{item.quantity}</span>
-                        <button
-                          onClick={() => increment(item.product.id, item.size)}
-                          className="w-[28px] h-[28px] flex items-center justify-center border border-[#0d0d0d] rounded text-[14px] font-bold hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150"
-                        >
-                          +
-                        </button>
-                        <button
-                          onClick={() => remove(item.product.id, item.size)}
-                          className="ml-[4px] text-[11px] font-bold uppercase tracking-[0.06em] text-[#aaa] hover:text-[#0d0d0d] transition-colors duration-150"
-                        >
-                          Remove
-                        </button>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/products/${item.product.slug}`}>
+                          <p className="text-[13px] font-bold uppercase tracking-[0.04em] leading-snug hover:opacity-60 transition-opacity">
+                            {item.product.name}
+                          </p>
+                        </Link>
+                        <p className="text-[12px] font-bold text-[#6F6F73] uppercase tracking-[0.04em] mt-[4px]">
+                          {variantTitle(item.variant.optionValues)}
+                        </p>
+                        <p className="text-[13px] font-bold mt-[8px]">
+                          ${item.variant.price}.00
+                        </p>
+
+                        {/* Qty controls */}
+                        <div className="flex items-center gap-[12px] mt-[12px]">
+                          <button
+                            onClick={() => decrement(item.variant.id)}
+                            className="w-[28px] h-[28px] flex items-center justify-center border border-[#0d0d0d] rounded text-[14px] font-bold hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150"
+                          >
+                            −
+                          </button>
+                          <span className="text-[13px] font-bold w-[16px] text-center">{item.quantity}</span>
+                          <button
+                            onClick={() => increment(item.variant.id)}
+                            className="w-[28px] h-[28px] flex items-center justify-center border border-[#0d0d0d] rounded text-[14px] font-bold hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150"
+                          >
+                            +
+                          </button>
+                          <button
+                            onClick={() => remove(item.variant.id)}
+                            className="ml-[4px] text-[11px] font-bold uppercase tracking-[0.06em] text-[#aaa] hover:text-[#0d0d0d] transition-colors duration-150"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Line total */}
-                    <div className="shrink-0 text-right">
-                      <p className="text-[13px] font-bold">${(item.product.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                  </motion.div>
-                ))}
+                      {/* Line total */}
+                      <div className="shrink-0 text-right">
+                        <p className="text-[13px] font-bold">${(item.variant.price * item.quantity).toFixed(2)}</p>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </AnimatePresence>
             </motion.div>
 

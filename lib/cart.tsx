@@ -1,45 +1,36 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
-import type { Product } from '@/types/product'
-import { CYBER_LOVE_PRODUCTS, BASEMENT_PRODUCTS } from '@/lib/products'
+import type { Product, ProductVariant } from '@/types/product'
+import { ALL_PRODUCTS } from '@/lib/products'
+import { buildLegacyIndex, buildVariantIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
 
 const STORAGE_KEY = 'scripts-cart'
 
-// Catalog lookup for rehydrating persisted cart entries (we store only
-// {id,size,quantity} so product data never goes stale in storage).
-const CATALOG: Record<string, Product> = Object.fromEntries(
-  [...CYBER_LOVE_PRODUCTS, ...BASEMENT_PRODUCTS].map((p) => [p.id, p]),
-)
-
-interface StoredItem { id: string; size: string; quantity: number }
-
-function loadStored(): CartItem[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as StoredItem[]
-    return parsed
-      .filter((s) => CATALOG[s.id] && s.quantity > 0)
-      .map((s) => ({ product: CATALOG[s.id], size: s.size, quantity: s.quantity }))
-  } catch {
-    return []
-  }
-}
+const VARIANTS = buildVariantIndex(ALL_PRODUCTS)
+const LEGACY = buildLegacyIndex(ALL_PRODUCTS)
 
 export interface CartItem {
   product: Product
-  size: string
+  variant: ProductVariant
   quantity: number
+}
+
+function loadStored(): CartItem[] {
+  if (typeof window === 'undefined') return []
+  return parseStoredCart(window.localStorage.getItem(STORAGE_KEY), VARIANTS, LEGACY)
+    .map(({ variantId, quantity }) => {
+      const ref = VARIANTS.get(variantId)!
+      return { product: ref.product, variant: ref.variant, quantity }
+    })
 }
 
 interface CartCtx {
   items: CartItem[]
-  add: (product: Product, size: string) => void
-  remove: (productId: string, size: string) => void
-  increment: (productId: string, size: string) => void
-  decrement: (productId: string, size: string) => void
+  add: (product: Product, variant: ProductVariant) => void
+  remove: (variantId: string) => void
+  increment: (variantId: string) => void
+  decrement: (variantId: string) => void
   clearCart: () => void
   count: number
   total: number
@@ -64,45 +55,45 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
   useEffect(() => {
     if (!hydrated.current || typeof window === 'undefined') return
-    const minimal: StoredItem[] = items.map((i) => ({ id: i.product.id, size: i.size, quantity: i.quantity }))
+    const minimal: StoredItem[] = items.map((i) => ({ variantId: i.variant.id, quantity: i.quantity }))
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(minimal))
   }, [items])
   const openCart  = useCallback(() => setIsOpen(true), [])
   const closeCart = useCallback(() => setIsOpen(false), [])
 
-  const add = useCallback((product: Product, size: string) => {
+  const add = useCallback((product: Product, variant: ProductVariant) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id && i.size === size)
+      const existing = prev.find((i) => i.variant.id === variant.id)
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id && i.size === size
+          i.variant.id === variant.id
             ? { ...i, quantity: i.quantity + 1 }
             : i
         )
       }
-      return [...prev, { product, size, quantity: 1 }]
+      return [...prev, { product, variant, quantity: 1 }]
     })
   }, [])
 
-  const remove = useCallback((productId: string, size: string) => {
-    setItems((prev) => prev.filter((i) => !(i.product.id === productId && i.size === size)))
+  const remove = useCallback((variantId: string) => {
+    setItems((prev) => prev.filter((i) => i.variant.id !== variantId))
   }, [])
 
-  const increment = useCallback((productId: string, size: string) => {
+  const increment = useCallback((variantId: string) => {
     setItems((prev) =>
       prev.map((i) =>
-        i.product.id === productId && i.size === size
+        i.variant.id === variantId
           ? { ...i, quantity: i.quantity + 1 }
           : i
       )
     )
   }, [])
 
-  const decrement = useCallback((productId: string, size: string) => {
+  const decrement = useCallback((variantId: string) => {
     setItems((prev) =>
       prev
         .map((i) =>
-          i.product.id === productId && i.size === size
+          i.variant.id === variantId
             ? { ...i, quantity: i.quantity - 1 }
             : i
         )
@@ -113,7 +104,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(() => setItems([]), [])
 
   const count = items.reduce((s, i) => s + i.quantity, 0)
-  const total = items.reduce((s, i) => s + i.product.price * i.quantity, 0)
+  const total = items.reduce((s, i) => s + i.variant.price * i.quantity, 0)
 
   return (
     <CartContext.Provider value={{ items, add, remove, increment, decrement, clearCart, count, total, isOpen, openCart, closeCart }}>
