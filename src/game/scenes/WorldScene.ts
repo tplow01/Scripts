@@ -6,19 +6,19 @@ import { footprint, propActive } from "@/game/world/types";
 import type { Interaction, Decoration, Room } from "@/game/world/types";
 import { HEATH_INTRO_PATH, HEATH_HOME, heathPathAlongCounter } from "@/game/world/mainRoom";
 import { gameSession } from "@/lib/gameSession";
-
-type Facing = "down" | "up" | "left" | "right";
+import { NpcActor } from "@/game/actors/NpcActor";
+import { WalkCycle, TILE_STEP_MS, TURN_MS, STRIDE_HOLD } from "@/game/art/walkCycle";
+import { characterFrame, isCharacterFrame, parseCharacterFrame } from "@/game/art/characters";
+import type { CharacterId, Facing } from "@/game/art/characters";
 
 const FADE_MS = 260;
-const STEP_MS = 130;
-// Slow enough that each stride frame reads (FireRed walks ~250ms/tile).
-const PLAYER_STEP_MS = 210;
+/** Scripted walks (Heath's intro / counter slides) move faster than a patrol. */
+const SCRIPTED_STEP_MS = 130;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
 const INTRO_FALLBACK_MS = 15000;
 /** Tiles of flat black void drawn around the main room, and how far the
  * camera bounds expand to reveal it. */
 const EXTERIOR_APRON = 4;
-const CHARACTER_KEYS = new Set(["scribbs", "npc", "npcRail", "npcSitter", "npcGazer", "npcShopper", "cashier"]);
 const CHARACTER_HEIGHT_TILES = 1.25;
 
 /**
@@ -53,9 +53,24 @@ export class WorldScene extends Phaser.Scene {
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
   private facing: Facing = "down";
-  /** Alternates which foot leads each step: false → right foot, true → left. */
-  private stepParity = false;
+  /** The player's walk-cycle state (see art/walkCycle.ts). */
+  private cycle = new WalkCycle();
+  /**
+   * FireRed turn-in-place: set when a new direction is pressed from a
+   * standstill; no step happens until this timestamp passes.
+   */
+  private turnUntil = 0;
+  /**
+   * True from the moment a step lands until the player comes to rest. While
+   * true, a direction change costs no turn delay — so corners stay fluid
+   * mid-walk and only a fresh press from standing turns in place.
+   */
+  private walking = false;
   private lastInteractionId: string | null = null;
+  /** Patrolling NPCs in the current room (see actors/NpcActor.ts). */
+  private npcs: NpcActor[] = [];
+  /** The NPC currently mid-conversation, so its patrol can resume on close. */
+  private talkingTo: NpcActor | null = null;
 
   /**
    * Direction codes currently held (keyboard keys or on-screen D-pad), most
@@ -82,7 +97,10 @@ export class WorldScene extends Phaser.Scene {
 
     // Scribbs + shadow persist across rooms (so camera-follow stays valid).
     this.scribbsShadow = this.add.image(0, 0, SHADOW_KEY).setDepth(9);
-    this.scribbs = this.add.image(0, 0, "scribbs-down-both").setOrigin(0.5, 1).setDepth(10);
+    this.scribbs = this.add
+      .image(0, 0, characterFrame("scribbs", "down", "both"))
+      .setOrigin(0.5, 1)
+      .setDepth(10);
     this.cameras.main.roundPixels = true;
     this.cameras.main.startFollow(this.scribbs, true, 0.18, 0.18);
     this.scale.on("resize", this.updateZoom, this);
@@ -107,10 +125,15 @@ export class WorldScene extends Phaser.Scene {
     const onDialog = (open: boolean) => {
       this.dialogOpen = open;
       if (open) this.held = [];
-      else if (this.pendingDialogClose) {
-        const done = this.pendingDialogClose;
-        this.pendingDialogClose = null;
-        done();
+      else {
+        // A patrolling NPC we were talking to picks its route back up.
+        this.talkingTo?.resume(this.time.now);
+        this.talkingTo = null;
+        if (this.pendingDialogClose) {
+          const done = this.pendingDialogClose;
+          this.pendingDialogClose = null;
+          done();
+        }
       }
     };
     this.game.events.on("dialog", onDialog);
@@ -178,9 +201,16 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Poll held directions: a finished step chains into the next while held. */
-  update() {
+  update(time: number) {
     const code = this.held[this.held.length - 1];
     if (code) this.stepToward(code);
+    else if (!this.moving && this.walking) {
+      // Input released — come to rest on the neutral frame. (Mid-walk the
+      // stride frame is held for the whole tile; see art/walkCycle.ts.)
+      this.walking = false;
+      this.setFrame(this.cycle.rest());
+    }
+    this.updateNpcs(time);
   }
 
   /** Face + step in a direction if the scene allows movement right now. */
@@ -188,8 +218,40 @@ export class WorldScene extends Phaser.Scene {
     if (this.moving || this.transitioning || this.dialogOpen || this.overlayOpen) return;
     const dir = this.dirFor(code);
     if (!dir) return;
+
+    // FireRed turn-in-place: a fresh press in a new direction from a standstill
+    // turns first and only walks if the press is sustained. Changing direction
+    // mid-walk (this.walking) is free, so corners don't feel sticky.
+    if (dir.facing !== this.facing && !this.walking) {
+      this.facing = dir.facing;
+      this.setFrame(this.cycle.rest());
+      this.turnUntil = this.time.now + TURN_MS;
+      return;
+    }
+    if (this.time.now < this.turnUntil) return;
+
     this.facing = dir.facing;
     this.tryMove(dir.dx, dir.dy);
+  }
+
+  /** Advance every patrolling NPC, unless a scripted sequence owns the room. */
+  private updateNpcs(time: number) {
+    if (this.transitioning) return;
+    for (const npc of this.npcs) {
+      npc.update(time, (x, y) => this.npcCanEnter(npc, x, y));
+    }
+  }
+
+  /** A tile an NPC may step onto: walkable, and nobody standing there. */
+  private npcCanEnter(self: NpcActor, x: number, y: number): boolean {
+    if (!canStep(this.room, self.tileX, self.tileY, x, y)) return false;
+    if (x === this.tileX && y === this.tileY) return false;
+    return !this.npcs.some((n) => n !== self && n.tileX === x && n.tileY === y);
+  }
+
+  /** The patrolling NPC standing on a tile right now, if any. */
+  private npcAt(x: number, y: number): NpcActor | undefined {
+    return this.npcs.find((n) => n.tileX === x && n.tileY === y);
   }
 
   private clearHeld() {
@@ -268,11 +330,19 @@ export class WorldScene extends Phaser.Scene {
     // are standing fixtures with a shadow. Flag-gated ones (hidden stairs) are
     // skipped until revealed.
     this.cashierImg = undefined;
+    this.npcs = [];
+    this.talkingTo = null;
     for (const it of this.room.interactions) {
       if (!propActive(it, gameSession.revealed)) continue;
       // During the intro, Heath (the cashier) is a walking actor, not a prop —
       // playHeathIntro draws the static cashier once he's back behind the counter.
       if (this.introPending && it.id === "cashier") continue;
+      // Patrolling NPCs own their own sprite and position (see NpcActor) —
+      // the world entry is only their starting point, so no static prop.
+      if (it.patrol) {
+        this.spawnNpc(it);
+        continue;
+      }
       if (it.type === "stairs") this.placeProp(it, 0.5, false);
       else if (it.type === "poster") this.placeProp(it, 1, false);
       else {
@@ -336,6 +406,25 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects.push(img);
   }
 
+  /** Bring a patrolling NPC to life from its world-data entry. */
+  private spawnNpc(it: Interaction) {
+    const frame = parseCharacterFrame(it.artKey);
+    if (!frame || !it.patrol) {
+      throw new Error(`NPC "${it.id}" needs a character artKey and a patrol.`);
+    }
+    const npc = new NpcActor(this, {
+      id: it.id,
+      character: frame.id,
+      patrol: it.patrol,
+      tileSize: this.room.tileSize,
+      heightTiles: CHARACTER_HEIGHT_TILES,
+      depth: 3,
+      shadowKey: SHADOW_KEY,
+    });
+    this.npcs.push(npc);
+    this.roomObjects.push(...npc.objects);
+  }
+
   /** Place a prop honouring its footprint; solid props get a contact shadow. */
   private placeProp(p: Interaction | Decoration, depth: number, withShadow: boolean): Phaser.GameObjects.Image {
     const ts = this.room.tileSize;
@@ -350,7 +439,7 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(1.5);
       this.roomObjects.push(sh);
     }
-    const isCharacter = CHARACTER_KEYS.has(p.artKey);
+    const isCharacter = isCharacterFrame(p.artKey);
     const img = this.add.image(
       cx,
       isCharacter ? p.tileY * ts + h * ts : cy,
@@ -457,32 +546,50 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.setZoom(zoom);
   };
 
-  /** Glide an actor image tile-to-tile along a hand-authored path.
+  /**
+   * Glide a character image tile-to-tile along a hand-authored path, animating
+   * it on the same FireRed rules as the player: one stride held per tile, feet
+   * alternating, neutral on arrival.
+   *
    * Scripted walks deliberately IGNORE collision — paths are authored against
-   * the room layout (see HEATH_INTRO_PATH next to the main-room data). */
+   * the room layout (see HEATH_INTRO_PATH next to the main-room data).
+   */
   private walkActor(
     img: Phaser.GameObjects.Image,
     path: Array<{ x: number; y: number }>,
-    stepMs = STEP_MS,
+    character: CharacterId,
+    from: { x: number; y: number },
+    restFacing: Facing,
+    /** Hold one facing for the whole walk (Heath stays turned to the customer
+     * side while sliding along the counter) instead of facing the travel. */
+    lockFacing?: Facing,
+    stepMs = SCRIPTED_STEP_MS,
   ): Promise<void> {
     const ts = this.room.tileSize;
+    const cycle = new WalkCycle();
     return new Promise((resolve) => {
       let i = 0;
+      let at = from;
       const step = () => {
         if (i >= path.length || !img.active) {
-          if (img.active && img.texture.key.startsWith("cashier-walk")) img.setTexture("cashier");
+          if (img.active) img.setTexture(characterFrame(character, restFacing, cycle.rest()));
           resolve();
           return;
         }
         const t = path[i++];
-        // Face the direction of travel on horizontal moves; a purely vertical
-        // step (e.g. Heath sliding along the counter) keeps its current flip.
-        const targetX = t.x * ts + ts / 2;
-        if (targetX !== img.x) img.setFlipX(targetX < img.x);
-        if (img.texture.key === "cashier" || img.texture.key.startsWith("cashier-walk")) {
-          const phase = (["b", "c", "d"] as const)[(i - 1) % 3];
-          img.setTexture(`cashier-walk-${phase}`);
+        const dx = t.x - at.x;
+        const dy = t.y - at.y;
+        const travel: Facing | null =
+          dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : dy < 0 ? "up" : null;
+        const facing = lockFacing ?? travel;
+        if (facing) {
+          img.setTexture(characterFrame(character, facing, cycle.step()));
+          // Settle onto neutral partway through the tile, same beat as the player.
+          this.time.delayedCall(stepMs * STRIDE_HOLD, () => {
+            if (img.active) img.setTexture(characterFrame(character, facing, cycle.rest()));
+          });
         }
+        at = t;
         this.tweens.add({
           targets: img,
           x: t.x * ts + ts / 2,
@@ -509,7 +616,7 @@ export class WorldScene extends Phaser.Scene {
     const ts = this.room.tileSize;
     const start = HEATH_INTRO_PATH[0];
     const heath = this.add
-      .image(start.x * ts + ts / 2, (start.y + 1) * ts, resolveTextureKey("cashier"))
+      .image(start.x * ts + ts / 2, (start.y + 1) * ts, characterFrame("heath", "down", "both"))
       .setOrigin(0.5, 1)
       .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
       .setDepth(10)
@@ -520,8 +627,10 @@ export class WorldScene extends Phaser.Scene {
     await new Promise<void>((r) =>
       this.tweens.add({ targets: heath, alpha: 1, duration: 220, onComplete: () => r() }),
     );
-    // …and walk up to the player at the door.
-    await this.walkActor(heath, HEATH_INTRO_PATH.slice(1));
+    // …and walk up to the player at the door. He arrives from the west but
+    // stops directly ABOVE the player, so he turns down to deliver the welcome
+    // face-to-face rather than staying in profile.
+    await this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down");
 
     // Hand the mic to React (the welcome pages) and wait for the dialogue to
     // close — with a fallback so a lost event can never strand the intro.
@@ -530,8 +639,9 @@ export class WorldScene extends Phaser.Scene {
     this.game.events.emit("welcome");
     await this.waitForDialogClose();
 
-    // Walk back and slip behind the counter.
-    await this.walkActor(heath, [...HEATH_INTRO_PATH].reverse().slice(1));
+    // Walk back and slip behind the counter, ending facing the customer side.
+    const back = [...HEATH_INTRO_PATH].reverse();
+    await this.walkActor(heath, back.slice(1), "heath", back[0], "right");
     await new Promise<void>((r) =>
       this.tweens.add({ targets: heath, alpha: 0, duration: 220, onComplete: () => r() }),
     );
@@ -561,15 +671,15 @@ export class WorldScene extends Phaser.Scene {
 
     const ts = this.room.tileSize;
     const heath = this.add
-      .image(HEATH_HOME.x * ts + ts / 2, (HEATH_HOME.y + 1) * ts, resolveTextureKey("cashier"))
+      // Faces right, toward the customer side, for the whole exchange.
+      .image(HEATH_HOME.x * ts + ts / 2, (HEATH_HOME.y + 1) * ts, characterFrame("heath", "right", "both"))
       .setOrigin(0.5, 1)
       .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
-      .setFlipX(true) // faces right, toward the customer side
       .setDepth(10);
     this.roomObjects.push(heath);
 
     const path = heathPathAlongCounter(fy);
-    await this.walkActor(heath, path);
+    await this.walkActor(heath, path, "heath", HEATH_HOME, "right", "right");
 
     this.game.events.emit("interaction", { id: "checkout", type: "checkout" });
     await this.waitForDialogClose();
@@ -583,7 +693,8 @@ export class WorldScene extends Phaser.Scene {
     // Slide back to his usual spot, then vanish behind the counter.
     const inbound = [...path.slice(0, -1)].reverse();
     inbound.push(HEATH_HOME);
-    await this.walkActor(heath, inbound);
+    const outAt = path[path.length - 1] ?? HEATH_HOME;
+    await this.walkActor(heath, inbound, "heath", outAt, "right", "right");
     heath.destroy();
     this.cashierImg?.setVisible(true);
 
@@ -669,18 +780,20 @@ export class WorldScene extends Phaser.Scene {
     const nx = this.tileX + dx;
     const ny = this.tileY + dy;
 
-    if (!canStep(this.room, this.tileX, this.tileY, nx, ny)) {
-      this.setFrame("both"); // turn-in-place (wall, fixture, or wrong-side seat)
+    // Blocked by a wall, fixture, wrong-side seat — or someone standing there.
+    if (!canStep(this.room, this.tileX, this.tileY, nx, ny) || this.npcAt(nx, ny)) {
+      this.walking = false;
+      this.setFrame(this.cycle.rest());
       return;
     }
 
     this.moving = true;
-    this.setFrame(this.stepParity ? "left" : "right");
-    this.stepParity = !this.stepParity;
-    // Hold the stride frame for most of the step so it visibly lands, then
-    // settle onto both feet just before the tile move completes.
-    this.time.delayedCall(PLAYER_STEP_MS * 0.65, () => {
-      if (this.moving) this.setFrame("both");
+    this.walking = true;
+    // One tile, one full step: lead on the stride, settle onto neutral partway
+    // through, alternating feet tile to tile.
+    this.setFrame(this.cycle.step());
+    this.time.delayedCall(TILE_STEP_MS * STRIDE_HOLD, () => {
+      if (this.moving) this.setFrame(this.cycle.rest());
     });
 
     const ts = this.room.tileSize;
@@ -688,20 +801,21 @@ export class WorldScene extends Phaser.Scene {
       targets: this.scribbsShadow,
       x: nx * ts + ts / 2,
       y: (ny + 1) * ts - ts * 0.08,
-      duration: PLAYER_STEP_MS,
+      duration: TILE_STEP_MS,
       ease: "Linear",
     });
     this.tweens.add({
       targets: this.scribbs,
       x: nx * ts + ts / 2,
       y: (ny + 1) * ts,
-      duration: PLAYER_STEP_MS,
+      duration: TILE_STEP_MS,
       ease: "Linear",
       onComplete: () => {
         this.tileX = nx;
         this.tileY = ny;
         this.moving = false;
-        this.setFrame("both");
+        // Deliberately NOT resting here: if a direction is still held, update()
+        // chains straight into the next stride and the walk stays continuous.
         this.saveSession();
         this.checkInteraction();
       },
@@ -720,12 +834,15 @@ export class WorldScene extends Phaser.Scene {
 
   /** Pick the texture for the current facing + walk frame. */
   private setFrame(foot: "left" | "both" | "right") {
-    this.scribbs.setTexture(`scribbs-${this.facing}-${foot}`);
+    this.scribbs.setTexture(characterFrame("scribbs", this.facing, foot));
   }
 
   /** Step onto an interaction tile: transition (stairs) or fire a stub event. */
   private checkInteraction() {
     const hit = this.room.interactions.find((i) =>
+      // A patrolling NPC's authored tile is only a spawn point — the player can
+      // stand on it while the NPC is elsewhere, and must not trip its dialogue.
+      !i.patrol &&
       propActive(i, gameSession.revealed) &&
       footprint(i).some((t) => t.x === this.tileX && t.y === this.tileY),
     );
@@ -759,8 +876,17 @@ export class WorldScene extends Phaser.Scene {
     const zone = (this.room.seats ?? []).find((z) => z.tiles.some((t) => t.x === fx && t.y === fy));
     if (zone && !zone.tiles.some((t) => t.x === this.tileX && t.y === this.tileY)) return;
 
+    // A patrolling NPC standing right there takes priority — they're on a live
+    // tile, not the authored one, so they're matched by actor, not footprint.
+    const walker = this.npcAt(fx, fy);
+    if (walker) {
+      this.talkToNpc(walker);
+      return;
+    }
+
     const at = (x: number, y: number) =>
       this.room.interactions.find((i) =>
+        !i.patrol &&
         propActive(i, gameSession.revealed) &&
         footprint(i).some((t) => t.x === x && t.y === y),
       );
@@ -774,7 +900,7 @@ export class WorldScene extends Phaser.Scene {
       const bx = fx + dx;
       const by = fy + dy;
       const clerk = this.room.interactions.find((i) =>
-        i.type === "npc" &&
+        i.type === "npc" && !i.patrol &&
         propActive(i, gameSession.revealed) &&
         footprint(i).some((t) => t.x === bx && t.y === by),
       );
@@ -786,6 +912,15 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     if (hit && !hit.target) this.fireInteraction(hit);
+  }
+
+  /** Start a conversation with a patrolling NPC: they stop and turn to face us. */
+  private talkToNpc(npc: NpcActor) {
+    npc.suspend();
+    npc.faceTile(this.tileX, this.tileY);
+    this.talkingTo = npc;
+    const entry = this.room.interactions.find((i) => i.id === npc.id);
+    if (entry) this.fireInteraction(entry);
   }
 
   /** Move to another room, fading the camera (or instantly). */

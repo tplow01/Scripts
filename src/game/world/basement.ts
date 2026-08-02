@@ -47,7 +47,9 @@ export const basementRoom: Room = {
     { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack-h3", wTiles: 3, solid: true },
     { id: "rail-left", type: "rack", tileX: C(7), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
     { id: "rail-right", type: "rack", tileX: C(11), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
-    { id: "basement-npc", type: "npc", tileX: C(9), tileY: R("b"), artKey: "npc", solid: true },
+    // Heath again — an independent instance, never co-visible with the one
+    // behind the shop counter.
+    { id: "basement-npc", type: "npc", tileX: C(9), tileY: R("b"), artKey: "heath-down-both", solid: true },
   ],
   decorations: [
     // Boxes: spawn alcove (d1, f1) + corners (f10, f11, e11).

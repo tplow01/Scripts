@@ -1,11 +1,13 @@
 import * as Phaser from "phaser";
 import { bakeAllTextures } from "@/game/art/registry";
+import { allCharacterFrames, characterFrame, characterFramePath } from "@/game/art/characters";
 
 /**
- * Most production art is baked from the original SCR!PTS 32px source
- * definitions. Scribbs (the player character) is the deliberate exception:
- * its sprites are loaded from authored PNGs in /assets/scribbs so the
- * player art can be updated without touching procedural pixel-art code.
+ * Props and architecture are baked from the original SCR!PTS 32px source
+ * definitions. The cast is the deliberate exception: every character's frames
+ * are loaded from authored PNGs under /assets, so character art can be
+ * redrawn and re-imported (scripts/import-sprites.py) without touching
+ * procedural pixel-art code.
  */
 
 export class BootScene extends Phaser.Scene {
@@ -18,15 +20,10 @@ export class BootScene extends Phaser.Scene {
     // 480px (exact 5×) master. No runtime resampling or procedural approximation.
     this.load.image("emblem", "/assets/logo-floor-96.png");
 
-    // Scribbs walk-cycle art: 4 directions x 3 authored frames (left foot /
-    // both feet / right foot), 64px PNGs. Left and right are distinct art —
-    // no flip-mirroring.
-    const directions = ["down", "up", "left", "right"] as const;
-    const feet = ["left", "both", "right"] as const;
-    for (const dir of directions) {
-      for (const foot of feet) {
-        this.load.image(`scribbs-${dir}-${foot}`, `/assets/scribbs/scribbs-${dir}-${foot}.png`);
-      }
+    // The cast: 5 characters x 4 facings x 3 walk frames (left foot / neutral /
+    // right foot), 64px PNGs. Left and right are distinct art — no flip-mirroring.
+    for (const { id, facing, foot } of allCharacterFrames()) {
+      this.load.image(characterFrame(id, facing, foot), characterFramePath(id, facing, foot));
     }
   }
 

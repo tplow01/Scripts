@@ -60,23 +60,43 @@ export const mainRoom: Room = {
       holes: [{ dx: 0, dy: 1 }, { dx: 0, dy: 2 }, { dx: 0, dy: 3 }, { dx: 0, dy: 4 }] },
 
     // Cashier — Heath himself, standing in the checkout gap behind the counter
-    // (l1), facing his checkout. He also stars in the first-entry intro walk.
-    { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "cashier", solid: true, flip: true },
+    // (l1), facing right toward the customer side. He also stars in the
+    // first-entry intro walk. Left/right are distinct art, so he faces with a
+    // frame rather than a flip.
+    { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "heath-right-both", solid: true },
 
     // Clothing rails: horizontal h8–14, vertical h15–n15.
     { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack-h7", wTiles: 7, solid: true },
     { id: "rail-v", type: "rack", tileX: C(15), tileY: R("h"), artKey: "rack-v7", hTiles: 7, solid: true },
 
-    // Shoppers populating the floor (each speaks when interacted with).
-    // Browsing the horizontal rail (stands just below it, i10).
-    { id: "npc-rail", type: "npc", tileX: C(10), tileY: R("i"), artKey: "npcRail", solid: true },
-    // Studying the vertical rail (stands to its left, k14).
-    { id: "npc-gazer", type: "npc", tileX: C(14), tileY: R("k"), artKey: "npcGazer", solid: true },
-    // Seated on the sofa, at the corner (e1).
-    { id: "npc-sofa", type: "npc", tileX: C(1), tileY: R("e"), artKey: "npcSitter", solid: true },
-    // Customer who just checked out, tucked into the checkout corner (o3) so
-    // the counter approach stays clear.
-    { id: "npc-checkout", type: "npc", tileX: C(3), tileY: R("o"), artKey: "npcShopper", solid: true },
+    // ── The cast on the shop floor ──
+    // Teo browses the vertical rail, shuffling a couple of tiles up and down
+    // column 14 and turning back to face the rail at each end.
+    { id: "teo", type: "npc", tileX: C(14), tileY: R("j"), artKey: "teo-right-both", solid: false,
+      patrol: {
+        waypoints: [
+          { x: C(14), y: R("j") }, { x: C(14), y: R("k") }, { x: C(14), y: R("l") },
+        ],
+        restFacing: "right",
+      } },
+
+    // TP walks the shop: from beside the sofa (d6), down column 6, then along
+    // row n to the front of the checkout (n3). Every waypoint is orthogonally
+    // adjacent to the last — this is a hand-authored route, not a pathfinder.
+    { id: "tp", type: "npc", tileX: C(6), tileY: R("d"), artKey: "tp-down-both", solid: false,
+      patrol: {
+        waypoints: [
+          { x: C(6), y: R("d") }, { x: C(6), y: R("e") }, { x: C(6), y: R("f") },
+          { x: C(6), y: R("g") }, { x: C(6), y: R("h") }, { x: C(6), y: R("i") },
+          { x: C(6), y: R("j") }, { x: C(6), y: R("k") }, { x: C(6), y: R("l") },
+          { x: C(6), y: R("m") }, { x: C(6), y: R("n") },
+          { x: C(5), y: R("n") }, { x: C(4), y: R("n") }, { x: C(3), y: R("n") },
+        ],
+      } },
+
+    // Karl stands beside the couch arm (d2), facing out into the room. The
+    // source art has no seated pose, so he stands rather than fake-sitting.
+    { id: "karl", type: "npc", tileX: C(2), tileY: R("d"), artKey: "karl-down-both", solid: true },
   ],
   // The sofa itself — the L of cushions: vertical arm (col 1, rows c–e) + base
   // (row e, cols 1–5). You can only sit by stepping down from the top side; you

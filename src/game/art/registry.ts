@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import { bakePixelArt, bakeShadow } from "./pixelArt";
+import { isCharacterFrame } from "./characters";
 import {
-  hiresCharacters,
   hiresFloorArt,
   hiresBasementFloorArt,
   hiresWallTopArt,
@@ -62,12 +62,6 @@ const TEXTURE_KEYS = [
   "mannequin",
   "speaker",
   "box",
-  "npc",
-  "npcRail",
-  "npcSitter",
-  "npcGazer",
-  "npcShopper",
-  "cashier",
   "couch",
   "crates",
   "rug",
@@ -101,16 +95,6 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "mannequin", hiresMannequinArt);
   bakePixelArt(scene, "speaker", hiresSpeakerArt);
   bakePixelArt(scene, "box", hiresBoxArt);
-  bakePixelArt(scene, "npc", hiresCharacters.npc);
-  bakePixelArt(scene, "npcRail", hiresCharacters.npcRail);
-  bakePixelArt(scene, "npcSitter", hiresCharacters.npcSitter);
-  bakePixelArt(scene, "npcGazer", hiresCharacters.npcGazer);
-  bakePixelArt(scene, "npcShopper", hiresCharacters.npcShopper);
-  bakePixelArt(scene, "cashier", hiresCharacters.cashier);
-  bakePixelArt(scene, "cashier-walk-a", hiresCharacters["cashier-walk-a"]);
-  bakePixelArt(scene, "cashier-walk-b", hiresCharacters["cashier-walk-b"]);
-  bakePixelArt(scene, "cashier-walk-c", hiresCharacters["cashier-walk-c"]);
-  bakePixelArt(scene, "cashier-walk-d", hiresCharacters["cashier-walk-d"]);
   bakePixelArt(scene, "couch", hiresCouchArt);
   bakePixelArt(scene, "crates", hiresCratesArt);
   bakePixelArt(scene, "rug", hiresRugArt);
@@ -122,13 +106,16 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "mat", matArt);
   bakePixelArt(scene, "ext-void", hiresExtVoidArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
-  // Scribbs (player) textures are loaded from authored PNGs in BootScene.preload
-  // rather than baked procedurally — do not overwrite them here.
+  // The cast (see art/characters.ts) is loaded from authored PNGs in
+  // BootScene.preload rather than baked procedurally — nothing to do here.
 }
 
-/** Resolve a world artKey (or wall-variant key) to its baked texture key. */
+/** Resolve a world artKey (or wall-variant key) to its loaded texture key. */
 export function resolveTextureKey(artKey: string): string {
   if ((TEXTURE_KEYS as readonly string[]).includes(artKey)) return artKey;
+  // Character frames ("heath-right-both") are loaded, not baked, and are
+  // enumerated by art/characters.ts rather than listed here.
+  if (isCharacterFrame(artKey)) return artKey;
   throw new Error(`Unknown art key: "${artKey}". Add it to the art registry.`);
 }
 

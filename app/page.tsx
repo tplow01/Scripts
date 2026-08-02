@@ -66,23 +66,16 @@ const PROMPTS: Record<string, PromptDef> = {
     speaker: "Heath",
     pages: ["Heath here — take your time looking around.", "When you're ready, bring your pieces to the counter."],
   },
-  // Floor shoppers (by id) — flavour speech, no navigation.
-  "npc-rail": {
+  // The cast on the shop floor (by id) — flavour speech, no navigation.
+  // TODO(thomas): replace these placeholder lines with the real copy.
+  teo: {
     variant: "message",
-    pages: ["These just dropped this morning.", "I think there's only a few pairs left though."],
+    speaker: "Teo",
+    pages: ["These just dropped this morning.", "I think there's only a few pieces left though."],
   },
-  "npc-gazer": {
+  tp: {
     variant: "message",
-    pages: [
-      "There's so many sick pieces, I can't choose which one to get… might js have to get a few, don't tell my bank.",
-    ],
-  },
-  "npc-sofa": {
-    variant: "message",
-    pages: ["This pretty sick store huh? I'd check out the vinyls — some of my favorites in there."],
-  },
-  "npc-checkout": {
-    variant: "message",
+    speaker: "TP",
     pages: [
       () => {
         const p = CYBER_LOVE_PRODUCTS[Math.floor(Math.random() * CYBER_LOVE_PRODUCTS.length)];
@@ -91,10 +84,17 @@ const PROMPTS: Record<string, PromptDef> = {
       "This spot is sweeeeeet! The staff is awesome and the pieces are sick!",
     ],
   },
-  // Basement (by id — overrides the "rack" type so it routes to the pieces page)
-  // Down here the tone is hushed — you found the secret, after all.
+  karl: {
+    variant: "message",
+    speaker: "Karl",
+    pages: ["This pretty sick store huh? I'd check out the vinyls — some of my favorites in there."],
+  },
+  // Basement (by id — overrides the "rack" type so it routes to the pieces page).
+  // This is Heath again, down in the secret room; the tone is hushed, because
+  // you found the place you weren't supposed to.
   "basement-npc": {
     variant: "messageChoice",
+    speaker: "Heath",
     pages: ["Shhh… how did you find this place?", "You have to check these pieces out, they are insane!"],
     question: "Check out my favourite pieces?",
     kind: "basement",

@@ -11,7 +11,7 @@
 
 **Status:** Canonical · Launch Version
 **Owner:** Heath (founder, SCR!PTS)
-**Last meaningful update:** 2026-08-01 (admin rebuilt around the Shopify-style product variant model)
+**Last meaningful update:** 2026-08-01 (five-character cast + FireRed walk cycle)
 
 ---
 
@@ -118,12 +118,21 @@ Showcase new arrivals, upcoming collections, key products — visual storytellin
 ### Poster walls
 Contain photoshoots, campaign imagery, collection stories, creative inspirations, future teasers, artist references — they build the SCR!PTS universe.
 
-### NPC system
-NPCs bring the store to life; dialogue updates with future collections. Examples:
-- **Record Collector** — *"This track changed my life."*
-- **Basement Rumor Guy** — *"I heard there's another room here."*
-- **Loyal Customer** — *"Been here since Drop 01."*
-- **Creative Friend** — *"You ever get an idea so good you can't sleep?"*
+### The cast
+The store is populated by **five named, hand-drawn characters** — no anonymous
+background shoppers. Dialogue updates with future collections.
+
+| Character | Where | Behaviour |
+|---|---|---|
+| **Scribbs** | everywhere | The player's avatar |
+| **Heath** | behind the checkout | Greets you on first entry; walks the counter at checkout |
+| **Heath** | the Basement | A second, independent instance guarding the secret rack |
+| **Teo** | the vertical clothing rail | Browses — shuffles a couple of tiles up and down |
+| **TP** | sofa ↔ checkout | Walks a fixed route across the shop floor |
+| **Karl** | beside the sofa | Stands and talks |
+
+Every character is authored as 4 facings × 3 walk frames and imported by
+`scripts/import-sprites.py`; left and right are distinct art, never mirrored.
 
 ### Lounge area (interactive lore zone)
 The Lounge is an **interactive lure environment** — not an optional/hidden afterthought. It's where the SCR!PTS universe deepens and where the brand's external channels live.
@@ -302,3 +311,4 @@ Record meaningful changes to this playbook here so the project's direction has a
 - **2026-07-31** — **Admin metric drill-downs shipped.** Each Overview stat card opens a full SaaS-style detail page (/metrics/revenue·orders·aov·visitors): 7/14/30d range toggle, large charts with hover value readouts and day ticks, per-metric breakdowns (revenue by product, payment split, status mix, avg items, high/low orders, conversion rate, top pages, device split) and range-filtered drill-down tables. Stats logic extracted to lib/admin/stats.ts; traffic mock extended to 30 days.
 - **2026-07-31** — **Admin responsive UX pass.** Three breakpoints (phone <640 / tablet / desktop ≥1024): phone bottom nav replaces the sidebar, tables become stacked cards, and drill-downs gained a sticky header (back + metric + range pills) plus a dedicated headline stat card with a delta chip. Fixed tables bleeding past their card borders and values wrapping mid-token.
 - **2026-08-01** — **Admin rebuilt around a Shopify-style product variant model.** Products now declare options (e.g. Size, Colour) that expand into variants, each with its own SKU, stock, and pricing; the old hand-set product status field is gone — **availability is derived** from variant stock/backorder state. The product editor moved from a slide-over drawer to a **dedicated full-page route** with an options editor and a variant table/cards. The storefront catalog now ships **6 products**, and the product detail page gained a **colourway swatch picker** for choosing a variant directly. Products-list table rows were also consolidated to a single stretched-link click target per row (was four redundant links) for cleaner keyboard/screen-reader navigation.
+- **2026-08-01** — **Five-character cast + FireRed walk cycle.** Replaced the one-authored-player/six-procedural-NPC setup with five hand-drawn characters — Scribbs (player), Heath (checkout + a second instance in the Basement), Teo (browsing the vertical rail), TP (walking a sofa↔checkout route) and Karl (beside the sofa). All procedural character art was deleted from `hiresArt.ts`; the cast now loads from authored PNGs via `art/characters.ts` and `scripts/import-sprites.py`, which scales every character to a common content height so the cast is one size. Movement moved to a shared `WalkCycle`: one stride held per tile with the feet alternating, neutral only at a standstill, ~250ms/tile, plus FireRed **turn-in-place** (a tap turns, only a held press walks). Patrolling NPCs run on a new `NpcActor` that holds position when blocked rather than clipping through. Spec: `docs/superpowers/specs/2026-08-01-five-character-cast-design.md`.

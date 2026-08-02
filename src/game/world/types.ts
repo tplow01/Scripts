@@ -58,10 +58,30 @@ export function propActive(p: Placed, revealed: Set<string>): boolean {
   return true;
 }
 
+/**
+ * A patrolling NPC's route. The actor walks the waypoints in order, then back,
+ * for ever. Consecutive waypoints must be orthogonally adjacent — this is a
+ * hand-authored route, not a pathfinder.
+ *
+ * A patrolling NPC is NOT part of the static blocked set (its authored tile is
+ * only a starting point); the scene tracks its live tile instead.
+ */
+export interface Patrol {
+  waypoints: Array<{ x: number; y: number }>;
+  /** ms per tile. Defaults to the shared walk pace. */
+  stepMs?: number;
+  /** ms spent standing still at each end of the route. */
+  pauseMs?: number;
+  /** Facing held while paused (e.g. turning to face the rail). */
+  restFacing?: "up" | "down" | "left" | "right";
+}
+
 export interface Interaction extends Placed {
   /** Stable unique id within the room. */
   id: string;
   type: InteractionType;
+  /** Present on an `npc` that walks a route instead of standing still. */
+  patrol?: Patrol;
   /** Present on transitions (stairs) — stepping here moves to another room. */
   target?: { roomId: string; spawn?: { tileX: number; tileY: number } };
   /** How the transition plays. Defaults to "fade" when a target is present. */
