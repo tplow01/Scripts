@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { resolveTextureKey } from "@/game/art/registry";
+import { mainRoom } from "@/game/world/mainRoom";
 import {
   MURAL_IDS,
   MURAL_SLICES,
@@ -85,5 +86,39 @@ describe("mural assets", () => {
 
   it("still rejects art keys that are neither prop, character, nor mural", () => {
     expect(() => resolveTextureKey("not-a-real-key")).toThrow(/Unknown art key/);
+  });
+});
+
+describe("murals in the shop", () => {
+  const slices = (mainRoom.decorations ?? []).filter((d) => isMuralTile(d.artKey));
+
+  it("places every slice of both murals", () => {
+    expect(slices).toHaveLength(16);
+  });
+
+  it("hangs the vinyl wall along row a, cols 1-8", () => {
+    const vinyl = slices.filter((d) => d.artKey.startsWith("vinyl-wall"));
+    expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(vinyl.every((d) => d.tileY === 1)).toBe(true);
+  });
+
+  it("hangs the clothing wall along row g, cols 8-15", () => {
+    const cloth = slices.filter((d) => d.artKey.startsWith("clothing-wall"));
+    expect(cloth.map((d) => d.tileX)).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
+    expect(cloth.every((d) => d.tileY === 7)).toBe(true);
+  });
+
+  it("mounts every slice on a wall tile, never on floor", () => {
+    for (const d of slices) {
+      expect(
+        mainRoom.tiles[d.tileY][d.tileX],
+        `${d.artKey} at (${d.tileX},${d.tileY}) is not on a wall tile`,
+      ).toBe("wall");
+    }
+  });
+
+  it("never overlaps two slices on one tile", () => {
+    const at = slices.map((d) => `${d.tileX},${d.tileY}`);
+    expect(new Set(at).size).toBe(at.length);
   });
 });

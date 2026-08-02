@@ -1,5 +1,6 @@
 import type { Room, TileType } from "./types";
 import { MAT_OVERHANG_PX } from "@/game/art/sprites";
+import { mural } from "@/game/art/walls";
 
 /**
  * Shop floor (Main) — Map v3, the exact measured layout (see docs/world-layout.md).
@@ -123,6 +124,22 @@ export const mainRoom: Room = {
     },
   ],
   decorations: [
+    // ── The shop's only two wall faces ──
+    // Every other wall tile renders as flat exterior black (see WorldScene), so
+    // the room has no vertical wall faces at all. These two horizontal murals
+    // are hand-drawn trapezoids: full width at the base, chamfered at the top
+    // ends where they stop.
+    //
+    // Vinyl wall (row a, cols 1-8) — behind the music alcove. Chamfered at both
+    // ends, so it reads as a freestanding wall; col 0 is deliberately left bare
+    // for its left chamfer to taper into.
+    ...mural("vinyl-wall", { tileX: C(1), tileY: R("a"), tiles: 8 }),
+
+    // Clothing wall (row g, cols 8-15) — the cutout's bottom edge, directly
+    // above the horizontal rail at row h. Square on the left where it meets the
+    // corner, chamfered on the right at the map edge.
+    ...mural("clothing-wall", { tileX: C(8), tileY: R("g"), tiles: 8 }),
+
     // Speakers flanking the vinyl deck (b2, b5).
     // Bookcase (b1) mirroring the record crate at b6 about the vinyl desk, so
     // the music alcove reads symmetrically: bookcase, speaker, desk, speaker, crate.
