@@ -136,6 +136,24 @@ describe('parseStoredState', () => {
     const parsed = parseStoredState(JSON.stringify(good))!
     expect(parsed.products[0].media).toEqual([{ id: 'm2', url: '/products/a.png', alt: '', position: 1 }])
   })
+  it('nulls variant.imageId pointing at media removed by blob-url sanitizing', () => {
+    const good = seedState()
+    good.products[0] = {
+      ...good.products[0],
+      media: [
+        { id: 'm1', url: 'blob:http://x/1', alt: '', position: 0 },
+        { id: 'm2', url: '/products/a.png', alt: '', position: 1 },
+      ],
+      variants: good.products[0].variants.map((v, i) => ({
+        ...v,
+        imageId: i === 0 ? 'm1' : 'm2',
+      })),
+    }
+    const parsed = parseStoredState(JSON.stringify(good))!
+    const variants = parsed.products[0].variants
+    expect(variants[0].imageId).toBeNull()
+    expect(variants[1].imageId).toBe('m2')
+  })
   it('migrates a v2 payload in place', () => {
     const v2 = JSON.stringify({
       products: [{

@@ -122,10 +122,13 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
       careInstructions: head.careInstructions,
     }
 
+    const colorwayAxis = options.findIndex((o) => o.name === 'Colorway')
     const variants = reconcileVariants(shell.id, shell.skuRoot, options, [], defaults).map((v, i) => ({
       ...v,
       stock: seedStock(i),
-      imageId: mediaIdByColorway.get(v.optionValues[1]) ?? media[0]?.id ?? null,
+      imageId: (colorwayAxis >= 0 ? mediaIdByColorway.get(v.optionValues[colorwayAxis]) : undefined)
+        ?? media[0]?.id
+        ?? null,
     }))
 
     return { ...shell, variants }

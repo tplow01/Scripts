@@ -118,11 +118,19 @@ export function parseStoredState(raw: string | null): AdminState | null {
     parsed.products = parsed.products.every(isMigrated)
       ? parsed.products
       : migrateProducts(parsed.products as unknown as LegacyProduct[])
-    parsed.products = parsed.products.map((p) => ({
-      ...p,
-      media: (p.media ?? []).filter((m) => !m.url.startsWith('blob:')),
-      variants: (p.variants ?? []).map((v) => ({ ...v })),
-    }))
+    parsed.products = parsed.products.map((p) => {
+      const media = (p.media ?? []).filter((m) => !m.url.startsWith('blob:'))
+      const mediaIds = new Set(media.map((m) => m.id))
+      return {
+        ...p,
+        media,
+        // Any variant pointing at a media id removed above falls back to unset.
+        variants: (p.variants ?? []).map((v) => ({
+          ...v,
+          imageId: v.imageId && mediaIds.has(v.imageId) ? v.imageId : null,
+        })),
+      }
+    })
     return parsed
   } catch {
     return null
@@ -133,6 +141,7 @@ export function parseStoredState(raw: string | null): AdminState | null {
 
 interface AdminApi {
   state: AdminState
+  hydrated: boolean
   add: (p: Product) => void
   update: (p: Product) => void
   remove: (id: string) => void
@@ -144,6 +153,10 @@ const AdminContext = createContext<AdminApi | null>(null)
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AdminState>(seedState)
+  // True once the rehydration effect below has run, whether or not a stored payload existed.
+  // Consumers that capture state.products into local component state (e.g. the edit-product
+  // form) must wait for this before mounting, or they lock onto seed data on a hard reload.
+  const [hydrated, setHydrated] = useState(false)
   // True once the persist effect has run at least once. The very first render/commit uses
   // seed state — persisting it before rehydration lands would clobber whatever was stored.
   const persistedOnce = useRef(false)
@@ -152,6 +165,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = parseStoredState(localStorage.getItem(STORAGE_KEY))
     if (stored) setState(stored)
+    setHydrated(true)
   }, [])
 
   // Persist on every change. Object-URL images won't survive reload — pages render a placeholder then.
@@ -173,7 +187,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     [])
 
   return (
-    <AdminContext.Provider value={{ state, add, update, remove, togglePublished: togglePublishedCb, setOrder }}>
+    <AdminContext.Provider
+      value={{ state, hydrated, add, update, remove, togglePublished: togglePublishedCb, setOrder }}>
       {children}
     </AdminContext.Provider>
   )

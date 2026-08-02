@@ -8,8 +8,19 @@ import { useAdmin } from '@/lib/admin/store'
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { state } = useAdmin()
+  const { state, hydrated } = useAdmin()
   const product = state.products.find((p) => p.id === id)
+
+  // ProductForm captures `initial` once into useState — mounting it before localStorage
+  // rehydration lands would lock the form onto seed data and a Save would clobber persisted
+  // inventory. Wait for rehydration to finish before the form ever mounts.
+  if (!hydrated) {
+    return (
+      <div className="rounded-xl border border-grey/25 bg-[#141414] p-5">
+        <p className="text-[11px] uppercase tracking-[0.14em] text-grey">Loading product…</p>
+      </div>
+    )
+  }
 
   if (!product) {
     return (

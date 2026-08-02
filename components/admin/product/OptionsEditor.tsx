@@ -3,16 +3,25 @@ import { X } from 'lucide-react'
 import { useState } from 'react'
 import {
   MAX_OPTIONS, addOption, addOptionValue, impactOfRemoval,
-  removeOption, removeOptionValue, renameOptionValue,
+  removeOption, removeOptionValue, renameOptionValue, type VariantDefaults,
 } from '@/lib/admin/variants'
 import { NEW_VARIANT_DEFAULTS } from '@/lib/admin/store'
 import { inputCls, labelCls, type SectionProps } from './ProductForm'
 
-const D = NEW_VARIANT_DEFAULTS
+/** New variants should inherit the product's own defaults (price, backorder, etc.), not the
+ * generic new-product defaults — otherwise adding a size to a migrated pre-order product mints
+ * a variant that silently reads as sold-out-and-not-backorderable next to its siblings. */
+function defaultsFor(product: SectionProps['product']): VariantDefaults {
+  const v = product.variants[0]
+  if (!v) return NEW_VARIANT_DEFAULTS
+  const { price, compareAtPrice, cost, barcode, trackInventory, allowBackorder, weightGrams } = v
+  return { price, compareAtPrice, cost, barcode, trackInventory, allowBackorder, weightGrams }
+}
 
 export default function OptionsEditor({ product, onChange }: SectionProps) {
   const [drafts, setDrafts] = useState<Record<number, string>>({})
   const [editing, setEditing] = useState<{ axis: number; value: string } | null>(null)
+  const D = defaultsFor(product)
 
   const confirmRemoveValue = (axis: number, value: string) => {
     const { variants, stock } = impactOfRemoval(product, axis, value)
@@ -28,7 +37,12 @@ export default function OptionsEditor({ product, onChange }: SectionProps) {
             <span className={labelCls + ' mb-0'}>{opt.name}</span>
             <button type="button" className="text-[11px] text-grey hover:text-pink-deep"
               onClick={() => {
-                if (window.confirm(`Remove the ${opt.name} axis? Only variants on "${opt.values[0]}" are kept.`))
+                const survivor = opt.values[0]
+                const doomed = product.variants.filter((v) => v.optionValues[axis] !== survivor)
+                const stock = doomed.reduce((n, v) => n + v.stock, 0)
+                if (window.confirm(
+                  `Remove the ${opt.name} axis? This deletes ${doomed.length} variant${doomed.length === 1 ? '' : 's'} holding ${stock} in stock. Only variants on "${survivor}" are kept.`,
+                ))
                   onChange(removeOption(product, axis, D))
               }}>Remove axis</button>
           </div>
