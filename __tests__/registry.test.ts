@@ -39,8 +39,10 @@ describe("art registry", () => {
   });
 });
 
-describe("staff floor art key", () => {
-  it("resolves floor-staff", () => {
-    expect(resolveTextureKey("floor-staff")).toBe("floor-staff");
+describe("retired art keys", () => {
+  it("no longer resolves floor-staff", () => {
+    // The behind-counter floor was removed with the authored floor panels;
+    // this proves the key is gone rather than orphaned in the registry.
+    expect(() => resolveTextureKey("floor-staff")).toThrow();
   });
 });

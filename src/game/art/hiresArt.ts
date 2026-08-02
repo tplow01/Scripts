@@ -47,6 +47,9 @@ const P: Palette = {
   v: "#C9C2B7",
   a: "#252329",
   A: "#17161B",
+  // Shop floor-panel corner mark: a neutral tint between paper and brand grey.
+  // The only floor-panel colour with no BRAND.md token of its own.
+  N: "#C1C0C4",
 };
 
 type Grid = string[][];
@@ -68,13 +71,23 @@ const ellipse = (g: Grid, cx: number, cy: number, rx: number, ry: number, ch: st
 };
 const rows = (g: Grid): string[] => g.map((r) => r.join(""));
 
-function buildFloor(dark = false): PixelArt {
-  const g = grid(32, 32, dark ? "x" : "e");
-  // 16px fashion-showroom slabs with a fine 1px bevel and deterministic grain.
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-    if (x % 16 === 0 || y % 16 === 0) put(g, x, y, dark ? "A" : "v");
-    else if (x % 16 === 1 || y % 16 === 1) put(g, x, y, dark ? "z" : "w");
-    else if ((x * 13 + y * 7) % 71 === 0) put(g, x, y, dark ? "d" : "u");
+/**
+ * One authored floor panel, filling a whole tile.
+ *
+ * Traced from the supplied Shop/Basement floor panel art: a flat field with a
+ * 3-pixel L in each corner and no interior pattern at all. Because the panel is
+ * exactly one tile, the four L's of neighbouring tiles meet as a small cross at
+ * every junction, seating the floor seam on the movement grid.
+ */
+function buildFloorPanel(field: string, mark: string): PixelArt {
+  const g = grid(32, 32, field);
+  const max = 31;
+  for (const [cx, cy] of [[0, 0], [max, 0], [0, max], [max, max]]) {
+    const inX = cx === 0 ? 1 : max - 1;
+    const inY = cy === 0 ? 1 : max - 1;
+    put(g, cx, cy, mark);
+    put(g, inX, cy, mark);
+    put(g, cx, inY, mark);
   }
   return { rows: rows(g), palette: P };
 }
@@ -91,24 +104,10 @@ function buildWall(kind: "top" | "side" | "bottom" | "fill"): PixelArt {
   return { rows: rows(g), palette: P };
 }
 
-/**
- * Behind-the-counter floor — the staff side of the checkout. Same slab
- * construction as the shop floor, several shades darker, so the counter reads
- * as a barrier with a working side behind it.
- */
-function buildStaffFloor(): PixelArt {
-  const g = grid(32, 32, "T");
-  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
-    if (x % 16 === 0 || y % 16 === 0) put(g, x, y, "G");
-    else if (x % 16 === 1 || y % 16 === 1) put(g, x, y, "t");
-    else if ((x * 13 + y * 7) % 71 === 0) put(g, x, y, "h");
-  }
-  return { rows: rows(g), palette: P };
-}
-
-export const hiresFloorArt = buildFloor(false);
-export const hiresBasementFloorArt = buildFloor(true);
-export const hiresStaffFloorArt = buildStaffFloor();
+// Field and mark are brand tokens wherever one exists: paper/ink for the two
+// fields, brand grey for the basement mark. Only the shop's mark has no token.
+export const hiresFloorArt = buildFloorPanel("w", "N");
+export const hiresBasementFloorArt = buildFloorPanel("k", "G");
 export const hiresWallTopArt = buildWall("top");
 export const hiresWallSideArt = buildWall("side");
 export const hiresWallBottomArt = buildWall("bottom");

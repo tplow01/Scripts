@@ -4,7 +4,6 @@ import { isCharacterFrame } from "./characters";
 import {
   hiresFloorArt,
   hiresBasementFloorArt,
-  hiresStaffFloorArt,
   hiresWallTopArt,
   hiresWallSideArt,
   hiresWallBottomArt,
@@ -47,7 +46,6 @@ import { emblemArt, matArt } from "./sprites";
 const TEXTURE_KEYS = [
   "floor",
   "floor-basement",
-  "floor-staff",
   "wall-top",
   "wall-side",
   "wall-bottom",
@@ -82,7 +80,6 @@ export const SHADOW_KEY = "shadow";
 export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "floor", hiresFloorArt);
   bakePixelArt(scene, "floor-basement", hiresBasementFloorArt);
-  bakePixelArt(scene, "floor-staff", hiresStaffFloorArt);
   bakePixelArt(scene, "wall-top", hiresWallTopArt);
   bakePixelArt(scene, "wall-side", hiresWallSideArt);
   bakePixelArt(scene, "wall-bottom", hiresWallBottomArt);
