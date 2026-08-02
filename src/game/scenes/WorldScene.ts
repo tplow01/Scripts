@@ -382,6 +382,10 @@ export class WorldScene extends Phaser.Scene {
     }
     this.updateZoom();
     this.lastInteractionId = null;
+    // Room lighting: the player carries across rooms, so his tint is set on
+    // every load rather than once at creation.
+    if (this.room.characterTint !== undefined) this.scribbs.setTint(this.room.characterTint);
+    else this.scribbs.clearTint();
     this.saveSession();
   }
 
@@ -420,6 +424,7 @@ export class WorldScene extends Phaser.Scene {
       heightTiles: CHARACTER_HEIGHT_TILES,
       depth: 3,
       shadowKey: SHADOW_KEY,
+      tint: this.room.characterTint,
     });
     this.npcs.push(npc);
     this.roomObjects.push(...npc.objects);
@@ -447,6 +452,7 @@ export class WorldScene extends Phaser.Scene {
     );
     if (isCharacter) img.setOrigin(0.5, 1).setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES);
     else img.setDisplaySize(w * ts, h * ts);
+    if (isCharacter && this.room.characterTint !== undefined) img.setTint(this.room.characterTint);
     img.setFlipX(!!p.flip).setDepth(isCharacter ? Math.max(depth, 3) : depth);
     this.roomObjects.push(img);
     return img;

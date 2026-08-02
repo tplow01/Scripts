@@ -116,3 +116,10 @@ describe("patrolling NPCs", () => {
     }
   });
 });
+
+describe('room lighting', () => {
+  it('tints characters in the basement and leaves the shop untinted', () => {
+    expect(basementRoom.characterTint).toBeDefined()
+    expect(mainRoom.characterTint).toBeUndefined()
+  })
+})

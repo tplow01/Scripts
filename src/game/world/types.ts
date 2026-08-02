@@ -119,6 +119,13 @@ export interface Room {
   decorations?: Decoration[];
   /** Optional darkening overlay drawn over the whole room (e.g. the Basement). */
   ambient?: { color: number; alpha: number };
+  /**
+   * Multiply-tint applied to every character in the room. The ambient overlay
+   * sits below the player, so without this he reads as lit while the room
+   * around him is in shadow. Tinting rather than raising the overlay keeps him
+   * readable — under the overlay he would darken exactly as much as the floor.
+   */
+  characterTint?: number;
   /** Tiles you can only step onto from a specific side (e.g. sofa cushions). */
   seats?: SeatZone[];
 }

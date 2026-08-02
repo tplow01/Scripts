@@ -17,6 +17,8 @@ export interface NpcActorOptions {
   heightTiles: number;
   depth: number;
   shadowKey: string;
+  /** Room lighting tint, if the room sets one. */
+  tint?: number;
 }
 
 /**
@@ -81,6 +83,7 @@ export class NpcActor {
       .setOrigin(0.5, 1)
       .setDisplaySize(ts, ts * opts.heightTiles)
       .setDepth(opts.depth);
+    if (opts.tint !== undefined) this.image.setTint(opts.tint);
     this.sync();
   }
 

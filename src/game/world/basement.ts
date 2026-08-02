@@ -38,6 +38,7 @@ export const basementRoom: Room = {
   tiles: buildTiles(WIDTH, HEIGHT),
   spawn: { tileX: C(2), tileY: R("e") },
   ambient: { color: 0x000000, alpha: 0.45 },
+  characterTint: 0x8a8a96,
   interactions: [
     // Spawn alcove (col 1): box d1, stairs e1 → back up to the Shop, box f1.
     { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs", solid: false,
