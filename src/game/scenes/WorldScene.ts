@@ -678,8 +678,11 @@ export class WorldScene extends Phaser.Scene {
       .setDepth(10);
     this.roomObjects.push(heath);
 
+    // No locked facing: he walks facing the way he travels (down or up the
+    // counter), and `restFacing` turns him back to the customer on arrival.
+    // Locking him to "right" made him shuffle sideways along the counter.
     const path = heathPathAlongCounter(fy);
-    await this.walkActor(heath, path, "heath", HEATH_HOME, "right", "right");
+    await this.walkActor(heath, path, "heath", HEATH_HOME, "right");
 
     this.game.events.emit("interaction", { id: "checkout", type: "checkout" });
     await this.waitForDialogClose();
@@ -694,7 +697,7 @@ export class WorldScene extends Phaser.Scene {
     const inbound = [...path.slice(0, -1)].reverse();
     inbound.push(HEATH_HOME);
     const outAt = path[path.length - 1] ?? HEATH_HOME;
-    await this.walkActor(heath, inbound, "heath", outAt, "right", "right");
+    await this.walkActor(heath, inbound, "heath", outAt, "right");
     heath.destroy();
     this.cashierImg?.setVisible(true);
 
