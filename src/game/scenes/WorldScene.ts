@@ -351,13 +351,17 @@ export class WorldScene extends Phaser.Scene {
       }
     }
 
-    // Optional ambient darkening overlay (Basement) — above props, below Scribbs.
+    // Optional ambient darkening overlay (Basement): darkens the room's floor
+    // and props only. Characters are shaded separately via `characterTint` so
+    // Scribbs and NPCs match consistently instead of being double-darkened by
+    // the overlay. Characters sit at depth 3+, so 2.5 keeps the overlay below
+    // all of them.
     if (this.room.ambient) {
       const ts = this.room.tileSize;
       const overlay = this.add
         .rectangle(0, 0, this.room.width * ts, this.room.height * ts, this.room.ambient.color, this.room.ambient.alpha)
         .setOrigin(0, 0)
-        .setDepth(5);
+        .setDepth(2.5);
       this.roomObjects.push(overlay);
     }
 
@@ -566,9 +570,6 @@ export class WorldScene extends Phaser.Scene {
     character: CharacterId,
     from: { x: number; y: number },
     restFacing: Facing,
-    /** Hold one facing for the whole walk (Heath stays turned to the customer
-     * side while sliding along the counter) instead of facing the travel. */
-    lockFacing?: Facing,
     stepMs = SCRIPTED_STEP_MS,
   ): Promise<void> {
     const ts = this.room.tileSize;
@@ -587,12 +588,11 @@ export class WorldScene extends Phaser.Scene {
         const dy = t.y - at.y;
         const travel: Facing | null =
           dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : dy < 0 ? "up" : null;
-        const facing = lockFacing ?? travel;
-        if (facing) {
-          img.setTexture(characterFrame(character, facing, cycle.step()));
+        if (travel) {
+          img.setTexture(characterFrame(character, travel, cycle.step()));
           // Settle onto neutral partway through the tile, same beat as the player.
           this.time.delayedCall(stepMs * STRIDE_HOLD, () => {
-            if (img.active) img.setTexture(characterFrame(character, facing, cycle.rest()));
+            if (img.active) img.setTexture(characterFrame(character, travel, cycle.rest()));
           });
         }
         at = t;

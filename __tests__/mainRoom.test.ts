@@ -116,17 +116,37 @@ describe('music alcove symmetry', () => {
 })
 
 describe('sofa reachability', () => {
-  it('leaves every seat tile enterable from outside the zone', () => {
+  it('lets the player reach every seat tile from outside the zone', () => {
     for (const zone of mainRoom.seats ?? []) {
+      const key = (t: { x: number; y: number }) => `${t.x},${t.y}`
+      const inZone = (x: number, y: number) => zone.tiles.some((s) => s.x === x && s.y === y)
+
+      // Seeds: seat tiles you can step onto directly from outside the zone.
+      const seeds = zone.tiles.filter((t) =>
+        [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => {
+          const f = { x: t.x - dx, y: t.y - dy }
+          return !inZone(f.x, f.y) &&
+            isWalkableIn(mainRoom, f.x, f.y) &&
+            canStep(mainRoom, f.x, f.y, t.x, t.y)
+        }))
+      expect(seeds.length, `seat zone entered by "${zone.enterDir}" has no entrance`).toBeGreaterThan(0)
+
+      // Spread inward only where the zone permits shuffling between its tiles.
+      const reached = new Set(seeds.map(key))
+      if (zone.internalMoves) {
+        for (let grew = true; grew;) {
+          grew = false
+          for (const t of zone.tiles) {
+            if (reached.has(key(t))) continue
+            const adjacent = zone.tiles.some((s) =>
+              reached.has(key(s)) && Math.abs(s.x - t.x) + Math.abs(s.y - t.y) === 1)
+            if (adjacent) { reached.add(key(t)); grew = true }
+          }
+        }
+      }
+
       for (const t of zone.tiles) {
-        const froms = [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) => ({ x: t.x - dx, y: t.y - dy }))
-        const reachable = froms.some((f) =>
-          !zone.tiles.some((s) => s.x === f.x && s.y === f.y) &&
-          isWalkableIn(mainRoom, f.x, f.y) &&
-          canStep(mainRoom, f.x, f.y, t.x, t.y))
-        const viaZone = zone.internalMoves === true &&
-          zone.tiles.some((s) => (Math.abs(s.x - t.x) + Math.abs(s.y - t.y)) === 1)
-        expect(reachable || viaZone, `seat ${t.x},${t.y} is unreachable`).toBe(true)
+        expect(reached.has(key(t)), `seat ${key(t)} is unreachable`).toBe(true)
       }
     }
   })
