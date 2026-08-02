@@ -80,17 +80,18 @@ export const mainRoom: Room = {
         restFacing: "right",
       } },
 
-    // TP walks the shop: from beside the sofa (d6), down column 6, then along
-    // row n to the front of the checkout (n3). Every waypoint is orthogonally
-    // adjacent to the last — this is a hand-authored route, not a pathfinder.
-    { id: "tp", type: "npc", tileX: C(6), tileY: R("d"), artKey: "tp-down-both", solid: false,
+    // TP paces the open floor between the sofa and the checkout: down column 4
+    // from row f (the first row clear of the sofa's seat zone) to row n, then
+    // one tile west to the counter approach. Well clear of the floor logo at
+    // columns 7-9. Every waypoint is orthogonally adjacent to the last — this
+    // is a hand-authored route, not a pathfinder.
+    { id: "tp", type: "npc", tileX: C(4), tileY: R("f"), artKey: "tp-down-both", solid: false,
       patrol: {
         waypoints: [
-          { x: C(6), y: R("d") }, { x: C(6), y: R("e") }, { x: C(6), y: R("f") },
-          { x: C(6), y: R("g") }, { x: C(6), y: R("h") }, { x: C(6), y: R("i") },
-          { x: C(6), y: R("j") }, { x: C(6), y: R("k") }, { x: C(6), y: R("l") },
-          { x: C(6), y: R("m") }, { x: C(6), y: R("n") },
-          { x: C(5), y: R("n") }, { x: C(4), y: R("n") }, { x: C(3), y: R("n") },
+          { x: C(4), y: R("f") }, { x: C(4), y: R("g") }, { x: C(4), y: R("h") },
+          { x: C(4), y: R("i") }, { x: C(4), y: R("j") }, { x: C(4), y: R("k") },
+          { x: C(4), y: R("l") }, { x: C(4), y: R("m") }, { x: C(4), y: R("n") },
+          { x: C(3), y: R("n") },
         ],
       } },
 

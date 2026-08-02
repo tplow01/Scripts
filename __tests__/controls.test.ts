@@ -10,11 +10,20 @@ describe('controls', () => {
     expect(KEY_TO_BTN['z']).toBe('A')
     expect(KEY_TO_BTN['x']).toBe('B')
   })
-  it('no longer maps Enter/Shift/Escape to game buttons', () => {
-    expect(KEY_TO_BTN['Enter']).toBeUndefined()
+  it('no longer maps Shift/Escape to game buttons', () => {
     expect(KEY_TO_BTN['Shift']).toBeUndefined()
     expect(KEY_TO_BTN['Escape']).toBeUndefined()
   })
+})
+
+describe('Enter as interact', () => {
+  it('maps Enter to the A button alongside z', () => {
+    expect(KEY_TO_BTN.Enter).toBe('A')
+    expect(KEY_TO_BTN.z).toBe('A')
+  })
+})
+
+describe('controls utilities', () => {
   it('labels the four utilities', () => {
     expect(UTILITY_LABELS.social).toBe('SOCIALS')
     expect(UTILITY_LABELS.inventory).toBe('INVENTORY')

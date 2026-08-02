@@ -14,5 +14,7 @@ export const UTILITY_LABELS: Record<UtilityAction, string> = {
 /** KeyboardEvent.key → console button. Lowercase letters; arrows verbatim. */
 export const KEY_TO_BTN: Record<string, Btn> = {
   ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
-  z: 'A', x: 'B',
+  // Enter interacts like Z: the scene already accepts it, so without this the
+  // dialogue layer would swallow Enter and force a switch to Z mid-conversation.
+  z: 'A', Enter: 'A', x: 'B',
 }

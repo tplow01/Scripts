@@ -97,4 +97,22 @@ describe("patrolling NPCs", () => {
       }
     }
   });
+
+  it('keeps every route clear of the floor logo', () => {
+    // The SCR!PTS floor mark occupies columns 7-9, rows k-m (11-13).
+    for (const npc of patrols) {
+      for (const p of npc.patrol!.waypoints) {
+        const onLogo = p.x >= 7 && p.x <= 9 && p.y >= 11 && p.y <= 13
+        expect(onLogo, `${npc.id} crosses the logo at ${p.x},${p.y}`).toBe(false)
+      }
+    }
+  });
+
+  it('keeps TP between the sofa and the checkout', () => {
+    const tp = patrols.find((p) => p.id === 'tp')!
+    for (const p of tp.patrol!.waypoints) {
+      expect(p.x).toBeLessThanOrEqual(4)
+      expect(p.y).toBeGreaterThanOrEqual(6)
+    }
+  });
 });
