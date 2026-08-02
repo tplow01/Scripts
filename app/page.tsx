@@ -67,11 +67,14 @@ const PROMPTS: Record<string, PromptDef> = {
     pages: ["Heath here — take your time looking around.", "When you're ready, bring your pieces to the counter."],
   },
   // The cast on the shop floor (by id) — flavour speech, no navigation.
-  // TODO(thomas): replace these placeholder lines with the real copy.
   teo: {
     variant: "message",
     speaker: "Teo",
-    pages: ["These just dropped this morning.", "I think there's only a few pieces left though."],
+    pages: [
+      "These just dropped this morning.",
+      "I think there's only a few pairs left though.",
+      "There's so many sick pieces, I can't choose which one to get… might js have to get a few, don't tell my bank.",
+    ],
   },
   tp: {
     variant: "message",

@@ -1,7 +1,7 @@
 /** Material recipes for the SCR!PTS console — the ONLY place shell colours live. */
 
-/** Flat pink shell. One fill, no gradients, no creases — the body is a solid. */
-export const SHELL_PINK = '#FF4FA3'
+/** Flat shell body in the brand neutral grey. One fill, no gradients, no creases. */
+export const SHELL_BODY = '#6F6F73'
 
 /** Wordmark strip and flat printed labels/icons. */
 export const STRIP_BLACK = '#0D0D0D'

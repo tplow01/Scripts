@@ -9,7 +9,7 @@ import DPad from './shell/DPad'
 import RoundBtn from './shell/RoundBtn'
 import SystemOverlay from './shell/SystemOverlay'
 import { DmgBtn, FlatIconBtn, QuestionGlyph, SpeakerIcon } from './shell/UtilityBtn'
-import { SCREEN_GLASS, SHELL_PINK, STRIP_BLACK, WORDMARK_PINK } from './shell/theme'
+import { SCREEN_GLASS, SHELL_BODY, STRIP_BLACK, WORDMARK_PINK } from './shell/theme'
 
 export type { Btn }
 
@@ -136,7 +136,7 @@ export default function GameBoyShell({
     : null
 
   const rootStyle: React.CSSProperties = {
-    background: SHELL_PINK, userSelect: 'none', WebkitUserSelect: 'none',
+    background: SHELL_BODY, userSelect: 'none', WebkitUserSelect: 'none',
     WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none',
   }
 
@@ -173,8 +173,8 @@ export default function GameBoyShell({
           </div>
         </div>
         <div style={{ height: railH, display: 'flex', alignItems: 'center', gap: 26 }}>
-          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} labelBeside onPress={() => onUtility('social')} />
-          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} labelBeside onPress={() => onUtility('inventory')} />
+          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
+          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
           <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
             <SpeakerIcon size={19} muted={muted} />
           </FlatIconBtn>

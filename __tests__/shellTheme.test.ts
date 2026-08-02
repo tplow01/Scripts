@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import * as T from '@/components/shell/theme'
 
 describe('shell theme', () => {
-  it('shell is one flat brand pink, strip is brand black', () => {
-    expect(T.SHELL_PINK).toBe('#FF4FA3')
+  it('shell is one flat neutral grey, strip is brand black', () => {
+    expect(T.SHELL_BODY).toBe('#6F6F73')
     expect(T.STRIP_BLACK).toBe('#0D0D0D')
   })
   it('wordmark is Primary Pink', () => {
@@ -12,8 +12,8 @@ describe('shell theme', () => {
   it('rubber and DMG pill faces are molded (gradients), never pink', () => {
     expect(T.RUBBER_FACE).toContain('gradient')
     expect(T.DMG_PILL_FACE).toContain('gradient')
-    expect(T.RUBBER_FACE.toLowerCase()).not.toContain('#ff4fa3')
-    expect(T.DMG_PILL_FACE.toLowerCase()).not.toContain('#ff4fa3')
+    expect(T.RUBBER_FACE.toLowerCase()).not.toContain('#6f6f73')
+    expect(T.DMG_PILL_FACE.toLowerCase()).not.toContain('#6f6f73')
   })
   it('retired ink/pink-face tokens are gone', () => {
     const t = T as Record<string, unknown>
