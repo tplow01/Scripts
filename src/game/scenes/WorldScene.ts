@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { wallVariant } from "@/game/art/wallVariant";
+import { isMuralTile } from "@/game/art/walls";
 import { footprint, propActive } from "@/game/world/types";
 import type { Interaction, Decoration, Room } from "@/game/world/types";
 import { HEATH_INTRO_PATH, HEATH_HOME, heathPathAlongCounter } from "@/game/world/mainRoom";
@@ -288,19 +289,20 @@ export class WorldScene extends Phaser.Scene {
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
     // The Basement lays down its own darker floor; everywhere else uses "floor".
     const floorKey = roomId === "basement" ? "floor-basement" : "floor";
-    // The main room's southern border sits against the exterior void, not an
-    // interior wall — render it flat black (no cap/trim line) so the floor
-    // reads as running straight up to the outside, FireRed-threshold style.
-    const isOuterSouthEdge = (x: number, y: number) =>
-      roomId === "main" && y === this.room.height - 1;
+    // The shop has no wall FACES: every wall tile renders as the same flat
+    // exterior black the apron uses, so the floor reads as running straight up
+    // to the outside on all sides. The room's only two walls are the hand-drawn
+    // horizontal murals hung as decorations (see mainRoom.ts) — nothing
+    // vertical. The Basement keeps the FireRed cap/side/base depth treatment.
+    const flatWalls = roomId === "main";
     for (let y = 0; y < this.room.height; y++) {
       for (let x = 0; x < this.room.width; x++) {
         const isWall = this.room.tiles[y][x] === "wall";
-        const key = isOuterSouthEdge(x, y)
-          ? "wall-fill"
-          : isWall
-            ? wallVariant(this.room, x, y)
-            : floorKey;
+        const key = !isWall
+          ? floorKey
+          : flatWalls
+            ? "ext-void"
+            : wallVariant(this.room, x, y);
         this.placeTile(resolveTextureKey(key), x, y, 0);
       }
     }
@@ -322,7 +324,7 @@ export class WorldScene extends Phaser.Scene {
       }
       if (deco.artKey === "emblem") this.placeProp(deco, 0.4, false);
       else if (flatFloor.has(deco.artKey)) this.placeProp(deco, 0.6, false);
-      else if (onWall.has(deco.artKey)) this.placeProp(deco, 1, false);
+      else if (onWall.has(deco.artKey) || isMuralTile(deco.artKey)) this.placeProp(deco, 1, false);
       else this.placeProp(deco, 2, !!deco.solid);
     }
 
