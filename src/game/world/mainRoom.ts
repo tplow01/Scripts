@@ -95,20 +95,30 @@ export const mainRoom: Room = {
         ],
       } },
 
-    // Karl stands beside the couch arm (d2), facing out into the room. The
-    // source art has no seated pose, so he stands rather than fake-sitting.
-    { id: "karl", type: "npc", tileX: C(2), tileY: R("d"), artKey: "karl-down-both", solid: true },
+    // Karl stands beside the couch's right edge (d6), facing out into the room.
+    // The source art has no seated pose, so he stands rather than fake-sitting.
+    { id: "karl", type: "npc", tileX: C(6), tileY: R("d"), artKey: "karl-down-both", solid: true },
   ],
   // The sofa itself — the L of cushions: vertical arm (col 1, rows c–e) + base
   // (row e, cols 1–5). You can only sit by stepping down from the top side; you
   // can't walk onto it from the back (below) or the sides. The open corner
   // (cols 2–5 × rows c–d) is just normal floor.
   seats: [
+    // Couch base (row e, cols 2–5): sit by stepping down from the open floor
+    // above. Seated is planted — the only move is back off the way you came.
     {
       enterDir: "down",
       tiles: [
-        { x: C(1), y: R("c") }, { x: C(1), y: R("d") }, { x: C(1), y: R("e") },
         { x: C(2), y: R("e") }, { x: C(3), y: R("e") }, { x: C(4), y: R("e") }, { x: C(5), y: R("e") },
+      ],
+    },
+    // Couch arm (col 1, rows c–e): the bookcase occupies b1, so the arm is
+    // entered from BELOW — step up from f1 — and you may shuffle along it.
+    {
+      enterDir: "up",
+      internalMoves: true,
+      tiles: [
+        { x: C(1), y: R("c") }, { x: C(1), y: R("d") }, { x: C(1), y: R("e") },
       ],
     },
   ],

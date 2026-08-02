@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mainRoom } from "@/game/world/mainRoom";
-import { isWalkableIn as isWalkable } from "@/game/world/rooms";
+import { isWalkableIn as isWalkable, canStep, isWalkableIn } from "@/game/world/rooms";
 import { footprint, buildBlockedSet, propActive } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
@@ -112,5 +112,22 @@ describe('music alcove symmetry', () => {
   it('makes the bookcase solid', () => {
     const bookcase = (mainRoom.decorations ?? []).find((d) => d.artKey === 'bookcase')
     expect(bookcase?.solid).toBe(true)
+  })
+})
+
+describe('sofa reachability', () => {
+  it('leaves every seat tile enterable from outside the zone', () => {
+    for (const zone of mainRoom.seats ?? []) {
+      for (const t of zone.tiles) {
+        const froms = [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) => ({ x: t.x - dx, y: t.y - dy }))
+        const reachable = froms.some((f) =>
+          !zone.tiles.some((s) => s.x === f.x && s.y === f.y) &&
+          isWalkableIn(mainRoom, f.x, f.y) &&
+          canStep(mainRoom, f.x, f.y, t.x, t.y))
+        const viaZone = zone.internalMoves === true &&
+          zone.tiles.some((s) => (Math.abs(s.x - t.x) + Math.abs(s.y - t.y)) === 1)
+        expect(reachable || viaZone, `seat ${t.x},${t.y} is unreachable`).toBe(true)
+      }
+    }
   })
 })

@@ -103,6 +103,12 @@ export interface Decoration extends Placed {}
 export interface SeatZone {
   tiles: Array<{ x: number; y: number }>;
   enterDir: "up" | "down" | "left" | "right";
+  /**
+   * Allow moving between tiles inside this zone. Default (absent/false) is the
+   * planted behaviour: sitting down commits you, and the only move is back out
+   * the way you came. The couch arm sets this so you can shuffle along it.
+   */
+  internalMoves?: boolean;
 }
 
 export interface Room {
