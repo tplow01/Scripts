@@ -47,9 +47,6 @@ const P: Palette = {
   v: "#C9C2B7",
   a: "#252329",
   A: "#17161B",
-  // Shop floor-panel corner mark: a neutral tint between paper and brand grey.
-  // The only floor-panel colour with no BRAND.md token of its own.
-  N: "#C1C0C4",
 };
 
 type Grid = string[][];
@@ -72,24 +69,14 @@ const ellipse = (g: Grid, cx: number, cy: number, rx: number, ry: number, ch: st
 const rows = (g: Grid): string[] => g.map((r) => r.join(""));
 
 /**
- * One authored floor panel, filling a whole tile.
+ * One floor tile: a single flat brand colour, edge to edge.
  *
- * Traced from the supplied Shop/Basement floor panel art: a flat field with a
- * 3-pixel L in each corner and no interior pattern at all. Because the panel is
- * exactly one tile, the four L's of neighbouring tiles meet as a small cross at
- * every junction, seating the floor seam on the movement grid.
+ * Deliberately unpatterned — no seam, bevel or grain. The shop floor is brand
+ * paper and the basement floor is brand ink, so the rooms read as clean fields
+ * that the props, rugs and floor logo sit on top of.
  */
-function buildFloorPanel(field: string, mark: string): PixelArt {
-  const g = grid(32, 32, field);
-  const max = 31;
-  for (const [cx, cy] of [[0, 0], [max, 0], [0, max], [max, max]]) {
-    const inX = cx === 0 ? 1 : max - 1;
-    const inY = cy === 0 ? 1 : max - 1;
-    put(g, cx, cy, mark);
-    put(g, inX, cy, mark);
-    put(g, cx, inY, mark);
-  }
-  return { rows: rows(g), palette: P };
+function buildFloorPanel(field: string): PixelArt {
+  return { rows: rows(grid(32, 32, field)), palette: P };
 }
 
 function buildWall(kind: "top" | "side" | "bottom" | "fill"): PixelArt {
@@ -104,10 +91,9 @@ function buildWall(kind: "top" | "side" | "bottom" | "fill"): PixelArt {
   return { rows: rows(g), palette: P };
 }
 
-// Field and mark are brand tokens wherever one exists: paper/ink for the two
-// fields, brand grey for the basement mark. Only the shop's mark has no token.
-export const hiresFloorArt = buildFloorPanel("w", "N");
-export const hiresBasementFloorArt = buildFloorPanel("k", "G");
+// Straight brand tokens: paper (#F7F7F5) upstairs, ink (#0D0D0D) downstairs.
+export const hiresFloorArt = buildFloorPanel("w");
+export const hiresBasementFloorArt = buildFloorPanel("k");
 export const hiresWallTopArt = buildWall("top");
 export const hiresWallSideArt = buildWall("side");
 export const hiresWallBottomArt = buildWall("bottom");
