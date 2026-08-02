@@ -24,7 +24,7 @@ the same time as the rendering change.
 
 | Set | Location | Slices |
 | --- | --- | --- |
-| Vinyl wall | `~/Documents/Sprites/Vinyl_wall/` | 8 |
+| Vinyl wall | `~/Documents/Sprites/Vinyl_wall/` | 8 (one middle slice dropped → 7 in game) |
 | Clothing wall | `~/Documents/Sprites/Clothing_Wall/` | 8 |
 
 Each slice is a 6667x6667 RGBA square — one tile of a continuous wall, stitched
@@ -114,9 +114,17 @@ exports a `mural()` helper expanding one declaration into per-tile decorations:
 
 Placement:
 
-- **Vinyl wall** — row `a`, interior cols **1–8**. Col 0 is left bare; the left
+- **Vinyl wall** — row `a`, interior cols **1–7**. Col 0 is left bare; the left
   chamfer floats in open space, which is what a both-ends-chamfered freestanding
   wall is drawn to do.
+
+  The source art is 8 slices, one wider than the row it hangs on, so the
+  importer drops a middle slice (`drop` in `MURALS`) and renumbers the rest
+  1–7. Slices 2–7 of the vinyl export are byte-identical flat wall, so nothing
+  unique is lost — only the two chamfered ends carry distinct art, and both
+  survive. With 7 tiles the right chamfer terminates flush at the cutout corner
+  instead of overhanging it. Dropping an END slice is rejected by the importer,
+  since that would cut off a chamfer.
 - **Clothing wall** — row `g`, interior cols **8–15**. Exactly covers the
   cutout's bottom edge, flush with the map edge on the right.
 

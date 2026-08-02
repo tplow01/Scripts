@@ -130,10 +130,10 @@ export const mainRoom: Room = {
     // are hand-drawn trapezoids: full width at the base, chamfered at the top
     // ends where they stop.
     //
-    // Vinyl wall (row a, cols 1-8) — behind the music alcove. Chamfered at both
+    // Vinyl wall (row a, cols 1-7) — behind the music alcove. Chamfered at both
     // ends, so it reads as a freestanding wall; col 0 is deliberately left bare
     // for its left chamfer to taper into.
-    ...mural("vinyl-wall", { tileX: C(1), tileY: R("a"), tiles: 8 }),
+    ...mural("vinyl-wall", { tileX: C(1), tileY: R("a"), tiles: 7 }),
 
     // Clothing wall (row g, cols 8-15) — the cutout's bottom edge, directly
     // above the horizontal rail at row h. Square on the left where it meets the

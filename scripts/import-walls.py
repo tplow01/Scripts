@@ -16,6 +16,7 @@ rather than by name.
 """
 import re
 from pathlib import Path
+from typing import Optional
 
 from PIL import Image
 
@@ -26,10 +27,16 @@ OUT = Path(__file__).resolve().parent.parent / "public" / "assets" / "walls"
 # canvas and buys crispness on hi-dpi displays.
 TILE = 64
 
-# Source folder -> output key prefix, and how many slices to expect.
+# Source folder -> output key prefix, how many slices the export contains, and
+# an optional middle slice to DROP.
+#
+# The vinyl wall was authored one tile too wide for the space it hangs in (row a
+# is 7 tiles). Its middle slices are byte-identical flat wall, so dropping one
+# shortens the wall without touching how it reads -- the two chamfered ends are
+# the only slices that carry unique art. Never drop slice 1 or the last one.
 MURALS = {
-    "Vinyl_wall": ("vinyl-wall", 8),
-    "Clothing_Wall": ("clothing-wall", 8),
+    "Vinyl_wall": ("vinyl-wall", 8, 5),
+    "Clothing_Wall": ("clothing-wall", 8, None),
 }
 
 
@@ -41,7 +48,7 @@ def slice_index(path: Path) -> int:
     return int(match.group(1))
 
 
-def import_mural(folder: str, prefix: str, expected: int) -> None:
+def import_mural(folder: str, prefix: str, expected: int, drop: Optional[int]) -> None:
     src_dir = SRC / folder
     if not src_dir.is_dir():
         raise SystemExit(f"missing source folder: {src_dir}")
@@ -54,22 +61,36 @@ def import_mural(folder: str, prefix: str, expected: int) -> None:
     if indices != list(range(1, expected + 1)):
         raise SystemExit(f"{folder}: slices are not numbered 1..{expected}: {indices}")
 
+    if drop is not None:
+        if not 1 < drop < expected:
+            raise SystemExit(
+                f"{folder}: drop must be a MIDDLE slice (2..{expected - 1}), got {drop} -- "
+                "dropping an end would cut off a chamfer"
+            )
+        paths = [p for p in paths if slice_index(p) != drop]
+
+    # Stale outputs from a previous run would otherwise linger as an orphaned
+    # tile once a mural gets shorter.
     OUT.mkdir(parents=True, exist_ok=True)
-    for path in paths:
+    for stale in OUT.glob(f"{prefix}-*.png"):
+        stale.unlink()
+
+    # Renumbered 1..N after the drop, so the kept slices stay contiguous.
+    for out_index, path in enumerate(paths, start=1):
         img = Image.open(path).convert("RGBA")
         if img.width != img.height:
             raise SystemExit(f"{path.name}: slices must be square, got {img.size}")
         # Nearest-neighbour, no crop, no masking -- alpha is load-bearing here.
         tile = img.resize((TILE, TILE), Image.NEAREST)
-        out_path = OUT / f"{prefix}-{slice_index(path)}.png"
+        out_path = OUT / f"{prefix}-{out_index}.png"
         tile.save(out_path)
         print(f"  {path.name} -> {out_path.name}")
 
 
 def main() -> None:
-    for folder, (prefix, expected) in MURALS.items():
+    for folder, (prefix, expected, drop) in MURALS.items():
         print(f"{folder}:")
-        import_mural(folder, prefix, expected)
+        import_mural(folder, prefix, expected, drop)
 
 
 if __name__ == "__main__":

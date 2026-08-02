@@ -18,25 +18,26 @@ describe("mural art keys", () => {
     expect(MURAL_IDS).toEqual(["vinyl-wall", "clothing-wall"]);
   });
 
-  it("declares eight slices per mural, matching the authored art", () => {
-    expect(MURAL_SLICES["vinyl-wall"]).toBe(8);
+  it("declares the slice count each mural actually ships, matching the authored art", () => {
+    expect(MURAL_SLICES["vinyl-wall"]).toBe(7);
     expect(MURAL_SLICES["clothing-wall"]).toBe(8);
   });
 
   it("builds 1-indexed texture keys and paths", () => {
     expect(muralTileKey("vinyl-wall", 1)).toBe("vinyl-wall-1");
     expect(muralTileKey("clothing-wall", 8)).toBe("clothing-wall-8");
+    expect(muralTileKey("vinyl-wall", 7)).toBe("vinyl-wall-7");
     expect(muralTilePath("vinyl-wall", 3)).toBe("/assets/walls/vinyl-wall-3.png");
   });
 
   it("enumerates every slice of every mural", () => {
-    expect(allMuralTiles()).toHaveLength(16);
+    expect(allMuralTiles()).toHaveLength(15);
     expect(allMuralTiles()[0]).toEqual({ id: "vinyl-wall", index: 1 });
   });
 
   it("recognises mural keys and rejects other art keys", () => {
-    expect(isMuralTile("vinyl-wall-8")).toBe(true);
-    expect(isMuralTile("vinyl-wall-9")).toBe(false);
+    expect(isMuralTile("vinyl-wall-7")).toBe(true);
+    expect(isMuralTile("vinyl-wall-8")).toBe(false);
     expect(isMuralTile("speaker")).toBe(false);
   });
 });
@@ -50,12 +51,12 @@ describe("mural() expansion", () => {
   });
 
   it("never marks a mural slice solid — collision comes from the wall tile beneath", () => {
-    expect(mural("vinyl-wall", { tileX: 1, tileY: 1, tiles: 8 }).every((t) => !t.solid)).toBe(true);
+    expect(mural("vinyl-wall", { tileX: 1, tileY: 1, tiles: 7 }).every((t) => !t.solid)).toBe(true);
   });
 
   it("refuses a tile count the authored art cannot fill", () => {
-    expect(() => mural("vinyl-wall", { tileX: 1, tileY: 1, tiles: 6 })).toThrow(
-      /vinyl-wall has 8 slices/,
+    expect(() => mural("vinyl-wall", { tileX: 1, tileY: 1, tiles: 8 })).toThrow(
+      /vinyl-wall has 7 slices/,
     );
   });
 });
@@ -93,12 +94,12 @@ describe("murals in the shop", () => {
   const slices = (mainRoom.decorations ?? []).filter((d) => isMuralTile(d.artKey));
 
   it("places every slice of both murals", () => {
-    expect(slices).toHaveLength(16);
+    expect(slices).toHaveLength(15);
   });
 
-  it("hangs the vinyl wall along row a, cols 1-8", () => {
+  it("hangs the vinyl wall along row a, cols 1-7", () => {
     const vinyl = slices.filter((d) => d.artKey.startsWith("vinyl-wall"));
-    expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(vinyl.every((d) => d.tileY === 1)).toBe(true);
   });
 

@@ -18,9 +18,15 @@ export type MuralId = "vinyl-wall" | "clothing-wall";
 
 export const MURAL_IDS = ["vinyl-wall", "clothing-wall"] as const;
 
-/** How many slices each mural was authored as. */
+/**
+ * How many slices each mural ships as.
+ *
+ * The vinyl wall was authored 8 tiles wide but hangs on a 7-tile row, so the
+ * importer drops one of its (byte-identical) middle slices. Both chamfered ends
+ * survive — only plain wall is lost. See `scripts/import-walls.py`.
+ */
 export const MURAL_SLICES: Record<MuralId, number> = {
-  "vinyl-wall": 8,
+  "vinyl-wall": 7,
   "clothing-wall": 8,
 };
 
