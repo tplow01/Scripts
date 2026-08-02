@@ -19,6 +19,7 @@ import {
   hiresStairsArt,
   hiresVinylDeskArt,
   hiresCratesArt,
+  hiresBookcaseArt,
   hiresCheckoutArt,
   hiresCouchArt,
   hiresPosterArt,
@@ -66,6 +67,7 @@ const TEXTURE_KEYS = [
   "box",
   "couch",
   "crates",
+  "bookcase",
   "rug",
   "emblem",
   "window",
@@ -100,6 +102,7 @@ export function bakeAllTextures(scene: Phaser.Scene): void {
   bakePixelArt(scene, "box", hiresBoxArt);
   bakePixelArt(scene, "couch", hiresCouchArt);
   bakePixelArt(scene, "crates", hiresCratesArt);
+  bakePixelArt(scene, "bookcase", hiresBookcaseArt);
   bakePixelArt(scene, "rug", hiresRugArt);
   // Brand invariant: use the exact pre-overhaul comet + scr!pts wordmark.
   bakePixelArt(scene, "emblem", emblemArt);

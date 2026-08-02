@@ -97,3 +97,20 @@ describe("mainRoom world data", () => {
     expect(isWalkable(mainRoom, 10, 2)).toBe(false); // top-right cutout
   });
 });
+
+describe('music alcove symmetry', () => {
+  it('mirrors the record crate with a bookcase about the vinyl desk', () => {
+    const at = (x: number, y: number) =>
+      (mainRoom.decorations ?? []).find((d) => d.tileX === x && d.tileY === y)
+    // Row b: bookcase(1) speaker(2) desk(3-4) speaker(5) crate(6).
+    expect(at(1, 2)?.artKey).toBe('bookcase')
+    expect(at(2, 2)?.artKey).toBe('speaker')
+    expect(at(5, 2)?.artKey).toBe('speaker')
+    expect(at(6, 2)?.artKey).toBe('crates')
+  })
+
+  it('makes the bookcase solid', () => {
+    const bookcase = (mainRoom.decorations ?? []).find((d) => d.artKey === 'bookcase')
+    expect(bookcase?.solid).toBe(true)
+  })
+})

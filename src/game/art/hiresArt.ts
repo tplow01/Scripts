@@ -193,6 +193,20 @@ export const hiresCratesArt = fixture(32, 32, (g) => {
   rect(g, 6, 24, 20, 2, "c");
 });
 
+/** Shelf of records/books — mirrors the crate on the far side of the alcove. */
+export const hiresBookcaseArt = fixture(32, 32, (g) => {
+  rect(g, 4, 2, 24, 27, "k");   // carcass silhouette
+  rect(g, 6, 4, 20, 23, "C");   // back panel
+  rect(g, 6, 4, 20, 2, "c");    // lit top edge
+  for (let s = 0; s < 3; s++) {
+    const top = 6 + s * 7;
+    for (let x = 7, i = 0; x < 25; x += 3, i++) {
+      rect(g, x, top + (i % 2), 2, 5 - (i % 2), ["p", "b", "m", "y", "r"][(i + s) % 5]);
+    }
+    rect(g, 6, top + 5, 20, 1, "c"); // shelf board under each row
+  }
+});
+
 export const hiresCheckoutArt = fixture(64, 160, (g) => {
   // L-shaped luxury counter: top bar plus right column, preserving its holes.
   rect(g, 0, 0, 64, 32, "C"); rect(g, 0, 0, 64, 7, "c"); rect(g, 0, 7, 64, 2, "y");

@@ -114,6 +114,9 @@ export const mainRoom: Room = {
   ],
   decorations: [
     // Speakers flanking the vinyl deck (b2, b5).
+    // Bookcase (b1) mirroring the record crate at b6 about the vinyl desk, so
+    // the music alcove reads symmetrically: bookcase, speaker, desk, speaker, crate.
+    { tileX: C(1), tileY: R("b"), artKey: "bookcase", solid: true },
     { tileX: C(2), tileY: R("b"), artKey: "speaker", solid: true },
     { tileX: C(5), tileY: R("b"), artKey: "speaker", solid: true },
 
