@@ -91,8 +91,24 @@ function buildWall(kind: "top" | "side" | "bottom" | "fill"): PixelArt {
   return { rows: rows(g), palette: P };
 }
 
+/**
+ * Behind-the-counter floor — the staff side of the checkout. Same slab
+ * construction as the shop floor, several shades darker, so the counter reads
+ * as a barrier with a working side behind it.
+ */
+function buildStaffFloor(): PixelArt {
+  const g = grid(32, 32, "T");
+  for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+    if (x % 16 === 0 || y % 16 === 0) put(g, x, y, "G");
+    else if (x % 16 === 1 || y % 16 === 1) put(g, x, y, "t");
+    else if ((x * 13 + y * 7) % 71 === 0) put(g, x, y, "h");
+  }
+  return { rows: rows(g), palette: P };
+}
+
 export const hiresFloorArt = buildFloor(false);
 export const hiresBasementFloorArt = buildFloor(true);
+export const hiresStaffFloorArt = buildStaffFloor();
 export const hiresWallTopArt = buildWall("top");
 export const hiresWallSideArt = buildWall("side");
 export const hiresWallBottomArt = buildWall("bottom");
@@ -254,8 +270,13 @@ export const hiresEmblemArt = fixture(96, 96, (g) => {
   rect(g, 12, 68, 72, 4, "k"); rect(g, 17, 76, 62, 3, "p"); rect(g, 24, 83, 48, 3, "k");
 });
 
+/**
+ * Everything outside the shop: one flat field of brand black, matching the
+ * camera background so the apron and the backdrop read as a single surface.
+ * Deliberately unpatterned — a speckle here made the void look like terrain.
+ */
 export const hiresExtVoidArt: PixelArt = {
-  rows: Array.from({ length: 32 }, (_, y) => Array.from({ length: 32 }, (_, x) => ((x * 11 + y * 7) % 97 === 0 ? "z" : "k")).join("")),
+  rows: Array.from({ length: 32 }, () => "k".repeat(32)),
   palette: P,
 };
 

@@ -38,3 +38,9 @@ describe("art registry", () => {
     expect(resolveTextureKey("ext-void")).toBe("ext-void");
   });
 });
+
+describe("staff floor art key", () => {
+  it("resolves floor-staff", () => {
+    expect(resolveTextureKey("floor-staff")).toBe("floor-staff");
+  });
+});

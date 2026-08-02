@@ -123,6 +123,15 @@ export const mainRoom: Room = {
     { tileX: C(6), tileY: R("b"), artKey: "crates", solid: true, concealing: "basement-entrance",
       slideTo: { tileX: C(7), tileY: R("b") } },
 
+    // The staff side of the checkout — the counter's walkable hole tiles
+    // (col 1, rows l–o). Four 1×1 pieces rather than one 1×4: a multi-tile
+    // decoration stretches a single tile's art across the whole footprint,
+    // which would smear the floor pattern.
+    { tileX: C(1), tileY: R("l"), artKey: "floor-staff", solid: false },
+    { tileX: C(1), tileY: R("m"), artKey: "floor-staff", solid: false },
+    { tileX: C(1), tileY: R("n"), artKey: "floor-staff", solid: false },
+    { tileX: C(1), tileY: R("o"), artKey: "floor-staff", solid: false },
+
     // Couch — single L footprint (5×3), arm down the left + base along the
     // bottom. Non-solid so Scribbs can step onto the cushions ("sit").
     { tileX: C(1), tileY: R("c"), artKey: "couch", wTiles: 5, hTiles: 3, solid: false },
