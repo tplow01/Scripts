@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { resolveTextureKey } from "@/game/art/registry";
 import {
   MURAL_IDS,
   MURAL_SLICES,
@@ -53,5 +56,34 @@ describe("mural() expansion", () => {
     expect(() => mural("vinyl-wall", { tileX: 1, tileY: 1, tiles: 6 })).toThrow(
       /vinyl-wall has 8 slices/,
     );
+  });
+});
+
+const PUBLIC = join(process.cwd(), "public");
+
+/** Width/height straight out of a PNG's IHDR chunk. */
+function pngSize(file: string): { width: number; height: number } {
+  const buf = readFileSync(file);
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+describe("mural assets", () => {
+  it("has an imported 64px PNG for every declared slice", () => {
+    for (const { id, index } of allMuralTiles()) {
+      const file = join(PUBLIC, muralTilePath(id, index));
+      expect(existsSync(file), `missing ${muralTilePath(id, index)}`).toBe(true);
+      expect(pngSize(file)).toEqual({ width: 64, height: 64 });
+    }
+  });
+
+  it("resolves every mural key through the art registry", () => {
+    for (const { id, index } of allMuralTiles()) {
+      const key = muralTileKey(id, index);
+      expect(resolveTextureKey(key)).toBe(key);
+    }
+  });
+
+  it("still rejects art keys that are neither prop, character, nor mural", () => {
+    expect(() => resolveTextureKey("not-a-real-key")).toThrow(/Unknown art key/);
   });
 });

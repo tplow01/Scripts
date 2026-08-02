@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { bakePixelArt, bakeShadow } from "./pixelArt";
 import { isCharacterFrame } from "./characters";
+import { isMuralTile } from "./walls";
 import {
   hiresFloorArt,
   hiresBasementFloorArt,
@@ -119,6 +120,9 @@ export function resolveTextureKey(artKey: string): string {
   // Character frames ("heath-right-both") are loaded, not baked, and are
   // enumerated by art/characters.ts rather than listed here.
   if (isCharacterFrame(artKey)) return artKey;
+  // Wall murals ("vinyl-wall-3") are likewise authored PNGs, enumerated by
+  // art/walls.ts.
+  if (isMuralTile(artKey)) return artKey;
   throw new Error(`Unknown art key: "${artKey}". Add it to the art registry.`);
 }
 

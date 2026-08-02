@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 import { bakeAllTextures } from "@/game/art/registry";
 import { allCharacterFrames, characterFrame, characterFramePath } from "@/game/art/characters";
+import { allMuralTiles, muralTileKey, muralTilePath } from "@/game/art/walls";
 
 /**
  * Props and architecture are baked from the original SCR!PTS 32px source
@@ -24,6 +25,13 @@ export class BootScene extends Phaser.Scene {
     // right foot), 64px PNGs. Left and right are distinct art — no flip-mirroring.
     for (const { id, facing, foot } of allCharacterFrames()) {
       this.load.image(characterFrame(id, facing, foot), characterFramePath(id, facing, foot));
+    }
+
+    // The shop's wall murals: two hand-drawn walls, 8 stitched 64px tiles each
+    // (scripts/import-walls.py). Authored PNGs for the same reason the cast is —
+    // so the walls can be redrawn without touching procedural art code.
+    for (const { id, index } of allMuralTiles()) {
+      this.load.image(muralTileKey(id, index), muralTilePath(id, index));
     }
   }
 
