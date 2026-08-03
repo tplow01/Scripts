@@ -255,7 +255,7 @@ export default function ProductsPage() {
                       <Thumb product={p} />
                       <div className="min-w-0 max-w-[220px]">
                         <p className="text-paper/90 font-medium truncate">{p.name}</p>
-                        <p className="text-grey text-[11px] truncate">{p.emotion} · {p.collection}</p>
+                        <p className="text-grey text-[11px] truncate">{p.emotion}</p>
                       </div>
                     </Link>
                   </td>

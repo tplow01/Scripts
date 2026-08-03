@@ -39,9 +39,9 @@ export const TRAFFIC_30D: { date: string; visitors: number; pageViews: number }[
 /** Ranked pages for the visitors drill-down; views are full-30-day totals. */
 export const TOP_PAGES: { path: string; views: number }[] = [
   { path: '/', views: 4210 },
-  { path: '/products/rage', views: 1875 },
+  { path: '/products/rage-white', views: 1875 },
   { path: '/basement', views: 1432 },
-  { path: '/products/love', views: 1204 },
+  { path: '/products/love-white', views: 1204 },
   { path: '/inventory', views: 986 },
 ]
 

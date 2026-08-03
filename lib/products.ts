@@ -198,14 +198,12 @@ export const ALL_PRODUCTS: Product[] = [...CYBER_LOVE_PRODUCTS, ...BASEMENT_PROD
  * redirects to `anxiety-white`. White exists for every emotion in both
  * collections, so every merged slug resolves. Derived, never hand-maintained.
  */
-export const LEGACY_SLUG_REDIRECTS: Record<string, string> = Object.fromEntries(
-  [...LEGACY_CYBER_LOVE, ...LEGACY_BASEMENT]
-    .filter((p) => p.colorway === 'White')
-    .map((p) => [
-      p.emotion.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-      p.slug,
-    ]),
-)
+export const LEGACY_SLUG_REDIRECTS: Record<string, string> = [...LEGACY_CYBER_LOVE, ...LEGACY_BASEMENT]
+  .filter((p) => p.colorway === 'White')
+  .reduce((acc, p) => {
+    acc[p.emotion.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')] = p.slug
+    return acc
+  }, Object.create(null) as Record<string, string>)
 
 export function findProductBySlug(slug: string): Product | undefined {
   return ALL_PRODUCTS.find((p) => p.slug === slug)

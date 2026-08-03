@@ -286,7 +286,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               variants={item}
               className={`text-[12px] font-bold tracking-[0.04em] uppercase leading-relaxed mb-[32px] ${text}`}
             >
-              {colorwayLabel(product)} colorway. {product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;Emotions&rdquo; collection. {product.modelNote}
+              {colorwayLabel(product) && `${colorwayLabel(product)} colorway. `}{product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;{product.collection}&rdquo; collection. {product.modelNote}
             </motion.p>
 
             <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[32px]">

@@ -72,6 +72,17 @@ describe('split catalog', () => {
     }
   })
 
+  it('resolves every variant imageId to a real media entry on its own product', () => {
+    for (const p of ALL_PRODUCTS) {
+      expect(p.media.length).toBeGreaterThan(0)
+      const mediaIds = new Set(p.media.map((m) => m.id))
+      for (const v of p.variants) {
+        expect(v.imageId).not.toBeNull()
+        expect(mediaIds.has(v.imageId as string)).toBe(true)
+      }
+    }
+  })
+
   it('has unique slugs, sku roots and variant skus across all twelve', () => {
     expect(new Set(ALL_PRODUCTS.map((p) => p.slug)).size).toBe(12)
     expect(new Set(ALL_PRODUCTS.map((p) => p.skuRoot)).size).toBe(12)

@@ -13,9 +13,9 @@ export function buildVariantIndex(products: Product[]): Map<string, VariantRef> 
 }
 
 /**
- * Maps the pre-merge `productId + size` key onto a variant id, choosing the
- * first colorway. Product ids survive the merge for the group head, which is
- * enough to rescue most live carts.
+ * Maps the pre-split `productId + size` key onto a variant id. Post-split
+ * each colourway is its own product, so the id → product mapping is exact
+ * and per-colourway rather than a best-effort merge.
  */
 export function buildLegacyIndex(products: Product[]): LegacyIndex {
   const out: LegacyIndex = new Map()

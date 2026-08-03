@@ -165,6 +165,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = parseStoredState(localStorage.getItem(STORAGE_KEY))
     if (stored) setState(stored)
+    try { localStorage.removeItem('scripts-admin-v2') } catch { /* storage blocked: safe to skip cleanup */ }
     setHydrated(true)
   }, [])
 
