@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import NavBar from '@/components/NavBar'
 import BasementNavBar from '@/components/BasementNavBar'
@@ -13,6 +14,7 @@ import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
 import { variantTitle, deriveAvailability } from '@/lib/admin/variants'
 import { LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
+import { colorwayLabel, siblingColorways } from '@/lib/products'
 
 const STATUS_LABEL: Record<string, string> = {
   'pre-order': 'PRE-ORDER',
@@ -21,10 +23,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function ProductDetail({ product, dark = false }: { product: Product; dark?: boolean }) {
   const sizeAxis = product.options.findIndex((o) => o.name === 'Size')
-  const colorAxis = product.options.findIndex((o) => o.name === 'Colorway')
-  const colorways = colorAxis >= 0 ? product.options[colorAxis].values : []
+  const siblings = siblingColorways(product)
 
-  const [colorway, setColorway] = useState<string>(colorways[0] ?? '')
   const [size, setSize] = useState<string | null>(null)
   const [activeImage, setActiveImage] = useState(0)
   const [added, setAdded] = useState(false)
@@ -35,48 +35,26 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   const isSoldOut = availability === 'sold-out'
 
   const variantFor = (s: string) =>
-    product.variants.find((v) =>
-      (sizeAxis < 0 || v.optionValues[sizeAxis] === s) &&
-      (colorAxis < 0 || v.optionValues[colorAxis] === colorway))
+    product.variants.find((v) => sizeAxis < 0 || v.optionValues[sizeAxis] === s)
 
   const selected = size ? variantFor(size) : undefined
   const sellable = (v: ProductVariant | undefined) =>
     !!v && (!v.trackInventory || v.stock > 0 || v.allowBackorder)
 
-  // Gallery scoped to the selected colorway: that colorway's own image(s)
-  // (reachable via imageId from the variants matching it) come first, then
-  // any shared media no variant claims (back shots, gallery extras), which
-  // apply to every colorway. Media claimed by a *different* colorway's
-  // variants never appears. Both groups preserve `position` order.
-  const claimedIds = new Set(product.variants.map((v) => v.imageId).filter((id): id is string => id != null))
-  const colorwayImageIds = new Set(
-    product.variants
-      .filter((v) => colorAxis < 0 || v.optionValues[colorAxis] === colorway)
-      .map((v) => v.imageId)
-      .filter((id): id is string => id != null),
-  )
-  const gallery = [
-    ...product.media.filter((m) => colorwayImageIds.has(m.id)),
-    ...product.media.filter((m) => !claimedIds.has(m.id)),
-  ]
-  const images = gallery.map((m) => m.url)
+  // One colourway per product, so the gallery is simply this product's media
+  // in position order — no filtering needed.
+  const images = product.media.map((m) => m.url)
 
   const heroUrl =
     product.media.find((m) => m.id === variantFor(size ?? product.options[sizeAxis]?.values[0] ?? '')?.imageId)?.url
     ?? images[0]
     ?? null
 
-  // Reset the size and re-sync the active image whenever the colorway
-  // changes, so a size that's sold out in the newly-chosen colorway is
-  // never left selected and the gallery always opens on the new colorway's
-  // own shot.
-  useEffect(() => { setSize(null) }, [colorway])
-
   useEffect(() => {
     const idx = heroUrl ? images.indexOf(heroUrl) : -1
     setActiveImage(idx >= 0 ? idx : 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroUrl, colorway])
+  }, [heroUrl])
 
   function handleAddToBag() {
     if (!selected || !sellable(selected)) return
@@ -231,26 +209,20 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               ${(selected?.price ?? product.variants[0]?.price ?? 0).toFixed(2)}
             </motion.p>
 
-            {colorways.length > 1 && (
+            {siblings.length > 0 && (
               <motion.div variants={item} className="mb-5">
                 <span className={`block text-[11px] uppercase tracking-[0.14em] ${textMuted} mb-2`}>
-                  Colorway — {colorway}
+                  Other colourways
                 </span>
-                <div className="flex gap-2" role="radiogroup" aria-label="Colorway">
-                  {colorways.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      role="radio"
-                      aria-checked={colorway === c}
-                      aria-label={c}
-                      onClick={() => setColorway(c)}
-                      className={`h-11 px-4 flex items-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${
-                        colorway === c ? sizeSelected : sizeUnselected
-                      }`}
+                <div className="flex flex-wrap gap-2">
+                  {siblings.map((s) => (
+                    <Link
+                      key={s.slug}
+                      href={`/products/${s.slug}`}
+                      className={`h-11 px-4 flex items-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${sizeUnselected}`}
                     >
-                      {c}
-                    </button>
+                      {colorwayLabel(s)}
+                    </Link>
                   ))}
                 </div>
               </motion.div>
@@ -314,7 +286,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               variants={item}
               className={`text-[12px] font-bold tracking-[0.04em] uppercase leading-relaxed mb-[32px] ${text}`}
             >
-              {colorway} colorway. {product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;Emotions&rdquo; collection. {product.modelNote}
+              {colorwayLabel(product)} colorway. {product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;Emotions&rdquo; collection. {product.modelNote}
             </motion.p>
 
             <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[32px]">
