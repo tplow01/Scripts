@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isMigrated, migrateProducts } from '@/lib/admin/migrate'
 import type { LegacyProduct } from '@/lib/admin/migrate'
-import { totalStock, variantTitle } from '@/lib/admin/variants'
+import { totalStock } from '@/lib/admin/variants'
 
 const legacy = (over: Partial<LegacyProduct> = {}): LegacyProduct => ({
   id: '1', name: '"ANXIETY" — White', emotion: 'ANXIETY', colorway: 'White',
@@ -18,26 +18,48 @@ const CYBER = [
 ]
 
 describe('migrateProducts', () => {
-  it('folds colorways of one emotion into a single product', () => {
+  it('splits each colorway of one emotion into its own product', () => {
     const out = migrateProducts(CYBER)
-    expect(out).toHaveLength(1)
-    expect(out[0].slug).toBe('anxiety')
-    expect(out[0].name).toBe('"ANXIETY"')
+    expect(out).toHaveLength(2)
+    expect(out.map((p) => p.slug)).toEqual(['anxiety-white', 'anxiety-green'])
+    expect(out.map((p) => p.name)).toEqual(['"ANXIETY" — White', '"ANXIETY" — Army Green'])
   })
 
-  it('builds a Size axis and a Colorway axis in that order', () => {
+  it('builds a Size axis and nothing else', () => {
     const [p] = migrateProducts(CYBER)
-    expect(p.options.map((o) => o.name)).toEqual(['Size', 'Colorway'])
+    expect(p.options.map((o) => o.name)).toEqual(['Size'])
     expect(p.options[0].values).toEqual(['S', 'M', 'L', 'XL'])
-    expect(p.options[1].values).toEqual(['White', 'Army Green'])
-    expect(p.options.map((o) => o.position)).toEqual([1, 2])
+    expect(p.options[0].position).toBe(1)
   })
 
-  it('creates one variant per size x colorway', () => {
+  it('creates one variant per size', () => {
     const [p] = migrateProducts(CYBER)
-    expect(p.variants).toHaveLength(8)
-    expect(new Set(p.variants.map((v) => v.sku)).size).toBe(8)
+    expect(p.variants).toHaveLength(4)
+    expect(new Set(p.variants.map((v) => v.sku)).size).toBe(4)
     expect(p.variants.every((v) => v.price === 44)).toBe(true)
+  })
+
+  it('derives skuRoot from collection, emotion and colourway', () => {
+    const out = migrateProducts(CYBER)
+    expect(out.map((p) => p.skuRoot)).toEqual(['SCR-ANX-WHI', 'SCR-ANX-ARM'])
+  })
+
+  it('gives a two-character emotion an unpadded segment', () => {
+    const out = migrateProducts([legacy({ id: 'b1', emotion: 'MJ', collection: 'Basement', slug: 'mj-white' })])
+    expect(out[0].skuRoot).toBe('BSM-MJ-WHI')
+  })
+
+  it('collects this colourway front shot first, then its back', () => {
+    const [white, green] = migrateProducts(CYBER)
+    expect(white.media[0].url).toBe('/products/cutout/anxiety-white.png')
+    expect(white.media[0].position).toBe(0)
+    expect(white.media[1].url).toBe('/products/cutout/back-white.png')
+    expect(green.media[0].url).toBe('/g.png')
+  })
+
+  it('points every variant at this product single front image', () => {
+    const [p] = migrateProducts(CYBER)
+    expect(p.variants.every((v) => v.imageId === p.media[0].id)).toBe(true)
   })
 
   it('seeds deterministic non-zero stock', () => {
@@ -45,21 +67,6 @@ describe('migrateProducts', () => {
     const b = migrateProducts(CYBER)
     expect(totalStock(a[0])).toBe(totalStock(b[0]))
     expect(totalStock(a[0])).toBeGreaterThan(0)
-  })
-
-  it('collects one media item per colorway plus the shared backs', () => {
-    const [p] = migrateProducts(CYBER)
-    expect(p.media.length).toBeGreaterThanOrEqual(2)
-    expect(p.media[0].position).toBe(0)
-  })
-
-  it('points every variant at the media for its colorway', () => {
-    const [p] = migrateProducts(CYBER)
-    const white = p.variants.find((v) => variantTitle(v.optionValues) === 'S / White')
-    const green = p.variants.find((v) => variantTitle(v.optionValues) === 'S / Army Green')
-    expect(white?.imageId).toBeTruthy()
-    expect(green?.imageId).toBeTruthy()
-    expect(white?.imageId).not.toBe(green?.imageId)
   })
 
   it('does not merge the same emotion across different collections', () => {
@@ -70,23 +77,13 @@ describe('migrateProducts', () => {
     expect(out).toHaveLength(2)
   })
 
-  it('keeps a single-colorway product as a one-value axis', () => {
-    const out = migrateProducts([legacy({ id: 'b1', emotion: 'MJ', collection: 'Basement', slug: 'mj-white' })])
-    expect(out[0].options[1].values).toEqual(['White'])
-    expect(out[0].variants).toHaveLength(4)
-  })
-
-  it('derives skuRoot from the collection and emotion', () => {
-    expect(migrateProducts(CYBER)[0].skuRoot).toBe('SCR-ANX')
-  })
-
   it('carries editorial copy and sets publishedStatus to active', () => {
     const [p] = migrateProducts(CYBER)
     expect(p.description).toBe('copy')
     expect(p.careInstructions).toEqual(['wash'])
     expect(p.fabric).toBe('100% Cotton')
     expect(p.publishedStatus).toBe('active')
-    expect(p.seo.title).toBe('"ANXIETY"')
+    expect(p.seo.title).toBe('"ANXIETY" — White')
   })
 
   it('sets allowBackorder from a pre-order source product', () => {
@@ -106,11 +103,9 @@ describe('migrateProducts', () => {
     const result = migrateProducts(mixed)
 
     expect(result).toHaveLength(2)
-    // First should be the newly-migrated one
     expect(result[1]).toEqual(migrated)
-    // Second should be the legacy one, now migrated
     expect(result[0].emotion).toBe('NEW')
-    expect(result[0].slug).toBe('new')
+    expect(result[0].slug).toBe('new-white')
     expect(result[0].variants.length).toBeGreaterThan(0)
   })
 })

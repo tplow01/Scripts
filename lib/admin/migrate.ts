@@ -31,8 +31,8 @@ export function isMigrated(value: unknown): boolean {
   return Array.isArray(p.options) && Array.isArray(p.variants) && Array.isArray(p.media)
 }
 
-const slugify = (s: string) =>
-  s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'product'
+/** First 3 alphanumeric characters, uppercased — the sku segment for one field. */
+const alpha3 = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()
 
 const collectionCode = (collection: string) =>
   collection.toLowerCase().startsWith('basement') ? 'BSM' : 'SCR'
@@ -57,34 +57,28 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
 
   const groups = new Map<string, LegacyProduct[]>()
   for (const p of toMigrate) {
-    const key = `${p.collection}|${p.emotion}`
+    const key = `${p.collection}|${p.emotion}|${p.colorway}`
     groups.set(key, [...(groups.get(key) ?? []), p])
   }
 
   const newProducts = [...groups.values()].map((group) => {
     const head = group[0]
-    const colorways = [...new Set(group.map((p) => p.colorway))]
     const sizes = [...new Set(group.flatMap((p) => p.sizes))]
 
-    // One front image per colorway, then every distinct back/gallery shot.
+    // This colourway's own front shot first, then its back and any gallery
+    // extras. No cross-colourway media, so the PDP gallery needs no filtering.
     const media: ProductMedia[] = []
-    const mediaIdByColorway = new Map<string, string>()
-    group.forEach((p) => {
-      if (!p.image || mediaIdByColorway.has(p.colorway)) return
-      const id = `${head.id}-m${media.length}`
-      media.push({ id, url: p.image, alt: `${head.emotion} — ${p.colorway}`, position: media.length })
-      mediaIdByColorway.set(p.colorway, id)
-    })
-    const extras = [...new Set(group.flatMap((p) => [p.backImage, ...(p.galleryImages ?? [])]))]
-    for (const url of extras) {
-      if (!url || media.some((m) => m.url === url)) continue
-      media.push({ id: `${head.id}-m${media.length}`, url, alt: `${head.emotion} — back`, position: media.length })
+    const pushMedia = (url: string | null | undefined, alt: string) => {
+      if (!url || media.some((m) => m.url === url)) return
+      media.push({ id: `${head.id}-m${media.length}`, url, alt, position: media.length })
+    }
+    pushMedia(head.image, `${head.emotion} — ${head.colorway}`)
+    for (const p of group) {
+      pushMedia(p.backImage, `${head.emotion} — back`)
+      for (const url of p.galleryImages ?? []) pushMedia(url, `${head.emotion} — detail`)
     }
 
-    const options: ProductOption[] = [
-      { name: 'Size', values: sizes, position: 1 },
-      { name: 'Colorway', values: colorways, position: 2 },
-    ]
+    const options: ProductOption[] = [{ name: 'Size', values: sizes, position: 1 }]
 
     const defaults: VariantDefaults = {
       price: head.price,
@@ -96,11 +90,10 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
       weightGrams: null,
     }
 
-    const name = `"${head.emotion}"`
     const shell: Product = {
       id: head.id,
-      name,
-      slug: slugify(head.emotion),
+      name: head.name,
+      slug: head.slug,
       emotion: head.emotion,
       description: head.description,
       collection: head.collection,
@@ -108,10 +101,10 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
       vendor: 'SCR!PTS',
       tags: [],
       publishedStatus: 'active',
-      skuRoot: `${collectionCode(head.collection)}-${head.emotion.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()}`,
+      skuRoot: `${collectionCode(head.collection)}-${alpha3(head.emotion)}-${alpha3(head.colorway)}`,
       shipDate: head.shipDate,
       requiresShipping: true,
-      seo: { title: name, description: head.description.slice(0, 155) },
+      seo: { title: head.name, description: head.description.slice(0, 155) },
       options,
       variants: [],
       media,
@@ -122,13 +115,10 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
       careInstructions: head.careInstructions,
     }
 
-    const colorwayAxis = options.findIndex((o) => o.name === 'Colorway')
     const variants = reconcileVariants(shell.id, shell.skuRoot, options, [], defaults).map((v, i) => ({
       ...v,
       stock: seedStock(i),
-      imageId: (colorwayAxis >= 0 ? mediaIdByColorway.get(v.optionValues[colorwayAxis]) : undefined)
-        ?? media[0]?.id
-        ?? null,
+      imageId: media[0]?.id ?? null,
     }))
 
     return { ...shell, variants }
