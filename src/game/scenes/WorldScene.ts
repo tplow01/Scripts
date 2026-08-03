@@ -1,7 +1,6 @@
 import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
-import { wallVariant } from "@/game/art/wallVariant";
 import { isMuralTile } from "@/game/art/walls";
 import { footprint, propActive } from "@/game/world/types";
 import type { Interaction, Decoration, Room } from "@/game/world/types";
@@ -270,40 +269,31 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects = [];
     this.coverObjects = [];
 
-    // ── Exterior treatment (main room only): the void beyond the walls is a
-    // flat SCR!PTS-black fill, Pokémon-style — the shop reads as a solid
-    // building block sitting on the overworld, not a street scene.
-    if (roomId === "main") {
-      this.cameras.main.setBackgroundColor("#0D0D0D");
-      for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
-        for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
-          const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
-          if (inside) continue;
-          this.placeTile(resolveTextureKey("ext-void"), x, y, -0.5);
-        }
+    // ── Exterior treatment: the void beyond the walls is a flat SCR!PTS-black
+    // fill, Pokémon-style — each room reads as a solid block sitting on the
+    // overworld, not a street scene. Both the Shop and the Basement use it, so
+    // they share one wall language.
+    this.cameras.main.setBackgroundColor("#0D0D0D");
+    for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
+      for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
+        const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
+        if (inside) continue;
+        this.placeTile(resolveTextureKey("ext-void"), x, y, -0.5);
       }
-    } else {
-      this.cameras.main.setBackgroundColor("#1C1A22"); // basement: untouched void
     }
 
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
     // The Basement lays down its own darker floor; everywhere else uses "floor".
     const floorKey = roomId === "basement" ? "floor-basement" : "floor";
-    // The shop has no wall FACES: every wall tile renders as the same flat
-    // exterior black the apron uses, so the floor reads as running straight up
-    // to the outside on all sides. The room's only two walls are the hand-drawn
-    // horizontal murals hung as decorations (see mainRoom.ts) — nothing
-    // vertical. The Basement keeps the FireRed cap/side/base depth treatment.
-    const flatWalls = roomId === "main";
+    // No room has wall FACES: every wall tile renders as the same flat exterior
+    // black the apron uses, so the floor reads as running straight up to the
+    // outside on all sides — no vertical side faces, no bottom faces. The only
+    // walls that are *drawn* are the hand-drawn horizontal murals hung as
+    // decorations (see mainRoom.ts).
     for (let y = 0; y < this.room.height; y++) {
       for (let x = 0; x < this.room.width; x++) {
         const isWall = this.room.tiles[y][x] === "wall";
-        const key = !isWall
-          ? floorKey
-          : flatWalls
-            ? "ext-void"
-            : wallVariant(this.room, x, y);
-        this.placeTile(resolveTextureKey(key), x, y, 0);
+        this.placeTile(resolveTextureKey(isWall ? "ext-void" : floorKey), x, y, 0);
       }
     }
 
@@ -376,16 +366,12 @@ export class WorldScene extends Phaser.Scene {
     this.syncScribbs();
 
     const ts = this.room.tileSize;
-    if (roomId === "main") {
-      const a = EXTERIOR_APRON * ts;
-      this.cameras.main.setBounds(-a, -a, this.room.width * ts + 2 * a, this.room.height * ts + 2 * a);
-      // Classic overworld composition: keep the player in the lower third so
-      // more of the shop (including the complete floor logo) is visible ahead.
-      this.cameras.main.setFollowOffset(0, ts * 2.35);
-    } else {
-      this.cameras.main.setBounds(0, 0, this.room.width * ts, this.room.height * ts);
-      this.cameras.main.setFollowOffset(0, ts * 0.45);
-    }
+    // Both rooms sit on the black apron, so both pan over it.
+    const a = EXTERIOR_APRON * ts;
+    this.cameras.main.setBounds(-a, -a, this.room.width * ts + 2 * a, this.room.height * ts + 2 * a);
+    // Classic overworld composition: keep the player in the lower third so more
+    // of the room is visible ahead. The Basement is short, so it needs less.
+    this.cameras.main.setFollowOffset(0, roomId === "main" ? ts * 2.35 : ts * 0.45);
     this.updateZoom();
     this.lastInteractionId = null;
     // Room lighting: the player carries across rooms, so his tint is set on

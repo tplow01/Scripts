@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { resolveTextureKey } from "@/game/art/registry";
 import { mainRoom } from "@/game/world/mainRoom";
+import { basementRoom } from "@/game/world/basement";
 import {
   MURAL_IDS,
   MURAL_SLICES,
@@ -14,13 +15,20 @@ import {
 } from "@/game/art/walls";
 
 describe("mural art keys", () => {
-  it("names both shop murals", () => {
-    expect(MURAL_IDS).toEqual(["vinyl-wall", "clothing-wall"]);
+  it("names the two shop murals and the two basement ones", () => {
+    expect(MURAL_IDS).toEqual([
+      "vinyl-wall",
+      "clothing-wall",
+      "basement-back-wall",
+      "basement-ledge-wall",
+    ]);
   });
 
   it("declares the slice count each mural actually ships, matching the authored art", () => {
     expect(MURAL_SLICES["vinyl-wall"]).toBe(7);
     expect(MURAL_SLICES["clothing-wall"]).toBe(8);
+    expect(MURAL_SLICES["basement-back-wall"]).toBe(5);
+    expect(MURAL_SLICES["basement-ledge-wall"]).toBe(6);
   });
 
   it("builds 1-indexed texture keys and paths", () => {
@@ -31,7 +39,7 @@ describe("mural art keys", () => {
   });
 
   it("enumerates every slice of every mural", () => {
-    expect(allMuralTiles()).toHaveLength(15);
+    expect(allMuralTiles()).toHaveLength(7 + 8 + 5 + 6);
     expect(allMuralTiles()[0]).toEqual({ id: "vinyl-wall", index: 1 });
   });
 
@@ -115,6 +123,49 @@ describe("murals in the shop", () => {
         mainRoom.tiles[d.tileY][d.tileX],
         `${d.artKey} at (${d.tileX},${d.tileY}) is not on a wall tile`,
       ).toBe("wall");
+    }
+  });
+
+  it("never overlaps two slices on one tile", () => {
+    const at = slices.map((d) => `${d.tileX},${d.tileY}`);
+    expect(new Set(at).size).toBe(at.length);
+  });
+});
+
+describe("murals in the basement", () => {
+  const slices = (basementRoom.decorations ?? []).filter((d) => isMuralTile(d.artKey));
+
+  it("places every slice of both walls", () => {
+    expect(slices).toHaveLength(11);
+  });
+
+  it("hangs the back wall along the top border row, cols 7-11", () => {
+    const back = slices.filter((d) => d.artKey.startsWith("basement-back-wall"));
+    expect(back.map((d) => d.tileX)).toEqual([7, 8, 9, 10, 11]);
+    expect(back.every((d) => d.tileY === 0)).toBe(true);
+  });
+
+  it("hangs the ledge wall along row c, cols 1-6", () => {
+    const ledge = slices.filter((d) => d.artKey.startsWith("basement-ledge-wall"));
+    expect(ledge.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(ledge.every((d) => d.tileY === 3)).toBe(true);
+  });
+
+  it("mounts every slice on a wall tile, never on floor", () => {
+    for (const d of slices) {
+      expect(
+        basementRoom.tiles[d.tileY][d.tileX],
+        `${d.artKey} at (${d.tileX},${d.tileY}) is not on a wall tile`,
+      ).toBe("wall");
+    }
+  });
+
+  it("caps a wall face — the tile directly below each slice is floor", () => {
+    for (const d of slices) {
+      expect(
+        basementRoom.tiles[d.tileY + 1][d.tileX],
+        `${d.artKey} at (${d.tileX},${d.tileY}) has no floor below it`,
+      ).toBe("floor");
     }
   });
 

@@ -14,9 +14,18 @@ import type { Decoration } from "@/game/world/types";
  * why the importer must never bounding-box crop these.
  */
 
-export type MuralId = "vinyl-wall" | "clothing-wall";
+export type MuralId =
+  | "vinyl-wall"
+  | "clothing-wall"
+  | "basement-back-wall"
+  | "basement-ledge-wall";
 
-export const MURAL_IDS = ["vinyl-wall", "clothing-wall"] as const;
+export const MURAL_IDS = [
+  "vinyl-wall",
+  "clothing-wall",
+  "basement-back-wall",
+  "basement-ledge-wall",
+] as const;
 
 /**
  * How many slices each mural ships as.
@@ -24,10 +33,16 @@ export const MURAL_IDS = ["vinyl-wall", "clothing-wall"] as const;
  * The vinyl wall was authored 8 tiles wide but hangs on a 7-tile row, so the
  * importer drops one of its (byte-identical) middle slices. Both chamfered ends
  * survive — only plain wall is lost. See `scripts/import-walls.py`.
+ *
+ * The two Basement walls are composed rather than hand-authored — same three
+ * source images, cut to length with the right pair of ends. See COMPOSED in
+ * `scripts/import-walls.py`.
  */
 export const MURAL_SLICES: Record<MuralId, number> = {
   "vinyl-wall": 7,
   "clothing-wall": 8,
+  "basement-back-wall": 5,
+  "basement-ledge-wall": 6,
 };
 
 /** Texture key for one slice — also the world-data `artKey`. 1-indexed. */
