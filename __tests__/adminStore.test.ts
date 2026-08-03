@@ -170,3 +170,13 @@ describe('parseStoredState', () => {
     expect(out?.products[0].slug).toBe('anxiety')
   })
 })
+
+describe('seed covers the whole catalog', () => {
+  it('seeds all twelve products, including the Basement', () => {
+    const s = seedState()
+    expect(s.products).toHaveLength(12)
+    expect(s.products.filter((p) => p.collection === 'Basement')).toHaveLength(4)
+    expect(s.products.some((p) => p.slug === 'mj-white')).toBe(true)
+    expect(s.products.some((p) => p.slug === 'are-you-okay-black')).toBe(true)
+  })
+})

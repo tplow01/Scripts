@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { CYBER_LOVE_PRODUCTS } from '@/lib/products'
+import { ALL_PRODUCTS } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { reconcileVariants, type VariantDefaults } from './variants'
 import { isMigrated, migrateProducts, type LegacyProduct } from './migrate'
@@ -13,7 +13,7 @@ export interface AdminState {
   orders: AdminOrder[]
 }
 
-const STORAGE_KEY = 'scripts-admin-v2'
+const STORAGE_KEY = 'scripts-admin-v3'
 
 /** Shared physical-product fields a brand-new product inherits. */
 export const NEW_PRODUCT_DEFAULTS = {
@@ -58,7 +58,7 @@ export function blankProduct(id: string): Product {
 // ── Pure state transitions (unit-tested; the provider is a thin shell over these).
 
 export function seedState(): AdminState {
-  return { products: [...CYBER_LOVE_PRODUCTS], orders: [...MOCK_ORDERS] }
+  return { products: [...ALL_PRODUCTS], orders: [...MOCK_ORDERS] }
 }
 
 export function addProduct(s: AdminState, p: Product): AdminState {
