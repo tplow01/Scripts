@@ -192,14 +192,36 @@ export const CYBER_LOVE_PRODUCTS: Product[] = migrateProducts(LEGACY_CYBER_LOVE)
 export const BASEMENT_PRODUCTS: Product[] = migrateProducts(LEGACY_BASEMENT)
 export const ALL_PRODUCTS: Product[] = [...CYBER_LOVE_PRODUCTS, ...BASEMENT_PRODUCTS]
 
-/** Every pre-merge slug → its merged destination. Drives the PDP redirects. */
+/**
+ * Merged slug → that emotion's White colourway. The pre-split PDP served
+ * `/products/anxiety`; after the split that slug has no product, so it
+ * redirects to `anxiety-white`. White exists for every emotion in both
+ * collections, so every merged slug resolves. Derived, never hand-maintained.
+ */
 export const LEGACY_SLUG_REDIRECTS: Record<string, string> = Object.fromEntries(
-  [...LEGACY_CYBER_LOVE, ...LEGACY_BASEMENT].map((p) => [
-    p.slug,
-    p.emotion.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-  ]),
+  [...LEGACY_CYBER_LOVE, ...LEGACY_BASEMENT]
+    .filter((p) => p.colorway === 'White')
+    .map((p) => [
+      p.emotion.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      p.slug,
+    ]),
 )
 
 export function findProductBySlug(slug: string): Product | undefined {
   return ALL_PRODUCTS.find((p) => p.slug === slug)
+}
+
+/** Other colourways of the same piece — same collection and emotion, different product. */
+export function siblingColorways(product: Product): Product[] {
+  return ALL_PRODUCTS.filter(
+    (p) =>
+      p.collection === product.collection &&
+      p.emotion === product.emotion &&
+      p.slug !== product.slug,
+  )
+}
+
+/** The colourway segment of a split product's name: '"ANXIETY" — White' → 'White'. */
+export function colorwayLabel(product: Product): string {
+  return product.name.split(' — ')[1] ?? ''
 }

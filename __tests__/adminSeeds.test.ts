@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ADMIN_SLUG, adminPath } from '@/lib/admin/config'
 import { MOCK_ORDERS } from '@/lib/admin/mockOrders'
 import { DEVICE_SPLIT, TOP_PAGES, TRAFFIC_30D } from '@/lib/admin/mockTraffic'
-import { ALL_PRODUCTS, BASEMENT_PRODUCTS, CYBER_LOVE_PRODUCTS, LEGACY_SLUG_REDIRECTS } from '@/lib/products'
+import { ALL_PRODUCTS, BASEMENT_PRODUCTS, CYBER_LOVE_PRODUCTS, LEGACY_SLUG_REDIRECTS, colorwayLabel, siblingColorways } from '@/lib/products'
 import { deriveAvailability, totalStock } from '@/lib/admin/variants'
 
 describe('admin config', () => {
@@ -57,30 +57,36 @@ describe('traffic seed', () => {
   })
 })
 
-describe('migrated catalog', () => {
-  it('folds twelve legacy products into six', () => {
-    expect(CYBER_LOVE_PRODUCTS).toHaveLength(4)
-    expect(BASEMENT_PRODUCTS).toHaveLength(2)
+describe('split catalog', () => {
+  it('ships 8 inventory and 4 Basement products', () => {
+    expect(CYBER_LOVE_PRODUCTS).toHaveLength(8)
+    expect(BASEMENT_PRODUCTS).toHaveLength(4)
+    expect(ALL_PRODUCTS).toHaveLength(12)
   })
 
-  it('gives every product options, variants and media', () => {
+  it('gives every product a single Size axis, plus variants and media', () => {
     for (const p of ALL_PRODUCTS) {
-      expect(p.options.length).toBeGreaterThan(0)
-      expect(p.variants.length).toBeGreaterThan(0)
+      expect(p.options.map((o) => o.name)).toEqual(['Size'])
+      expect(p.variants).toHaveLength(4)
       expect(p.media.length).toBeGreaterThan(0)
     }
   })
 
-  it('has unique slugs and globally unique variant skus', () => {
-    expect(new Set(ALL_PRODUCTS.map((p) => p.slug)).size).toBe(ALL_PRODUCTS.length)
+  it('has unique slugs, sku roots and variant skus across all twelve', () => {
+    expect(new Set(ALL_PRODUCTS.map((p) => p.slug)).size).toBe(12)
+    expect(new Set(ALL_PRODUCTS.map((p) => p.skuRoot)).size).toBe(12)
     const skus = ALL_PRODUCTS.flatMap((p) => p.variants.map((v) => v.sku))
     expect(new Set(skus).size).toBe(skus.length)
   })
 
-  it('redirects all twelve legacy slugs to a live product', () => {
+  it('redirects every merged slug to a live White product', () => {
     const entries = Object.entries(LEGACY_SLUG_REDIRECTS)
-    expect(entries).toHaveLength(12)
+    expect(entries).toHaveLength(6)
+    expect(Object.keys(LEGACY_SLUG_REDIRECTS).sort()).toEqual(
+      ['anxiety', 'are-you-okay', 'confusion', 'love', 'mj', 'rage'],
+    )
     for (const [, to] of entries) {
+      expect(to.endsWith('-white')).toBe(true)
       expect(ALL_PRODUCTS.some((p) => p.slug === to)).toBe(true)
     }
   })
@@ -92,9 +98,19 @@ describe('migrated catalog', () => {
     }
   })
 
-  it('gives ARE YOU OKAY a three-value colorway axis', () => {
-    const p = BASEMENT_PRODUCTS.find((x) => x.emotion === 'ARE YOU OKAY')
-    expect(p?.options[1].values).toHaveLength(3)
-    expect(p?.variants).toHaveLength(12)
+  it('links sibling colourways: 1 for inventory, 2 for ARE YOU OKAY, 0 for MJ', () => {
+    const anxietyWhite = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-white')!
+    expect(siblingColorways(anxietyWhite).map((p) => p.slug)).toEqual(['anxiety-green'])
+
+    const areBlack = ALL_PRODUCTS.find((p) => p.slug === 'are-you-okay-black')!
+    expect(siblingColorways(areBlack)).toHaveLength(2)
+
+    const mj = ALL_PRODUCTS.find((p) => p.slug === 'mj-white')!
+    expect(siblingColorways(mj)).toHaveLength(0)
+  })
+
+  it('reads the colourway label off the product name', () => {
+    const green = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-green')!
+    expect(colorwayLabel(green)).toBe('Army Green')
   })
 })
