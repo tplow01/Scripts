@@ -12,3 +12,6 @@ next-env.d.ts
 
 # Subagent-driven development scratch (ledgers, briefs, review packages)
 .superpowers/
+
+# Claude Code local state and git worktrees
+.claude/
