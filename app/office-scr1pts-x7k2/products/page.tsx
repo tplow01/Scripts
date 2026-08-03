@@ -225,12 +225,13 @@ export default function ProductsPage() {
 
         {/* Tablet and desktop: table */}
         <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-left text-[13px] min-w-[760px]">
+          <table className="w-full text-left text-[13px] min-w-[880px]">
             <thead>
               <tr className="text-[11px] uppercase tracking-[0.14em] text-grey border-b border-grey/25">
                 <th className="px-5 py-3 font-medium">Product</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Inventory</th>
+                <th className="px-5 py-3 font-medium">Collection</th>
                 <th className="px-5 py-3 font-medium">Type</th>
                 <th className="px-5 py-3 font-medium">Vendor</th>
                 <th className="px-5 py-3 font-medium">Published</th>
@@ -239,10 +240,10 @@ export default function ProductsPage() {
             </thead>
             <tbody>
               {empty && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-grey">No products yet — add your first drop</td></tr>
+                <tr><td colSpan={8} className="px-5 py-8 text-center text-grey">No products yet — add your first drop</td></tr>
               )}
               {noMatches && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-grey">No products match your filters</td></tr>
+                <tr><td colSpan={8} className="px-5 py-8 text-center text-grey">No products match your filters</td></tr>
               )}
               {visible.map((p) => (
                 <tr key={p.id} className="relative border-b border-grey/15 last:border-b-0 hover:bg-white/[0.02]">
@@ -261,6 +262,9 @@ export default function ProductsPage() {
                   <td className="px-5 py-3"><StatusBadge status={p.publishedStatus} /></td>
                   <td className="px-5 py-3">
                     <InventoryCell product={p} />
+                  </td>
+                  <td className="px-5 py-3 text-grey max-w-[160px] truncate">
+                    {p.collection}
                   </td>
                   <td className="px-5 py-3 text-grey max-w-[140px] truncate">
                     {p.productType}
