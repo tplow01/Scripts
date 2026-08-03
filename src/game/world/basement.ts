@@ -1,4 +1,5 @@
 import type { Room, TileType } from "./types";
+import { mural } from "@/game/art/walls";
 
 /**
  * The Basement — Map v3 (see docs/world-layout.md). Interior rows **a–f** ×
@@ -53,6 +54,22 @@ export const basementRoom: Room = {
     { id: "basement-npc", type: "npc", tileX: C(9), tileY: R("b"), artKey: "heath-down-both", solid: true },
   ],
   decorations: [
+    // ── The Basement's only two wall faces ──
+    // Like the Shop, every wall tile renders as flat exterior black (see
+    // WorldScene), so there are no vertical or bottom faces anywhere. These two
+    // horizontal murals are the only walls actually drawn — the exact mirror of
+    // the Shop's L, since the Basement's cutout is top-LEFT where the Shop's is
+    // top-right.
+    //
+    // Back wall (border row 0, cols 7–11) — behind the rack room. Black void
+    // sits off both ends, so it chamfers at both, like the vinyl wall.
+    ...mural("basement-back-wall", { tileX: C(7), tileY: 0, tiles: 5 }),
+
+    // Ledge wall (row c, cols 1–6) — the cutout's bottom edge, capping the
+    // bottom strip. Chamfered on the left where it tapers into the void, square
+    // on the right where it meets the right block's floor.
+    ...mural("basement-ledge-wall", { tileX: C(1), tileY: R("c"), tiles: 6 }),
+
     // Boxes: spawn alcove (d1, f1) + corners (f10, f11, e11).
     { tileX: C(1), tileY: R("d"), artKey: "box", solid: true },
     { tileX: C(1), tileY: R("f"), artKey: "box", solid: true },
