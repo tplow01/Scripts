@@ -167,7 +167,7 @@ describe('parseStoredState', () => {
     })
     const out = parseStoredState(v2)
     expect(out?.products[0].variants).toHaveLength(2)
-    expect(out?.products[0].slug).toBe('anxiety')
+    expect(out?.products[0].slug).toBe('anxiety-white')
   })
 })
 

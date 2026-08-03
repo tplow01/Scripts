@@ -11,8 +11,8 @@ describe('buildVariantIndex', () => {
   })
 
   it('resolves a variant back to its product', () => {
-    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety')!
-    expect(index.get(anxiety.variants[0].id)?.product.slug).toBe('anxiety')
+    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-white')!
+    expect(index.get(anxiety.variants[0].id)?.product.slug).toBe('anxiety-white')
   })
 })
 
@@ -24,14 +24,14 @@ describe('parseStoredCart', () => {
   })
 
   it('keeps valid v3 entries', () => {
-    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety')!
+    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-white')!
     const vid = anxiety.variants[0].id
     const raw = JSON.stringify([{ variantId: vid, quantity: 2 }])
     expect(parseStoredCart(raw, index, legacy)).toEqual([{ variantId: vid, quantity: 2 }])
   })
 
   it('drops entries for unknown variants and non-positive quantities', () => {
-    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety')!
+    const anxiety = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-white')!
     const raw = JSON.stringify([
       { variantId: 'gone', quantity: 1 },
       { variantId: anxiety.variants[0].id, quantity: 0 },
@@ -45,7 +45,7 @@ describe('parseStoredCart', () => {
     expect(out).toHaveLength(1)
     expect(out[0].quantity).toBe(3)
     const ref = index.get(out[0].variantId)!
-    expect(ref.product.slug).toBe('anxiety')
+    expect(ref.product.slug).toBe('anxiety-white')
     expect(ref.variant.optionValues).toContain('M')
   })
 
