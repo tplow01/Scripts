@@ -42,9 +42,9 @@ export const basementRoom: Room = {
   characterTint: 0x8a8a96,
   interactions: [
     // Spawn alcove (col 1): box d1, stairs e1 → back up to the Shop, box f1.
-    { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs", solid: false,
-      // Shop-side landing is just below the secret stairs (now at b7 = 7,2).
-      target: { roomId: "main", spawn: { tileX: 7, tileY: 3 } }, transition: "fade" },
+    { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs-basement", solid: false,
+      // Shop-side landing is just below the secret stairs (now at c6 = 6,3).
+      target: { roomId: "main", spawn: { tileX: 7, tileY: 4 } }, transition: "fade" },
     // Rack room (right block): three rails framing the NPC.
     { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack-h3", wTiles: 3, solid: true },
     { id: "rail-left", type: "rack", tileX: C(7), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },

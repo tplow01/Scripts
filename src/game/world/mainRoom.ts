@@ -1,14 +1,19 @@
 import type { Room, TileType } from "./types";
-import { MAT_OVERHANG_PX } from "@/game/art/sprites";
 import { mural } from "@/game/art/walls";
+import { entranceRug } from "@/game/art/floors";
+import { checkoutCounter } from "@/game/art/checkout";
+import { sofa, sofaCushions } from "@/game/art/sofa";
+import { rail } from "@/game/art/rails";
+import { vinylDeck } from "@/game/art/vinylDeck";
 
 /**
  * Shop floor (Main) — Map v3, the exact measured layout (see docs/world-layout.md).
  *
  * Interior is the player's notation: rows **a–o** (top→bottom) × columns **1–15**,
  * wrapped in a 1-tile wall border. So letter→y = (index + 1), column n → x = n.
- * Row a is now wall too (the top came down one tile), so play space is rows b–o;
- * the top-right is cut away (cols 8–15 × rows a–g) → an L-shaped floor.
+ * Rows a–b are wall too (the top came down two tiles) and so is col 15 (the
+ * right wall came in one), so play space is rows c–o × cols 1–14; the
+ * top-right is cut away (cols 8–15 × rows a–h) → an L-shaped floor.
  * Rendered with the baked pixel-art sprites in the art registry.
  */
 const WIDTH = 17; // 15 interior cols + border
@@ -26,17 +31,31 @@ function buildTiles(width: number, height: number): TileType[][] {
   for (let y = 0; y < height; y++) {
     const row: TileType[] = [];
     for (let x = 0; x < width; x++) {
-      // Top wall is 2 tiles thick (row 0 + interior row a) — the play space
-      // starts at row b, per the "top of map comes down one tile" layout note.
-      const border = x === 0 || y <= R("a") || x === maxX || y === maxY;
-      // Top-right cutout: interior cols 8–15 × rows a–g (plus their border).
-      const cutout = x >= C(8) && y <= R("g");
+      // Top wall is 3 tiles thick (row 0 + interior rows a–b) — the play space
+      // starts at row c, the music alcove and its wall having come down a tile.
+      // The right wall is 2 tiles thick (col 16 + interior col 15), so it butts
+      // straight up against the vertical clothing rail at col 14 — no lane of
+      // floor left stranded behind it.
+      const border = x === 0 || y <= R("b") || x >= C(15) || y === maxY;
+      // Top-right cutout: interior cols 8–15 × rows a–h (plus their border).
+      const cutout = x >= C(8) && y <= R("h");
       row.push(border || cutout ? "wall" : "floor");
     }
     tiles.push(row);
   }
   return tiles;
 }
+
+/** Left tile of the vinyl deck; its right slice sits beside it. */
+const DECK_AT = { tileX: C(3), tileY: R("c") };
+
+/** Left end of the horizontal clothing rail; it runs right from here. */
+const RAIL_H_AT = { tileX: C(8), tileY: R("i") };
+/** Top of the vertical clothing rail; it runs down from here. */
+const RAIL_V_AT = { tileX: C(14), tileY: R("j") };
+
+/** Top-left tile of the sofa — its back; the cushion row runs beneath it. */
+const SOFA_AT = { tileX: C(1), tileY: R("e") };
 
 export const mainRoom: Room = {
   id: "main",
@@ -47,17 +66,21 @@ export const mainRoom: Room = {
   // Spawn on the centre door (bottom). WorldScene walks Scribbs up on entry.
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
-    // Basement entrance — SECRET stairs (top, b6). Hidden behind record crates
+    // Basement entrance — SECRET stairs (top, c6). Hidden behind record crates
     // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
-    { id: "stairs", type: "stairs", tileX: C(6), tileY: R("b"), artKey: "stairs", solid: false,
+    { id: "stairs", type: "stairs", tileX: C(6), tileY: R("c"), artKey: "stairs-shop", solid: false,
       revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
 
-    // Music alcove (row b): vinyl deck (2 wide) — the reveal switch. Speakers are decorations.
-    { id: "vinyl", type: "vinylDesk", tileX: C(3), tileY: R("b"), artKey: "vinylDesk", wTiles: 2, solid: true },
+    // Music alcove (row c): vinyl deck (2 wide) — the reveal switch. Speakers
+    // are decorations. Art-less: its two hand-drawn slices are laid as
+    // decorations (see vinylDeck below); this entry is the collision + trigger.
+    { id: "vinyl", type: "vinylDesk", tileX: DECK_AT.tileX, tileY: DECK_AT.tileY, wTiles: 2, solid: true },
 
     // Checkout — single L footprint (2×5): top bar k1–k2 + right column k2–o2;
     // the bottom-left 1×4 cutout is a hole (walkable, transparent art).
-    { id: "checkout", type: "checkout", tileX: C(1), tileY: R("k"), artKey: "checkout", wTiles: 2, hTiles: 5, solid: true,
+    // Art-less: the counter's six hand-drawn slices are laid as decorations
+    // (see checkoutCounter below); this entry is its collision + interaction.
+    { id: "checkout", type: "checkout", tileX: C(1), tileY: R("k"), wTiles: 2, hTiles: 5, solid: true,
       holes: [{ dx: 0, dy: 1 }, { dx: 0, dy: 2 }, { dx: 0, dy: 3 }, { dx: 0, dy: 4 }] },
 
     // Cashier — Heath himself, standing in the checkout gap behind the counter
@@ -66,61 +89,52 @@ export const mainRoom: Room = {
     // frame rather than a flip.
     { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "heath-right-both", solid: true },
 
-    // Clothing rails: horizontal h8–14, vertical h15–n15.
-    { id: "rail-h", type: "rack", tileX: C(8), tileY: R("h"), artKey: "rack-h7", wTiles: 7, solid: true },
-    { id: "rail-v", type: "rack", tileX: C(15), tileY: R("h"), artKey: "rack-v7", hTiles: 7, solid: true },
+    // Clothing rails, 6 tiles each: horizontal i8–13, vertical j14–o14. The
+    // horizontal's last slice carries the corner, so the vertical starts one
+    // row below it. Art-less — their six hand-drawn slices are laid
+    // as decorations (see rail() below); these entries are the collision.
+    { id: "rail-h", type: "rack", tileX: RAIL_H_AT.tileX, tileY: RAIL_H_AT.tileY, wTiles: 6, solid: true },
+    { id: "rail-v", type: "rack", tileX: RAIL_V_AT.tileX, tileY: RAIL_V_AT.tileY, hTiles: 6, solid: true },
 
     // ── The cast on the shop floor ──
     // Teo browses the vertical rail, shuffling a couple of tiles up and down
-    // column 14 and turning back to face the rail at each end.
-    { id: "teo", type: "npc", tileX: C(14), tileY: R("j"), artKey: "teo-right-both", solid: false,
+    // column 13 and turning back to face the rail at each end.
+    { id: "teo", type: "npc", tileX: C(13), tileY: R("j"), artKey: "teo-right-both", solid: false,
       patrol: {
         waypoints: [
-          { x: C(14), y: R("j") }, { x: C(14), y: R("k") }, { x: C(14), y: R("l") },
+          { x: C(13), y: R("j") }, { x: C(13), y: R("k") }, { x: C(13), y: R("l") },
         ],
         restFacing: "right",
       } },
 
     // TP paces the open floor between the sofa and the checkout: down column 4
-    // from row f (the first row clear of the sofa's seat zone) to row n, then
+    // from row g (the first row clear of the sofa's seat zone) to row n, then
     // one tile west to the counter approach. Well clear of the floor logo at
     // columns 7-9. Every waypoint is orthogonally adjacent to the last — this
     // is a hand-authored route, not a pathfinder.
-    { id: "tp", type: "npc", tileX: C(4), tileY: R("f"), artKey: "tp-down-both", solid: false,
+    { id: "tp", type: "npc", tileX: C(4), tileY: R("g"), artKey: "tp-down-both", solid: false,
       patrol: {
         waypoints: [
-          { x: C(4), y: R("f") }, { x: C(4), y: R("g") }, { x: C(4), y: R("h") },
+          { x: C(4), y: R("g") }, { x: C(4), y: R("h") },
           { x: C(4), y: R("i") }, { x: C(4), y: R("j") }, { x: C(4), y: R("k") },
           { x: C(4), y: R("l") }, { x: C(4), y: R("m") }, { x: C(4), y: R("n") },
           { x: C(3), y: R("n") },
         ],
       } },
 
-    // Karl stands beside the couch's right edge (d6), facing out into the room.
+    // Karl stands beside the couch's right edge (f6), facing out into the room.
     // The source art has no seated pose, so he stands rather than fake-sitting.
-    { id: "karl", type: "npc", tileX: C(6), tileY: R("d"), artKey: "karl-down-both", solid: true },
+    { id: "karl", type: "npc", tileX: C(6), tileY: R("f"), artKey: "karl-down-both", solid: true },
   ],
-  // The sofa itself — the L of cushions: vertical arm (col 1, rows c–e) + base
-  // (row e, cols 1–5). You can only sit by stepping down from the top side; you
-  // can't walk onto it from the back (below) or the sides. The open corner
-  // (cols 2–5 × rows c–d) is just normal floor.
+  // The sofa's cushions (row f, cols 1–4). Its back sits above the left
+  // cushion at e1 and is solid, so you sit by stepping DOWN from the open floor
+  // at e2–e4 and may then shuffle along the row — including under the back to
+  // the left-hand cushion, which has no approach of its own.
   seats: [
-    // Couch base (row e, cols 2–5): sit by stepping down from the open floor
-    // above. Seated is planted — the only move is back off the way you came.
     {
       enterDir: "down",
-      tiles: [
-        { x: C(2), y: R("e") }, { x: C(3), y: R("e") }, { x: C(4), y: R("e") }, { x: C(5), y: R("e") },
-      ],
-    },
-    // Couch arm (col 1, rows c–e): the bookcase occupies b1, so the arm is
-    // entered from BELOW — step up from f1 — and you may shuffle along it.
-    {
-      enterDir: "up",
       internalMoves: true,
-      tiles: [
-        { x: C(1), y: R("c") }, { x: C(1), y: R("d") }, { x: C(1), y: R("e") },
-      ],
+      tiles: sofaCushions(SOFA_AT),
     },
   ],
   decorations: [
@@ -130,43 +144,62 @@ export const mainRoom: Room = {
     // are hand-drawn trapezoids: full width at the base, chamfered at the top
     // ends where they stop.
     //
-    // Vinyl wall (row a, cols 1-7) — behind the music alcove. Chamfered at both
+    // Vinyl wall (row b, cols 1-7) — behind the music alcove. Chamfered at both
     // ends, so it reads as a freestanding wall; col 0 is deliberately left bare
     // for its left chamfer to taper into.
-    ...mural("vinyl-wall", { tileX: C(1), tileY: R("a"), tiles: 7 }),
+    ...mural("vinyl-wall", { tileX: C(1), tileY: R("b"), tiles: 7 }),
 
-    // Clothing wall (row g, cols 8-15) — the cutout's bottom edge, directly
-    // above the horizontal rail at row h. Square on the left where it meets the
+    // Clothing wall (row h, cols 8-14) — the cutout's bottom edge, directly
+    // above the horizontal rail at row i. Seven tiles: the authored slice 6 is
+    // dropped so 7 and 8 shuffle left, ending the wall level with col 14. Square on the left where it meets the
     // corner, chamfered on the right at the map edge.
-    ...mural("clothing-wall", { tileX: C(8), tileY: R("g"), tiles: 8 }),
+    ...mural("clothing-wall", { tileX: C(8), tileY: R("h"), tiles: 7 }),
 
-    // Speakers flanking the vinyl deck (b2, b5).
-    // Bookcase (b1) mirroring the record crate at b6 about the vinyl desk, so
-    // the music alcove reads symmetrically: bookcase, speaker, desk, speaker, crate.
-    { tileX: C(1), tileY: R("b"), artKey: "bookcase", solid: true },
-    { tileX: C(2), tileY: R("b"), artKey: "speaker", solid: true },
-    { tileX: C(5), tileY: R("b"), artKey: "speaker", solid: true },
+    // Speakers flanking the vinyl deck (c2, c5).
+    // Record crate (c1) mirroring the one at c6 about the vinyl desk, so the
+    // music alcove reads symmetrically: crate, speaker, desk, speaker, crate.
+    { tileX: C(1), tileY: R("c"), artKey: "vinyl-crate", solid: true },
+    { tileX: C(2), tileY: R("c"), artKey: "speaker", solid: true },
+    { tileX: C(5), tileY: R("c"), artKey: "speaker", solid: true },
 
-    // Record crate concealing the secret stairs (b6, snug against the right
-    // speaker). Playing the vinyl slides it right to b7, parking it against
+    // Vinyl deck art — two slices, left then right (see art/vinylDeck.ts).
+    ...vinylDeck(DECK_AT),
+
+    // Record crate concealing the secret stairs (c6, snug against the right
+    // speaker). Playing the vinyl slides it right to c7, parking it against
     // the wall — it stays visible and solid there.
-    { tileX: C(6), tileY: R("b"), artKey: "crates", solid: true, concealing: "basement-entrance",
-      slideTo: { tileX: C(7), tileY: R("b") } },
+    { tileX: C(6), tileY: R("c"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
+      slideTo: { tileX: C(7), tileY: R("c") } },
 
-    // Couch — single L footprint (5×3), arm down the left + base along the
-    // bottom. Non-solid so Scribbs can step onto the cushions ("sit").
-    { tileX: C(1), tileY: R("c"), artKey: "couch", wTiles: 5, hTiles: 3, solid: false },
+    // Sofa — five hand-drawn slices: the back at e1, then the cushion row
+    // f1–f4 left to right. Only the back is solid; the cushions are a seat zone
+    // (see above), so Scribbs can step onto them.
+    ...sofa(SOFA_AT),
 
     // SCR!PTS floor logo — 3×3 canonical brand lockup, centred over the door
     // (cols 7–9, rows k–m). One row lower than the prototype so the full comet
     // remains inside the short mobile camera viewport as Scribbs approaches.
     { tileX: C(7), tileY: R("k"), artKey: "emblem", wTiles: 3, hTiles: 3 },
 
-    // Entrance: a flat SCR!PTS-black wall (no doors sprite) with a pink
-    // carpet marking the walk-in gap — Pokémon-style building exterior. The
-    // mat's own art overhangs its tile (see MAT_OVERHANG_PX) so it bleeds a
-    // few px past the floor edge onto the black exterior row below.
-    { tileX: C(7), tileY: R("o"), artKey: "mat", wTiles: 3, hTiles: (16 + MAT_OVERHANG_PX) / 16 },
+    // Entrance: a flat SCR!PTS-black wall (no doors sprite) with the
+    // hand-drawn pink rug marking the walk-in gap — Pokémon-style building
+    // exterior. Three sequential slices laid left to right (see art/floors.ts).
+    ...entranceRug({ tileX: C(7), tileY: R("o") }),
+
+    // Checkout counter art — six slices filling the L's solid cells: 1 top-left
+    // (k1), 2 to its right (k2), then 3–6 down column 2 to row o.
+    ...checkoutCounter({ tileX: C(1), tileY: R("k") }),
+
+    // Clothing rail art — six slices each, left to right and top to bottom,
+    // meeting at the top-right corner.
+    ...rail("rail-h", RAIL_H_AT),
+    ...rail("rail-v", RAIL_V_AT),
+
+    // Open carton filling the corner the two rails leave open (i14) — the
+    // horizontal ends at i13 and the vertical starts a row lower at j14. It
+    // fills its whole tile, so the corner reads solid instead of showing a
+    // bare square of floor.
+    { tileX: C(14), tileY: R("i"), artKey: "box-open", solid: true },
   ],
 };
 

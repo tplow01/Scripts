@@ -32,7 +32,7 @@ interface Placed {
    */
   holes?: Array<{ dx: number; dy: number }>;
   /** Key into the art registry — never an asset path. */
-  artKey: string;
+  artKey?: string;
   /** Mirror the art horizontally (e.g. an NPC facing the other way). */
   flip?: boolean;
   /**
@@ -77,6 +77,12 @@ export interface Patrol {
 }
 
 export interface Interaction extends Placed {
+  /**
+   * Omitted on an interaction that exists purely for collision and its
+   * behaviour, whose art is supplied by separate decorations (the checkout
+   * counter — see art/checkout.ts).
+   */
+  artKey?: string;
   /** Stable unique id within the room. */
   id: string;
   type: InteractionType;
@@ -93,7 +99,10 @@ export interface Interaction extends Placed {
  * solid obstacle like a speaker or box). `solid` decorations block movement but
  * have no interaction.
  */
-export interface Decoration extends Placed {}
+export interface Decoration extends Placed {
+  /** Decorations exist to be seen, so their art key is never optional. */
+  artKey: string;
+}
 
 /**
  * A group of walkable tiles (e.g. sofa cushions) that may only be ENTERED from

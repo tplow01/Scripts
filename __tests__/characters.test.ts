@@ -49,7 +49,8 @@ describe("the cast", () => {
   it("resolves every character artKey used by the world", () => {
     for (const room of [mainRoom, basementRoom]) {
       for (const it of room.interactions) {
-        expect(() => resolveTextureKey(it.artKey)).not.toThrow();
+        if (!it.artKey) continue; // art-less props (the checkout) draw via decorations
+        expect(() => resolveTextureKey(it.artKey!)).not.toThrow();
       }
     }
   });

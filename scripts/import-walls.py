@@ -10,22 +10,23 @@ their alpha channel -- the wall is a trapezoid, full width at the base and
 tapering at the top ends. Cropping to content would trim those triangles away
 and square the wall off.
 
-Source filenames are inconsistent (Illustrator exported the last clothing slice
-under a different pattern), so tiles are ordered by their trailing number
-rather than by name.
+Source filenames are inconsistent (Illustrator exported some slices under a
+different pattern), so tiles are ordered by their trailing number rather than
+by name.
 """
 import re
+import sys
 from pathlib import Path
 from typing import Optional
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from PIL import Image
+
+from pixel_grid import TILE, downsample
 
 SRC = Path.home() / "Documents" / "Sprites"
 OUT = Path(__file__).resolve().parent.parent / "public" / "assets" / "walls"
-
-# Rendered at 32px by placeTile's setDisplaySize; 64 matches the character
-# canvas and buys crispness on hi-dpi displays.
-TILE = 64
 
 # Source folder -> output key prefix, how many slices the export contains, and
 # an optional middle slice to DROP.
@@ -36,32 +37,16 @@ TILE = 64
 # the only slices that carry unique art. Never drop slice 1 or the last one.
 MURALS = {
     "Vinyl_wall": ("vinyl-wall", 8, 5),
-    "Clothing_Wall": ("clothing-wall", 8, None),
+    # The clothing wall hangs on a 7-tile run now that the right-hand column is
+    # wall, so slice 6 is dropped and 7-8 shuffle left into its place.
+    "Clothing_Wall": ("clothing-wall", 8, 6),
+    # The Basement's two walls. Both are now hand-authored at exactly the
+    # length of the row they hang on, so neither drops a slice.
+    #   basement-back-wall  row 0, cols 7-11 -- behind the rack room.
+    #   basement-ledge-wall row c, cols 1-6  -- the cutout's bottom edge.
+    "Basement_Clothing_Wall": ("basement-back-wall", 5, None),
+    "Basement_Entrance": ("basement-ledge-wall", 6, None),
 }
-
-# The Basement's two walls are COMPOSED, not hand-authored -- there is no
-# Basement_Wall source folder.
-#
-# Every mural above resolves to just three distinct images: a flat body, a left
-# chamfer, and a right chamfer (Vinyl_wall slices 1 and 8 are byte-identical to
-# Clothing_Wall's ends, and every middle slice is the same flat tile). So a wall
-# of any length with any pair of ends can be built from that vocabulary, and it
-# is genuinely the same hand-drawn wall rather than a lookalike.
-#
-# prefix -> (length, left end, right end). An end is chamfered when it tapers
-# into the black void and square when it butts up against floor.
-#   basement-back-wall  y=0, x=7-11 -- behind the rack room; void at both ends.
-#   basement-ledge-wall y=3, x=1-6  -- the cutout's bottom edge; its right end
-#                                      meets the right block's floor, so square.
-COMPOSED = {
-    "basement-back-wall": (5, "chamfer", "chamfer"),
-    "basement-ledge-wall": (6, "chamfer", "square"),
-}
-
-# Where the three building blocks come from. Vinyl_wall carries both chamfers.
-PARTS_FOLDER = "Vinyl_wall"
-PARTS = {"chamfer-left": 1, "body": 4, "chamfer-right": 8}
-
 
 def slice_index(path: Path) -> int:
     """Trailing number in the filename -- the tile's left-to-right position."""
@@ -103,59 +88,18 @@ def import_mural(folder: str, prefix: str, expected: int, drop: Optional[int]) -
         img = Image.open(path).convert("RGBA")
         if img.width != img.height:
             raise SystemExit(f"{path.name}: slices must be square, got {img.size}")
-        # Nearest-neighbour, no crop, no masking -- alpha is load-bearing here.
-        tile = img.resize((TILE, TILE), Image.NEAREST)
+        # Centre-sampled on the authored grid, no crop, no masking -- alpha is
+        # load-bearing here (see scripts/pixel_grid.py).
+        tile = downsample(img)
         out_path = OUT / f"{prefix}-{out_index}.png"
         tile.save(out_path)
         print(f"  {path.name} -> {out_path.name}")
-
-
-def load_parts() -> dict:
-    """The three distinct slice images, keyed by role, at output size."""
-    src_dir = SRC / PARTS_FOLDER
-    if not src_dir.is_dir():
-        raise SystemExit(f"missing source folder: {src_dir}")
-    by_index = {slice_index(p): p for p in src_dir.glob("*.png")}
-    parts = {}
-    for role, index in PARTS.items():
-        path = by_index.get(index)
-        if path is None:
-            raise SystemExit(f"{PARTS_FOLDER}: no slice {index} for '{role}'")
-        parts[role] = Image.open(path).convert("RGBA").resize((TILE, TILE), Image.NEAREST)
-    return parts
-
-
-def compose_mural(prefix: str, length: int, left: str, right: str, parts: dict) -> None:
-    if length < 2:
-        raise SystemExit(f"{prefix}: a wall needs at least 2 slices, got {length}")
-
-    def end(side: str, which: str) -> Image.Image:
-        if which == "square":
-            return parts["body"]
-        if which == "chamfer":
-            return parts[f"chamfer-{side}"]
-        raise SystemExit(f"{prefix}: unknown end '{which}' (want 'chamfer' or 'square')")
-
-    slices = [end("left", left)] + [parts["body"]] * (length - 2) + [end("right", right)]
-
-    OUT.mkdir(parents=True, exist_ok=True)
-    for stale in OUT.glob(f"{prefix}-*.png"):
-        stale.unlink()
-    for out_index, tile in enumerate(slices, start=1):
-        out_path = OUT / f"{prefix}-{out_index}.png"
-        tile.save(out_path)
-        print(f"  {out_path.name}")
 
 
 def main() -> None:
     for folder, (prefix, expected, drop) in MURALS.items():
         print(f"{folder}:")
         import_mural(folder, prefix, expected, drop)
-
-    parts = load_parts()
-    for prefix, (length, left, right) in COMPOSED.items():
-        print(f"{prefix} (composed, {length} slices):")
-        compose_mural(prefix, length, left, right, parts)
 
 
 if __name__ == "__main__":

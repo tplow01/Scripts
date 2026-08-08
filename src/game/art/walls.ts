@@ -30,17 +30,16 @@ export const MURAL_IDS = [
 /**
  * How many slices each mural ships as.
  *
- * The vinyl wall was authored 8 tiles wide but hangs on a 7-tile row, so the
- * importer drops one of its (byte-identical) middle slices. Both chamfered ends
- * survive — only plain wall is lost. See `scripts/import-walls.py`.
- *
- * The two Basement walls are composed rather than hand-authored — same three
- * source images, cut to length with the right pair of ends. See COMPOSED in
+ * The vinyl and clothing walls were both authored 8 tiles wide but hang on
+ * 7-tile rows, so the importer drops one middle slice from each and shuffles
+ * the rest left. Both ends survive — only plain wall is lost. See
  * `scripts/import-walls.py`.
+ *
+ * Every other mural is drawn at exactly the length of the row it hangs on.
  */
 export const MURAL_SLICES: Record<MuralId, number> = {
   "vinyl-wall": 7,
-  "clothing-wall": 8,
+  "clothing-wall": 7,
   "basement-back-wall": 5,
   "basement-ledge-wall": 6,
 };

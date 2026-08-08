@@ -2,36 +2,31 @@ import * as Phaser from "phaser";
 import { bakePixelArt, bakeShadow } from "./pixelArt";
 import { isCharacterFrame } from "./characters";
 import { isMuralTile } from "./walls";
+import { isFloorArt } from "./floors";
+import { isCheckoutTile } from "./checkout";
+import { isSofaTile } from "./sofa";
+import { isRailTile } from "./rails";
+import { isAuthoredProp } from "./props";
+import { isDeckTile } from "./vinylDeck";
 import {
-  hiresFloorArt,
-  hiresBasementFloorArt,
   hiresWallTopArt,
   hiresWallSideArt,
   hiresWallBottomArt,
   hiresWallFillArt,
   hiresRackArt,
-  hiresRailH7Art,
-  hiresRailV7Art,
   hiresRailH3Art,
   hiresRailV3Art,
-  hiresSpeakerArt,
-  hiresBoxArt,
-  hiresStairsArt,
-  hiresVinylDeskArt,
   hiresCratesArt,
   hiresBookcaseArt,
-  hiresCheckoutArt,
-  hiresCouchArt,
   hiresPosterArt,
   hiresDisplayTableArt,
   hiresMannequinArt,
   hiresWindowArt,
   hiresPlantArt,
-  hiresRugArt,
   hiresExtVoidArt,
   HIRES_NATIVE_SIZE,
 } from "./hiresArt";
-import { emblemArt, matArt } from "./sprites";
+import { emblemArt } from "./sprites";
 
 /**
  * Art registry — the ONLY place that maps a world `artKey` to a drawable.
@@ -45,33 +40,21 @@ import { emblemArt, matArt } from "./sprites";
 // Texture keys the world/scene may resolve. Wall variants are chosen at render
 // time by `wallVariant()`, not stored in world data.
 const TEXTURE_KEYS = [
-  "floor",
-  "floor-basement",
   "wall-top",
   "wall-side",
   "wall-bottom",
   "wall-fill",
   "rack",
-  "rack-h7",
-  "rack-v7",
   "rack-h3",
   "rack-v3",
-  "checkout",
-  "stairs",
   "poster",
   "displayTable",
-  "vinylDesk",
   "mannequin",
-  "speaker",
-  "box",
-  "couch",
   "crates",
   "bookcase",
-  "rug",
   "emblem",
   "window",
   "plant",
-  "mat",
   "ext-void",
 ] as const;
 
@@ -79,35 +62,22 @@ const TEXTURE_KEYS = [
 export const SHADOW_KEY = "shadow";
 
 export function bakeAllTextures(scene: Phaser.Scene): void {
-  bakePixelArt(scene, "floor", hiresFloorArt);
-  bakePixelArt(scene, "floor-basement", hiresBasementFloorArt);
   bakePixelArt(scene, "wall-top", hiresWallTopArt);
   bakePixelArt(scene, "wall-side", hiresWallSideArt);
   bakePixelArt(scene, "wall-bottom", hiresWallBottomArt);
   bakePixelArt(scene, "wall-fill", hiresWallFillArt);
   bakePixelArt(scene, "rack", hiresRackArt);
-  bakePixelArt(scene, "rack-h7", hiresRailH7Art);
-  bakePixelArt(scene, "rack-v7", hiresRailV7Art);
   bakePixelArt(scene, "rack-h3", hiresRailH3Art);
   bakePixelArt(scene, "rack-v3", hiresRailV3Art);
-  bakePixelArt(scene, "checkout", hiresCheckoutArt);
-  bakePixelArt(scene, "stairs", hiresStairsArt);
   bakePixelArt(scene, "poster", hiresPosterArt);
   bakePixelArt(scene, "displayTable", hiresDisplayTableArt);
-  bakePixelArt(scene, "vinylDesk", hiresVinylDeskArt);
   bakePixelArt(scene, "mannequin", hiresMannequinArt);
-  bakePixelArt(scene, "speaker", hiresSpeakerArt);
-  bakePixelArt(scene, "box", hiresBoxArt);
-  bakePixelArt(scene, "couch", hiresCouchArt);
   bakePixelArt(scene, "crates", hiresCratesArt);
   bakePixelArt(scene, "bookcase", hiresBookcaseArt);
-  bakePixelArt(scene, "rug", hiresRugArt);
   // Brand invariant: use the exact pre-overhaul comet + scr!pts wordmark.
   bakePixelArt(scene, "emblem", emblemArt);
   bakePixelArt(scene, "window", hiresWindowArt);
   bakePixelArt(scene, "plant", hiresPlantArt);
-  // Entrance invariant: keep the previous plain-pink threshold; no fake mark.
-  bakePixelArt(scene, "mat", matArt);
   bakePixelArt(scene, "ext-void", hiresExtVoidArt);
   bakeShadow(scene, SHADOW_KEY, 16, 8, 0.32);
   // The cast (see art/characters.ts) is loaded from authored PNGs in
@@ -123,6 +93,18 @@ export function resolveTextureKey(artKey: string): string {
   // Wall murals ("vinyl-wall-3") are likewise authored PNGs, enumerated by
   // art/walls.ts.
   if (isMuralTile(artKey)) return artKey;
+  // The floors and the entrance rug are authored PNGs too (art/floors.ts).
+  if (isFloorArt(artKey)) return artKey;
+  // The checkout counter is six authored slices too (art/checkout.ts).
+  if (isCheckoutTile(artKey)) return artKey;
+  // The sofa is five authored slices too (art/sofa.ts).
+  if (isSofaTile(artKey)) return artKey;
+  // The shop's two clothing rails are authored slices too (art/rails.ts).
+  if (isRailTile(artKey)) return artKey;
+  // One-tile hand-drawn props (art/props.ts).
+  if (isAuthoredProp(artKey)) return artKey;
+  // The vinyl deck is two authored slices (art/vinylDeck.ts).
+  if (isDeckTile(artKey)) return artKey;
   throw new Error(`Unknown art key: "${artKey}". Add it to the art registry.`);
 }
 
