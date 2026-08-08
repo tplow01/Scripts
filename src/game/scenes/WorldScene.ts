@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { isMuralTile } from "@/game/art/walls";
+import { isRugTile } from "@/game/art/floors";
 import { footprint, propActive } from "@/game/world/types";
 import type { Interaction, Decoration, Room } from "@/game/world/types";
 import { HEATH_INTRO_PATH, HEATH_HOME, heathPathAlongCounter } from "@/game/world/mainRoom";
@@ -283,8 +284,9 @@ export class WorldScene extends Phaser.Scene {
     }
 
     // Floor + walls (walls pick a cap/side/base variant for FireRed depth).
-    // The Basement lays down its own darker floor; everywhere else uses "floor".
-    const floorKey = roomId === "basement" ? "floor-basement" : "floor";
+    // The Basement lays down its own darker floor; everywhere else uses the
+    // shop floor. Both are hand-drawn tiles (see art/floors.ts).
+    const floorKey = roomId === "basement" ? "basement-floor" : "shop-floor";
     // No room has wall FACES: every wall tile renders as the same flat exterior
     // black the apron uses, so the floor reads as running straight up to the
     // outside on all sides — no vertical side faces, no bottom faces. The only
@@ -299,7 +301,7 @@ export class WorldScene extends Phaser.Scene {
 
     // Decorations: flat floor art sits low, wall art mounts on the wall, solid
     // obstacles stand with a contact shadow.
-    const flatFloor = new Set(["emblem", "rug", "mat"]);
+    const flatFloor = new Set(["emblem"]);
     const onWall = new Set(["poster", "window"]);
     for (const deco of this.room.decorations ?? []) {
       if (!propActive(deco, gameSession.revealed)) continue;
@@ -313,7 +315,7 @@ export class WorldScene extends Phaser.Scene {
         continue;
       }
       if (deco.artKey === "emblem") this.placeProp(deco, 0.4, false);
-      else if (flatFloor.has(deco.artKey)) this.placeProp(deco, 0.6, false);
+      else if (flatFloor.has(deco.artKey) || isRugTile(deco.artKey)) this.placeProp(deco, 0.6, false);
       else if (onWall.has(deco.artKey) || isMuralTile(deco.artKey)) this.placeProp(deco, 1, false);
       else this.placeProp(deco, 2, !!deco.solid);
     }
@@ -335,6 +337,9 @@ export class WorldScene extends Phaser.Scene {
         this.spawnNpc(it);
         continue;
       }
+      // A prop with no artKey is collision + interaction only; its art comes
+      // from decorations (the checkout counter).
+      if (!it.artKey) continue;
       if (it.type === "stairs") this.placeProp(it, 0.5, false);
       else if (it.type === "poster") this.placeProp(it, 1, false);
       else {
@@ -404,7 +409,7 @@ export class WorldScene extends Phaser.Scene {
 
   /** Bring a patrolling NPC to life from its world-data entry. */
   private spawnNpc(it: Interaction) {
-    const frame = parseCharacterFrame(it.artKey);
+    const frame = it.artKey ? parseCharacterFrame(it.artKey) : null;
     if (!frame || !it.patrol) {
       throw new Error(`NPC "${it.id}" needs a character artKey and a patrol.`);
     }
@@ -436,6 +441,7 @@ export class WorldScene extends Phaser.Scene {
         .setDepth(1.5);
       this.roomObjects.push(sh);
     }
+    if (!p.artKey) throw new Error("placeProp called on a prop with no artKey.");
     const isCharacter = isCharacterFrame(p.artKey);
     const img = this.add.image(
       cx,
@@ -528,7 +534,10 @@ export class WorldScene extends Phaser.Scene {
     // Draw any interactions this flag has just made active (the hidden stairs).
     for (const it of this.room.interactions) {
       if (it.revealedBy === flag && propActive(it, gameSession.revealed)) {
-        if (it.type === "stairs") this.placeProp(it, 0.5, false);
+        // A prop with no artKey is collision + interaction only; its art comes
+      // from decorations (the checkout counter).
+      if (!it.artKey) continue;
+      if (it.type === "stairs") this.placeProp(it, 0.5, false);
         else this.placeProp(it, 2, true);
       }
     }

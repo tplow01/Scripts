@@ -26,20 +26,20 @@ describe("mural art keys", () => {
 
   it("declares the slice count each mural actually ships, matching the authored art", () => {
     expect(MURAL_SLICES["vinyl-wall"]).toBe(7);
-    expect(MURAL_SLICES["clothing-wall"]).toBe(8);
+    expect(MURAL_SLICES["clothing-wall"]).toBe(7);
     expect(MURAL_SLICES["basement-back-wall"]).toBe(5);
     expect(MURAL_SLICES["basement-ledge-wall"]).toBe(6);
   });
 
   it("builds 1-indexed texture keys and paths", () => {
     expect(muralTileKey("vinyl-wall", 1)).toBe("vinyl-wall-1");
-    expect(muralTileKey("clothing-wall", 8)).toBe("clothing-wall-8");
+    expect(muralTileKey("clothing-wall", 7)).toBe("clothing-wall-7");
     expect(muralTileKey("vinyl-wall", 7)).toBe("vinyl-wall-7");
     expect(muralTilePath("vinyl-wall", 3)).toBe("/assets/walls/vinyl-wall-3.png");
   });
 
   it("enumerates every slice of every mural", () => {
-    expect(allMuralTiles()).toHaveLength(7 + 8 + 5 + 6);
+    expect(allMuralTiles()).toHaveLength(7 + 7 + 5 + 6);
     expect(allMuralTiles()[0]).toEqual({ id: "vinyl-wall", index: 1 });
   });
 
@@ -52,10 +52,10 @@ describe("mural art keys", () => {
 
 describe("mural() expansion", () => {
   it("lays slices left to right from the anchor tile", () => {
-    const tiles = mural("clothing-wall", { tileX: 8, tileY: 7, tiles: 8 });
-    expect(tiles).toHaveLength(8);
+    const tiles = mural("clothing-wall", { tileX: 8, tileY: 7, tiles: 7 });
+    expect(tiles).toHaveLength(7);
     expect(tiles[0]).toEqual({ tileX: 8, tileY: 7, artKey: "clothing-wall-1" });
-    expect(tiles[7]).toEqual({ tileX: 15, tileY: 7, artKey: "clothing-wall-8" });
+    expect(tiles[6]).toEqual({ tileX: 14, tileY: 7, artKey: "clothing-wall-7" });
   });
 
   it("never marks a mural slice solid — collision comes from the wall tile beneath", () => {
@@ -102,19 +102,19 @@ describe("murals in the shop", () => {
   const slices = (mainRoom.decorations ?? []).filter((d) => isMuralTile(d.artKey));
 
   it("places every slice of both murals", () => {
-    expect(slices).toHaveLength(15);
+    expect(slices).toHaveLength(14);
   });
 
-  it("hangs the vinyl wall along row a, cols 1-7", () => {
+  it("hangs the vinyl wall along row b, cols 1-7", () => {
     const vinyl = slices.filter((d) => d.artKey.startsWith("vinyl-wall"));
     expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(vinyl.every((d) => d.tileY === 1)).toBe(true);
+    expect(vinyl.every((d) => d.tileY === 2)).toBe(true);
   });
 
-  it("hangs the clothing wall along row g, cols 8-15", () => {
+  it("hangs the clothing wall along row h, cols 8-14", () => {
     const cloth = slices.filter((d) => d.artKey.startsWith("clothing-wall"));
-    expect(cloth.map((d) => d.tileX)).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
-    expect(cloth.every((d) => d.tileY === 7)).toBe(true);
+    expect(cloth.map((d) => d.tileX)).toEqual([8, 9, 10, 11, 12, 13, 14]);
+    expect(cloth.every((d) => d.tileY === 8)).toBe(true);
   });
 
   it("mounts every slice on a wall tile, never on floor", () => {
