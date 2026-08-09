@@ -68,21 +68,35 @@ export const isMuralTile = (key: string): boolean => TILE_KEYS.has(key);
  * anchor. Sixteen hand-written 1x1 entries would drown `mainRoom.ts`; this
  * keeps a wall to a single readable line there.
  *
+ * Pass `slices` to pick specific authored indices (e.g. skip a middle tile and
+ * keep the chamfered end). Otherwise every slice `1…MURAL_SLICES[id]` is used
+ * and `tiles` must match that count.
+ *
  * Slices are never solid: they mount on tiles that are already `wall` in the
  * room data, so collision is unchanged by hanging art on them.
  */
 export function mural(
   id: MuralId,
-  at: { tileX: number; tileY: number; tiles: number },
+  at: { tileX: number; tileY: number; tiles?: number; slices?: number[] },
 ): Decoration[] {
-  if (at.tiles !== MURAL_SLICES[id]) {
+  const indices =
+    at.slices ??
+    Array.from({ length: at.tiles ?? MURAL_SLICES[id] }, (_, i) => i + 1);
+  if (!at.slices && (at.tiles ?? MURAL_SLICES[id]) !== MURAL_SLICES[id]) {
     throw new Error(
       `mural("${id}") asked for ${at.tiles} tiles, but ${id} has ${MURAL_SLICES[id]} slices.`,
     );
   }
-  return Array.from({ length: at.tiles }, (_, i) => ({
+  for (const index of indices) {
+    if (index < 1 || index > MURAL_SLICES[id]) {
+      throw new Error(
+        `mural("${id}") slice ${index} is out of range 1…${MURAL_SLICES[id]}.`,
+      );
+    }
+  }
+  return indices.map((index, i) => ({
     tileX: at.tileX + i,
     tileY: at.tileY,
-    artKey: muralTileKey(id, i + 1),
+    artKey: muralTileKey(id, index),
   }));
 }

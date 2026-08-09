@@ -134,15 +134,13 @@ export const mainRoom: Room = {
     // are hand-drawn trapezoids: full width at the base, chamfered at the top
     // ends where they stop.
     //
-    // Vinyl wall (row c, cols 1-7) — behind the music alcove. Chamfered at both
-    // ends, so it reads as a freestanding wall; col 0 is deliberately left bare
-    // for its left chamfer to taper into.
-    ...mural("vinyl-wall", { tileX: C(1), tileY: R("c"), tiles: 7 }),
+    // Vinyl wall (row c, cols 1-6) — skip authored slice 6 and park slice 7 in
+    // its place so the chamfered right end sits on col 6 against the cut wall.
+    ...mural("vinyl-wall", { tileX: C(1), tileY: R("c"), slices: [1, 2, 3, 4, 5, 7] }),
 
-    // Clothing wall (row h, cols 8-14) — the cutout's bottom edge, directly
-    // above the horizontal rail at row i. Seven tiles: the authored slice 6 is
-    // dropped so 7 and 8 shuffle left, ending the wall level with col 14. Col 7
-    // of the cut is flat exterior black (the vertical cut line).
+    // Clothing wall (row h, cols 8-14) — above the rail. Col 7 (above the left
+    // carton) duplicates clothing-wall-1 so the cut corner is dressed.
+    { tileX: C(7), tileY: R("h"), artKey: "clothing-wall-1" },
     ...mural("clothing-wall", { tileX: C(8), tileY: R("h"), tiles: 7 }),
 
     // Speakers flanking the vinyl deck (d2, d5).
