@@ -150,15 +150,26 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               </AnimatePresence>
 
               {images.length > 1 && (
-                <button
-                  onClick={() => setActiveImage((i) => (i + 1) % images.length)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
-                  aria-label="Next image"
-                >
-                  <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-                    <path d="M1 1L9 9L1 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+                <>
+                  <button
+                    onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
+                    aria-label="Previous image"
+                  >
+                    <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                      <path d="M9 1L1 9L9 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setActiveImage((i) => (i + 1) % images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
+                    aria-label="Next image"
+                  >
+                    <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                      <path d="M1 1L9 9L1 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </>
               )}
             </div>
 

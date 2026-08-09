@@ -37,14 +37,15 @@ export const basementRoom: Room = {
   width: WIDTH,
   height: HEIGHT,
   tiles: buildTiles(WIDTH, HEIGHT),
-  spawn: { tileX: C(2), tileY: R("e") },
+  // Spawn on the basement stairs — entering from the shop lands here too.
+  spawn: { tileX: C(1), tileY: R("e") },
   ambient: { color: 0x000000, alpha: 0.45 },
   characterTint: 0x8a8a96,
   interactions: [
     // Spawn alcove (col 1): box d1, stairs e1 → back up to the Shop, box f1.
     { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs-basement", solid: false,
-      // Shop-side landing is just below the secret stairs (d6 → spawn beside it).
-      target: { roomId: "main", spawn: { tileX: 7, tileY: 4 } }, transition: "fade" },
+      // Return onto the shop stairs tile (d6) — never beside the slid crate.
+      target: { roomId: "main", spawn: { tileX: 6, tileY: 4 } }, transition: "fade" },
     // Rack room (right block): one horizontal rail with boxes on either end.
     { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack-h3", wTiles: 3, solid: true },
     // Heath again — an independent instance, never co-visible with the one

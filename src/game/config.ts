@@ -17,7 +17,7 @@ export function createGameConfig(
     parent,
     width: mainRoom.width * mainRoom.tileSize,
     height: mainRoom.height * mainRoom.tileSize,
-    backgroundColor: "#1C1A22",
+    backgroundColor: "#16161A",
     pixelArt: true,
     roundPixels: true,
     scale: {

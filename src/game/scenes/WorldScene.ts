@@ -53,6 +53,8 @@ export class WorldScene extends Phaser.Scene {
   private pendingCartClose: (() => void) | null = null;
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
+  /** Static (non-patrol) character props — face the player on talk. */
+  private staticNpcImgs = new Map<string, { img: Phaser.GameObjects.Image; artKey: string; tileX: number; tileY: number }>();
   private facing: Facing = "down";
   /** The player's walk-cycle state (see art/walkCycle.ts). */
   private cycle = new WalkCycle();
@@ -130,6 +132,8 @@ export class WorldScene extends Phaser.Scene {
         // A patrolling NPC we were talking to picks its route back up.
         this.talkingTo?.resume(this.time.now);
         this.talkingTo = null;
+        // Static NPCs return to their authored facing after the chat.
+        this.restoreStaticNpcFacing();
         if (this.pendingDialogClose) {
           const done = this.pendingDialogClose;
           this.pendingDialogClose = null;
@@ -270,11 +274,9 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects = [];
     this.coverObjects = [];
 
-    // ── Exterior treatment: the void beyond the walls is a flat SCR!PTS-black
-    // fill, Pokémon-style — each room reads as a solid block sitting on the
-    // overworld, not a street scene. Both the Shop and the Basement use it, so
-    // they share one wall language.
-    this.cameras.main.setBackgroundColor("#0D0D0D");
+    // ── Exterior treatment: flat void beyond the walls, a shade off the LCD
+    // bezel black so the shop/basement read as blocks on the overworld.
+    this.cameras.main.setBackgroundColor("#16161A");
     for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
       for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
         const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
@@ -324,6 +326,7 @@ export class WorldScene extends Phaser.Scene {
     // are standing fixtures with a shadow. Flag-gated ones (hidden stairs) are
     // skipped until revealed.
     this.cashierImg = undefined;
+    this.staticNpcImgs.clear();
     this.npcs = [];
     this.talkingTo = null;
     for (const it of this.room.interactions) {
@@ -345,6 +348,14 @@ export class WorldScene extends Phaser.Scene {
       else {
         const img = this.placeProp(it, 2, true);
         if (it.id === "cashier") this.cashierImg = img;
+        if (it.type === "npc" && it.artKey) {
+          this.staticNpcImgs.set(it.id, {
+            img,
+            artKey: it.artKey,
+            tileX: it.tileX,
+            tileY: it.tileY,
+          });
+        }
       }
     }
 
@@ -370,6 +381,19 @@ export class WorldScene extends Phaser.Scene {
     this.tileY = spawn.tileY;
     this.syncScribbs();
 
+    // Landing on stairs must not immediately bounce us back through the link.
+    const landedStairs = this.room.interactions.find(
+      (i) =>
+        i.type === "stairs" &&
+        propActive(i, gameSession.revealed) &&
+        footprint(i).some((t) => t.x === spawn.tileX && t.y === spawn.tileY),
+    );
+    this.lastInteractionId = landedStairs?.id ?? null;
+    if (landedStairs) {
+      this.facing = roomId === "basement" ? "right" : "down";
+      this.setFrame("both");
+    }
+
     const ts = this.room.tileSize;
     // Both rooms sit on the black apron, so both pan over it.
     const a = EXTERIOR_APRON * ts;
@@ -378,7 +402,6 @@ export class WorldScene extends Phaser.Scene {
     // of the room is visible ahead. The Basement is short, so it needs less.
     this.cameras.main.setFollowOffset(0, roomId === "main" ? ts * 2.35 : ts * 0.45);
     this.updateZoom();
-    this.lastInteractionId = null;
     // Room lighting: the player carries across rooms, so his tint is set on
     // every load rather than once at creation.
     if (this.room.characterTint !== undefined) this.scribbs.setTint(this.room.characterTint);
@@ -667,7 +690,15 @@ export class WorldScene extends Phaser.Scene {
     // Only now draw the static cashier prop (loadRoom skipped it).
     this.introPending = false;
     const cashier = this.room.interactions.find((i) => i.id === "cashier");
-    if (cashier) this.cashierImg = this.placeProp(cashier, 2, true);
+    if (cashier?.artKey) {
+      this.cashierImg = this.placeProp(cashier, 2, true);
+      this.staticNpcImgs.set(cashier.id, {
+        img: this.cashierImg,
+        artKey: cashier.artKey,
+        tileX: cashier.tileX,
+        tileY: cashier.tileY,
+      });
+    }
 
     this.transitioning = false;
     this.saveSession();
@@ -970,7 +1001,10 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
     }
-    if (hit && !hit.target) this.fireInteraction(hit);
+    if (hit && !hit.target) {
+      if (hit.type === "npc") this.faceStaticNpc(hit);
+      this.fireInteraction(hit);
+    }
   }
 
   /** Start a conversation with a patrolling NPC: they stop and turn to face us. */
@@ -980,6 +1014,27 @@ export class WorldScene extends Phaser.Scene {
     this.talkingTo = npc;
     const entry = this.room.interactions.find((i) => i.id === npc.id);
     if (entry) this.fireInteraction(entry);
+  }
+
+  /** Turn a static character prop to face Scribbs. */
+  private faceStaticNpc(hit: Interaction) {
+    const entry = this.staticNpcImgs.get(hit.id);
+    if (!entry?.img.active) return;
+    const frame = parseCharacterFrame(entry.artKey);
+    if (!frame) return;
+    const dx = this.tileX - entry.tileX;
+    const dy = this.tileY - entry.tileY;
+    if (dx === 0 && dy === 0) return;
+    const facing: Facing =
+      Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+    entry.img.setTexture(characterFrame(frame.id, facing, "both"));
+  }
+
+  /** Reset static NPCs to the facing encoded in their artKey. */
+  private restoreStaticNpcFacing() {
+    for (const entry of this.staticNpcImgs.values()) {
+      if (entry.img.active) entry.img.setTexture(resolveTextureKey(entry.artKey));
+    }
   }
 
   /** Move to another room, fading the camera (or instantly). */

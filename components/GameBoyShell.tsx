@@ -33,7 +33,7 @@ function ScreenModule({ children, overlay, stripHeight = 26, framePad = '0', lcd
   const padding = computePadding(framePad)
   return (
     <div style={{ background: STRIP_BLACK, display: 'flex', flexDirection: 'column', padding, ...style }}>
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: STRIP_BLACK }}>
         {children}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
         {overlay}
@@ -158,7 +158,7 @@ export default function GameBoyShell({
           background: STRIP_BLACK, borderRadius: 10, padding: `${frame}px ${frame}px 0`,
           boxShadow: '0 10px 26px rgba(0,0,0,0.35)',
         }}>
-          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: STRIP_BLACK }}>
             {screen}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
             {overlay}

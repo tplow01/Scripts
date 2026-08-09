@@ -64,7 +64,9 @@ export const mainRoom: Room = {
     // Basement entrance — SECRET stairs (top, d6). Hidden behind record crates
     // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
     { id: "stairs", type: "stairs", tileX: C(6), tileY: R("d"), artKey: "stairs-shop", solid: false,
-      revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
+      revealedBy: "basement-entrance",
+      target: { roomId: "basement", spawn: { tileX: 1, tileY: 5 } },
+      transition: "fade" },
 
     // Music alcove (row d): vinyl deck (2 wide) — the reveal switch. Speakers
     // are decorations. Art-less: its two hand-drawn slices are laid as
@@ -98,24 +100,30 @@ export const mainRoom: Room = {
         restFacing: "up",
       } },
 
-    // TP paces the open floor between the sofa and the checkout: down column 4
-    // from row h (clear of the sofa cushions on row g) to row n, then one tile
-    // west to the counter approach. Well clear of the floor logo at columns
-    // 7-9. Every waypoint is orthogonally adjacent to the last — this is a
-    // hand-authored route, not a pathfinder.
+    // TP paces a short stretch of column 4 between the lounge and the logo —
+    // clear of sofa cushions (row g) and the floor mark (cols 7–9, rows k–m).
     { id: "tp", type: "npc", tileX: C(4), tileY: R("h"), artKey: "tp-down-both", solid: false,
       patrol: {
         waypoints: [
           { x: C(4), y: R("h") },
-          { x: C(4), y: R("i") }, { x: C(4), y: R("j") }, { x: C(4), y: R("k") },
-          { x: C(4), y: R("l") }, { x: C(4), y: R("m") }, { x: C(4), y: R("n") },
-          { x: C(3), y: R("n") },
+          { x: C(4), y: R("i") },
+          { x: C(4), y: R("j") },
         ],
       } },
 
-    // Karl stands beside the couch's right edge (g6), facing out into the room.
-    // The source art has no seated pose, so he stands rather than fake-sitting.
-    { id: "karl", type: "npc", tileX: C(6), tileY: R("g"), artKey: "karl-down-both", solid: true },
+    // Karl walks a small loop around the lounge (open floor east of the sofa).
+    { id: "karl", type: "npc", tileX: C(6), tileY: R("g"), artKey: "karl-down-both", solid: false,
+      patrol: {
+        waypoints: [
+          { x: C(6), y: R("g") },
+          { x: C(6), y: R("h") },
+          { x: C(5), y: R("h") },
+          { x: C(5), y: R("g") },
+          { x: C(5), y: R("f") },
+          { x: C(6), y: R("f") },
+        ],
+        restFacing: "down",
+      } },
   ],
   decorations: [
     // ── The shop's only two wall faces ──

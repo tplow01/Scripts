@@ -17,9 +17,9 @@ export const DMG_PILL_FACE = 'radial-gradient(ellipse at 38% 25%, #3a3a3e 0%, #1
 export const DMG_PILL_SHADOW =
   '0 2px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08), inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -2px 3px rgba(0,0,0,0.6)'
 
-/** Glass sheen swept across the LCD's top corner. */
+/** Glass sheen swept across the LCD — kept subtle so it never reads as a white edge. */
 export const SCREEN_GLASS =
-  'linear-gradient(115deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 18%, transparent 30%)'
+  'linear-gradient(115deg, rgba(255,255,255,0.06) 0%, transparent 14%)'
 
 /** Press feedback: the control sinks and its drop shadow tightens. */
 export function pressedStyle(baseShadow: string): { transform: string; boxShadow: string } {

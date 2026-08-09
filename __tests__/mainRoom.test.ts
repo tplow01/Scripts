@@ -85,6 +85,7 @@ describe("mainRoom world data", () => {
     const stairs = mainRoom.interactions.find((i) => i.type === "stairs")!;
     expect(stairs.tileX).toBe(6);
     expect(stairs.tileY).toBe(4);
+    expect(stairs.target?.spawn).toEqual({ tileX: 1, tileY: 5 });
   });
 
   it("includes the core shop interaction types", () => {

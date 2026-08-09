@@ -24,7 +24,7 @@ describe("32px production art", () => {
     // Outside the shop is one flat field of brand black — no speckle.
     const chars = new Set(hiresExtVoidArt.rows.join("").split(""));
     expect(chars.size).toBe(1);
-    expect(hiresExtVoidArt.palette[[...chars][0]]).toBe("#0D0D0D");
+    expect(hiresExtVoidArt.palette[[...chars][0]]).toBe("#16161A");
   });
 });
 

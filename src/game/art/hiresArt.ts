@@ -276,7 +276,8 @@ export const hiresEmblemArt = fixture(96, 96, (g) => {
  */
 export const hiresExtVoidArt: PixelArt = {
   rows: Array.from({ length: 32 }, () => "k".repeat(32)),
-  palette: P,
+  // Slightly lighter than the LCD bezel (#0D0D0D) so exterior reads apart from the shell edge.
+  palette: { k: "#16161A" },
 };
 
 export const HIRES_NATIVE_SIZE = 32;

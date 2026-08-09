@@ -59,8 +59,8 @@ describe("the cast", () => {
 describe("patrolling NPCs", () => {
   const patrols = mainRoom.interactions.filter((i) => i.patrol);
 
-  it("puts Teo and TP on routes and leaves the rest standing", () => {
-    expect(patrols.map((p) => p.id).sort()).toEqual(["teo", "tp"]);
+  it("puts Teo, TP, and Karl on routes and leaves the rest standing", () => {
+    expect(patrols.map((p) => p.id).sort()).toEqual(["karl", "teo", "tp"]);
   });
 
   it("authors every route as a chain of orthogonally adjacent tiles", () => {
@@ -114,6 +114,17 @@ describe("patrolling NPCs", () => {
     for (const p of tp.patrol!.waypoints) {
       expect(p.x).toBeLessThanOrEqual(4)
       expect(p.y).toBeGreaterThanOrEqual(8)
+      expect(p.y).toBeLessThanOrEqual(10)
+    }
+  });
+
+  it('keeps Karl in the lounge beside the sofa', () => {
+    const karl = patrols.find((p) => p.id === 'karl')!
+    for (const p of karl.patrol!.waypoints) {
+      expect(p.x).toBeGreaterThanOrEqual(5)
+      expect(p.x).toBeLessThanOrEqual(6)
+      expect(p.y).toBeGreaterThanOrEqual(6)
+      expect(p.y).toBeLessThanOrEqual(8)
     }
   });
 });
