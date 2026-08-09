@@ -475,7 +475,7 @@ export class WorldScene extends Phaser.Scene {
 
     if (roomId === "main") {
       glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
-      glow(4, 3.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
+      glow(4, 4.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
       glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
     } else {
       glow(9.5, 3.2, 0xff4fa3, 4.8, 0.09); // secret rack spotlight

@@ -105,10 +105,10 @@ describe("murals in the shop", () => {
     expect(slices).toHaveLength(14);
   });
 
-  it("hangs the vinyl wall along row b, cols 1-7", () => {
+  it("hangs the vinyl wall along row c, cols 1-7", () => {
     const vinyl = slices.filter((d) => d.artKey.startsWith("vinyl-wall"));
     expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(vinyl.every((d) => d.tileY === 2)).toBe(true);
+    expect(vinyl.every((d) => d.tileY === 3)).toBe(true);
   });
 
   it("hangs the clothing wall along row h, cols 8-14", () => {

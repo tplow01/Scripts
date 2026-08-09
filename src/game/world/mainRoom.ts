@@ -11,9 +11,9 @@ import { vinylDeck } from "@/game/art/vinylDeck";
  *
  * Interior is the player's notation: rows **a–o** (top→bottom) × columns **1–15**,
  * wrapped in a 1-tile wall border. So letter→y = (index + 1), column n → x = n.
- * Rows a–b are wall too (the top came down two tiles) and so is col 15 (the
- * right wall came in one), so play space is rows c–o × cols 1–14; the
- * top-right is cut away (cols 8–15 × rows a–h) → an L-shaped floor.
+ * Rows a–c are wall on the music side (vinyl wall + alcove pushed down one tile)
+ * and col 15 is wall (right wall came in one), so play space is rows d–o × cols
+ * 1–14; the top-right is cut away (cols 8–15 × rows a–h) → an L-shaped floor.
  * Rendered with the baked pixel-art sprites in the art registry.
  */
 const WIDTH = 17; // 15 interior cols + border
@@ -25,18 +25,15 @@ const R = (letter: string) => letter.charCodeAt(0) - "a".charCodeAt(0) + 1;
 const C = (col: number) => col;
 
 function buildTiles(width: number, height: number): TileType[][] {
-  const maxX = width - 1;
   const maxY = height - 1;
   const tiles: TileType[][] = [];
   for (let y = 0; y < height; y++) {
     const row: TileType[] = [];
     for (let x = 0; x < width; x++) {
-      // Top wall is 3 tiles thick (row 0 + interior rows a–b) — the play space
-      // starts at row c, the music alcove and its wall having come down a tile.
-      // The right wall is 2 tiles thick (col 16 + interior col 15), so it butts
-      // straight up against the vertical clothing rail at col 14 — no lane of
-      // floor left stranded behind it.
-      const border = x === 0 || y <= R("b") || x >= C(15) || y === maxY;
+      // Top wall is 4 tiles thick on the music side (row 0 + interior a–c) —
+      // the vinyl wall sits on row c and the alcove on row d. The right wall is
+      // 2 tiles thick (col 16 + interior col 15).
+      const border = x === 0 || y <= R("c") || x >= C(15) || y === maxY;
       // Top-right cutout: interior cols 8–15 × rows a–h (plus their border).
       const cutout = x >= C(8) && y <= R("h");
       row.push(border || cutout ? "wall" : "floor");
@@ -47,12 +44,10 @@ function buildTiles(width: number, height: number): TileType[][] {
 }
 
 /** Left tile of the vinyl deck; its right slice sits beside it. */
-const DECK_AT = { tileX: C(3), tileY: R("c") };
+const DECK_AT = { tileX: C(3), tileY: R("d") };
 
 /** Left end of the horizontal clothing rail; it runs right from here. */
 const RAIL_H_AT = { tileX: C(8), tileY: R("i") };
-/** Top of the vertical clothing rail; it runs down from here. */
-const RAIL_V_AT = { tileX: C(14), tileY: R("j") };
 
 /** Top-left tile of the sofa — its back; the cushion row runs beneath it. */
 const SOFA_AT = { tileX: C(1), tileY: R("e") };
@@ -66,12 +61,12 @@ export const mainRoom: Room = {
   // Spawn on the centre door (bottom). Intro walks Scribbs up one tile (o8→n8).
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
-    // Basement entrance — SECRET stairs (top, c6). Hidden behind record crates
+    // Basement entrance — SECRET stairs (top, d6). Hidden behind record crates
     // until the vinyl deck is played; revealed → stepped onto → fade to Basement.
-    { id: "stairs", type: "stairs", tileX: C(6), tileY: R("c"), artKey: "stairs-shop", solid: false,
+    { id: "stairs", type: "stairs", tileX: C(6), tileY: R("d"), artKey: "stairs-shop", solid: false,
       revealedBy: "basement-entrance", target: { roomId: "basement" }, transition: "fade" },
 
-    // Music alcove (row c): vinyl deck (2 wide) — the reveal switch. Speakers
+    // Music alcove (row d): vinyl deck (2 wide) — the reveal switch. Speakers
     // are decorations. Art-less: its two hand-drawn slices are laid as
     // decorations (see vinylDeck below); this entry is the collision + trigger.
     { id: "vinyl", type: "vinylDesk", tileX: DECK_AT.tileX, tileY: DECK_AT.tileY, wTiles: 2, solid: true },
@@ -89,29 +84,24 @@ export const mainRoom: Room = {
     // frame rather than a flip.
     { id: "cashier", type: "npc", tileX: C(1), tileY: R("l"), artKey: "heath-right-both", solid: true },
 
-    // Clothing rails, 6 tiles each: horizontal i8–13, vertical j14–o14. The
-    // horizontal's last slice carries the corner, so the vertical starts one
-    // row below it. Art-less — their six hand-drawn slices are laid
-    // as decorations (see rail() below); these entries are the collision.
+    // Clothing rail — horizontal only (i8–13). Art-less — slices are decorations.
     { id: "rail-h", type: "rack", tileX: RAIL_H_AT.tileX, tileY: RAIL_H_AT.tileY, wTiles: 6, solid: true },
-    { id: "rail-v", type: "rack", tileX: RAIL_V_AT.tileX, tileY: RAIL_V_AT.tileY, hTiles: 6, solid: true },
 
     // ── The cast on the shop floor ──
-    // Teo browses the vertical rail, shuffling a couple of tiles up and down
-    // column 13 and turning back to face the rail at each end.
-    { id: "teo", type: "npc", tileX: C(13), tileY: R("j"), artKey: "teo-right-both", solid: false,
+    // Teo browses under the horizontal rail, shuffling a couple of tiles and
+    // facing up toward the hangers at each pause.
+    { id: "teo", type: "npc", tileX: C(10), tileY: R("j"), artKey: "teo-up-both", solid: false,
       patrol: {
         waypoints: [
-          { x: C(13), y: R("j") }, { x: C(13), y: R("k") }, { x: C(13), y: R("l") },
+          { x: C(10), y: R("j") }, { x: C(11), y: R("j") }, { x: C(12), y: R("j") },
         ],
-        restFacing: "right",
+        restFacing: "up",
       } },
 
     // TP paces the open floor between the sofa and the checkout: down column 4
-    // from row g (the first row clear of the sofa's seat zone) to row n, then
-    // one tile west to the counter approach. Well clear of the floor logo at
-    // columns 7-9. Every waypoint is orthogonally adjacent to the last — this
-    // is a hand-authored route, not a pathfinder.
+    // from row g to row n, then one tile west to the counter approach. Well
+    // clear of the floor logo at columns 7-9. Every waypoint is orthogonally
+    // adjacent to the last — this is a hand-authored route, not a pathfinder.
     { id: "tp", type: "npc", tileX: C(4), tileY: R("g"), artKey: "tp-down-both", solid: false,
       patrol: {
         waypoints: [
@@ -133,10 +123,10 @@ export const mainRoom: Room = {
     // are hand-drawn trapezoids: full width at the base, chamfered at the top
     // ends where they stop.
     //
-    // Vinyl wall (row b, cols 1-7) — behind the music alcove. Chamfered at both
+    // Vinyl wall (row c, cols 1-7) — behind the music alcove. Chamfered at both
     // ends, so it reads as a freestanding wall; col 0 is deliberately left bare
     // for its left chamfer to taper into.
-    ...mural("vinyl-wall", { tileX: C(1), tileY: R("b"), tiles: 7 }),
+    ...mural("vinyl-wall", { tileX: C(1), tileY: R("c"), tiles: 7 }),
 
     // Clothing wall (row h, cols 8-14) — the cutout's bottom edge, directly
     // above the horizontal rail at row i. Seven tiles: the authored slice 6 is
@@ -144,21 +134,21 @@ export const mainRoom: Room = {
     // corner, chamfered on the right at the map edge.
     ...mural("clothing-wall", { tileX: C(8), tileY: R("h"), tiles: 7 }),
 
-    // Speakers flanking the vinyl deck (c2, c5).
-    // Record crate (c1) mirroring the one at c6 about the vinyl desk, so the
+    // Speakers flanking the vinyl deck (d2, d5).
+    // Record crate (d1) mirroring the one at d6 about the vinyl desk, so the
     // music alcove reads symmetrically: crate, speaker, desk, speaker, crate.
-    { tileX: C(1), tileY: R("c"), artKey: "vinyl-crate", solid: true },
-    { tileX: C(2), tileY: R("c"), artKey: "speaker", solid: true },
-    { tileX: C(5), tileY: R("c"), artKey: "speaker", solid: true },
+    { tileX: C(1), tileY: R("d"), artKey: "vinyl-crate", solid: true },
+    { tileX: C(2), tileY: R("d"), artKey: "speaker", solid: true },
+    { tileX: C(5), tileY: R("d"), artKey: "speaker", solid: true },
 
     // Vinyl deck art — two slices, left then right (see art/vinylDeck.ts).
     ...vinylDeck(DECK_AT),
 
-    // Record crate concealing the secret stairs (c6, snug against the right
-    // speaker). Playing the vinyl slides it right to c7, parking it against
+    // Record crate concealing the secret stairs (d6, snug against the right
+    // speaker). Playing the vinyl slides it right to d7, parking it against
     // the wall — it stays visible and solid there.
-    { tileX: C(6), tileY: R("c"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
-      slideTo: { tileX: C(7), tileY: R("c") } },
+    { tileX: C(6), tileY: R("d"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
+      slideTo: { tileX: C(7), tileY: R("d") } },
 
     // Sofa — five hand-drawn slices: the back at e1, then the cushion row
     // f1–f4 left to right. Fully solid — walk around it, not onto it.
@@ -178,38 +168,28 @@ export const mainRoom: Room = {
     // (k1), 2 to its right (k2), then 3–6 down column 2 to row o.
     ...checkoutCounter({ tileX: C(1), tileY: R("k") }),
 
-    // Clothing rail art — six slices each, left to right and top to bottom,
-    // meeting at the top-right corner.
+    // Clothing rail art — horizontal only, six slices left to right.
     ...rail("rail-h", RAIL_H_AT),
-    ...rail("rail-v", RAIL_V_AT),
-
-    // Open carton filling the corner the two rails leave open (i14) — the
-    // horizontal ends at i13 and the vertical starts a row lower at j14. It
-    // fills its whole tile, so the corner reads solid instead of showing a
-    // bare square of floor.
-    { tileX: C(14), tileY: R("i"), artKey: "box-open", solid: true },
   ],
 };
 
 /**
- * Heath's first-entry intro walk (see WorldScene.playHeathIntro). He fades in
- * beside the counter (j1), walks along column 3 and row n, and stops one tile
- * above Scribbs' intro stop (m8 — Scribbs walks door o8 → n8 as Heath approaches).
+ * Heath's first-entry intro walk (see WorldScene.playHeathIntro). Direct L:
+ * fade in at j1, run right along row j to j8, then down column 8 to m8 (one tile
+ * above Scribbs at n8). One turn only — arrives facing down, no awkward pivots.
  * Scripted walks bypass collision, so keep this in sync with the fixture layout.
  */
 export const HEATH_INTRO_PATH: Array<{ x: number; y: number }> = [
   { x: C(1), y: R("j") },
   { x: C(2), y: R("j") },
   { x: C(3), y: R("j") },
-  { x: C(3), y: R("k") },
-  { x: C(3), y: R("l") },
-  { x: C(3), y: R("m") },
-  { x: C(3), y: R("n") },
-  { x: C(4), y: R("n") },
-  { x: C(5), y: R("n") },
-  { x: C(6), y: R("n") },
-  { x: C(7), y: R("n") },
-  { x: C(8), y: R("n") },
+  { x: C(4), y: R("j") },
+  { x: C(5), y: R("j") },
+  { x: C(6), y: R("j") },
+  { x: C(7), y: R("j") },
+  { x: C(8), y: R("j") },
+  { x: C(8), y: R("k") },
+  { x: C(8), y: R("l") },
   { x: C(8), y: R("m") },
 ];
 

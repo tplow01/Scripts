@@ -22,12 +22,13 @@ describe("mainRoom world data", () => {
     }
   });
 
-  it("has a three-tile-thick top wall (play space starts at row c)", () => {
+  it("has a four-tile-thick top wall (play space starts at row d)", () => {
     for (let x = 0; x < mainRoom.width; x++) {
       expect(mainRoom.tiles[1][x]).toBe("wall"); // interior row a
-      expect(mainRoom.tiles[2][x]).toBe("wall"); // interior row b, the vinyl wall
+      expect(mainRoom.tiles[2][x]).toBe("wall"); // interior row b
+      expect(mainRoom.tiles[3][x]).toBe("wall"); // interior row c, the vinyl wall
     }
-    expect(mainRoom.tiles[3][1]).toBe("floor"); // row c, col 1 is play space
+    expect(mainRoom.tiles[4][1]).toBe("floor"); // row d, col 1 is play space
   });
 
   it("spawns the player in bounds on a walkable tile", () => {
@@ -69,21 +70,21 @@ describe("mainRoom world data", () => {
   it("keeps the record crate in the world after the reveal, parked right of the stairs", () => {
     // Both alcove crates share one art key now, so find the concealing one.
     const crate = (mainRoom.decorations ?? []).find((d) => d.concealing)!;
-    expect(crate.tileX).toBe(6); // beside the right speaker (c5)
-    expect(crate.slideTo).toEqual({ tileX: 7, tileY: 3 }); // against the wall (c8+ is wall)
+    expect(crate.tileX).toBe(6); // beside the right speaker (d5)
+    expect(crate.slideTo).toEqual({ tileX: 7, tileY: 4 }); // against the wall (d8+ is wall)
     const revealed = new Set(["basement-entrance"]);
     // Still active (slid, not despawned)…
     expect(propActive(crate, revealed)).toBe(true);
-    // …and blocks its NEW tile, while the stairs tile (c6) is walkable.
+    // …and blocks its NEW tile, while the stairs tile (d6) is walkable.
     const blocked = buildBlockedSet(mainRoom, revealed);
-    expect(blocked.has("7,3")).toBe(true);
-    expect(blocked.has("6,3")).toBe(false);
+    expect(blocked.has("7,4")).toBe(true);
+    expect(blocked.has("6,4")).toBe(false);
   });
 
-  it("stairs sit under the crate at c6", () => {
+  it("stairs sit under the crate at d6", () => {
     const stairs = mainRoom.interactions.find((i) => i.type === "stairs")!;
     expect(stairs.tileX).toBe(6);
-    expect(stairs.tileY).toBe(3);
+    expect(stairs.tileY).toBe(4);
   });
 
   it("includes the core shop interaction types", () => {
@@ -91,6 +92,11 @@ describe("mainRoom world data", () => {
     for (const t of ["rack", "checkout", "stairs", "vinylDesk"]) {
       expect(types.has(t as never)).toBe(true);
     }
+  });
+
+  it("ships only the horizontal clothing rail", () => {
+    const racks = mainRoom.interactions.filter((i) => i.type === "rack");
+    expect(racks.map((r) => r.id)).toEqual(["rail-h"]);
   });
 
   it("treats out-of-bounds, wall, and the carved void as not walkable", () => {
@@ -104,11 +110,11 @@ describe('music alcove symmetry', () => {
   it('mirrors the record crate with a bookcase about the vinyl desk', () => {
     const at = (x: number, y: number) =>
       (mainRoom.decorations ?? []).find((d) => d.tileX === x && d.tileY === y)
-    // Row c: crate(1) speaker(2) desk(3-4) speaker(5) crate(6) — a matched pair.
-    expect(at(1, 3)?.artKey).toBe('vinyl-crate')
-    expect(at(2, 3)?.artKey).toBe('speaker')
-    expect(at(5, 3)?.artKey).toBe('speaker')
-    expect(at(6, 3)?.artKey).toBe('vinyl-crate')
+    // Row d: crate(1) speaker(2) desk(3-4) speaker(5) crate(6) — a matched pair.
+    expect(at(1, 4)?.artKey).toBe('vinyl-crate')
+    expect(at(2, 4)?.artKey).toBe('speaker')
+    expect(at(5, 4)?.artKey).toBe('speaker')
+    expect(at(6, 4)?.artKey).toBe('vinyl-crate')
   })
 
   it('makes both alcove crates solid', () => {

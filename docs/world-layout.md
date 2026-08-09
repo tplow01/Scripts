@@ -1,8 +1,12 @@
 # SCR!PTS — World Layout (Shop + Basement)
 
 > Exact tile layout of both areas, matching the measured wireframes and the implemented
-> room data ([`src/game/world/rooms/main.ts`](../src/game/world/rooms/main.ts),
-> [`basement.ts`](../src/game/world/rooms/basement.ts)). Last updated: 2026-06-29.
+> room data ([`src/game/world/mainRoom.ts`](../src/game/world/mainRoom.ts),
+> [`basement.ts`](../src/game/world/basement.ts)). Last updated: 2026-08-09.
+>
+> Recent layout notes: vinyl alcove + wall sit on rows **c–d** (top wall four tiles
+> thick on the music side); clothing rail is **horizontal only** (no right-side vertical
+> rail); Heath’s intro is a direct L along row j then down column 8.
 
 ## Coordinate system
 
