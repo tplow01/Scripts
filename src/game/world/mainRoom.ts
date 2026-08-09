@@ -13,8 +13,9 @@ import { vinylDeck } from "@/game/art/vinylDeck";
  * wrapped in a 1-tile wall border. So letter→y = (index + 1), column n → x = n.
  * Rows a–c are wall on the music side (vinyl wall + alcove pushed down one tile)
  * and col 15 is wall (right wall came in one), so play space is rows d–o × cols
- * 1–14; the top-right is cut away (cols 8–15 × rows a–h) → an L-shaped floor.
- * Rendered with the baked pixel-art sprites in the art registry.
+ * 1–14 on the left, with the top-right cut away (cols 7–15 × rows a–h) so a
+ * clean wall line sits behind the clothing rail. Rendered with the baked
+ * pixel-art sprites in the art registry.
  */
 const WIDTH = 17; // 15 interior cols + border
 const HEIGHT = 17; // 15 interior rows (a–o) + border
@@ -34,8 +35,9 @@ function buildTiles(width: number, height: number): TileType[][] {
       // the vinyl wall sits on row c and the alcove on row d. The right wall is
       // 2 tiles thick (col 16 + interior col 15).
       const border = x === 0 || y <= R("c") || x >= C(15) || y === maxY;
-      // Top-right cutout: interior cols 8–15 × rows a–h (plus their border).
-      const cutout = x >= C(8) && y <= R("h");
+      // Top-right cutout: cols 7–15 × rows a–h — the vertical cut sits left of
+      // the clothing rail so its back wall reads as a continuous line.
+      const cutout = x >= C(7) && y <= R("h");
       row.push(border || cutout ? "wall" : "floor");
     }
     tiles.push(row);
@@ -139,8 +141,8 @@ export const mainRoom: Room = {
 
     // Clothing wall (row h, cols 8-14) — the cutout's bottom edge, directly
     // above the horizontal rail at row i. Seven tiles: the authored slice 6 is
-    // dropped so 7 and 8 shuffle left, ending the wall level with col 14. Square on the left where it meets the
-    // corner, chamfered on the right at the map edge.
+    // dropped so 7 and 8 shuffle left, ending the wall level with col 14. Col 7
+    // of the cut is flat exterior black (the vertical cut line).
     ...mural("clothing-wall", { tileX: C(8), tileY: R("h"), tiles: 7 }),
 
     // Speakers flanking the vinyl deck (d2, d5).
@@ -153,11 +155,11 @@ export const mainRoom: Room = {
     // Vinyl deck art — two slices, left then right (see art/vinylDeck.ts).
     ...vinylDeck(DECK_AT),
 
-    // Record crate concealing the secret stairs (d6, snug against the right
-    // speaker). Playing the vinyl slides it right to d7, parking it against
-    // the wall — it stays visible and solid there.
+    // Record crate concealing the secret stairs (d6). Playing the vinyl steps
+    // it forward one tile (e6) then it vanishes — the cut wall at col 7 leaves
+    // no room to park it sideways.
     { tileX: C(6), tileY: R("d"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
-      slideTo: { tileX: C(7), tileY: R("d") } },
+      slideTo: { tileX: C(6), tileY: R("e") }, vanishAfterSlide: true },
 
     // Sofa — five hand-drawn slices: the back at f1, then the cushion row
     // g1–g4 left to right. Fully solid — walk around it, not onto it.
@@ -180,7 +182,8 @@ export const mainRoom: Room = {
     // Clothing rail art — horizontal only, six slices left to right.
     ...rail("rail-h", RAIL_H_AT),
 
-    // Open carton in the corner past the rail (i14), against the right wall.
+    // Open cartons: left of the rail (i7) and the right-wall corner (i14).
+    { tileX: C(7), tileY: R("i"), artKey: "box-open", solid: true },
     { tileX: C(14), tileY: R("i"), artKey: "box-open", solid: true },
   ],
 };

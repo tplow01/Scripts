@@ -30,7 +30,7 @@ describe("wallVariant (neighbour-based)", () => {
   });
 
   it("caps the top-right cutout's bottom edge (floor below it)", () => {
-    // Cutout is cols 8–15 × rows a–h (y1–8); (10,8) has floor at (10,9) below.
+    // Cutout is cols 7–15 × rows a–h (y1–8); (10,8) has floor at (10,9) below.
     expect(wallVariant(mainRoom, 10, 8)).toBe("wall-top");
   });
 });

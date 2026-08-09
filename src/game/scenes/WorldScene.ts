@@ -537,7 +537,7 @@ export class WorldScene extends Phaser.Scene {
     gameSession.revealed.add(flag);
     invalidateBlocked(this.room.id);
 
-    // Slide + fade the covers, then destroy them.
+    // Slide + fade the covers, then destroy them when they vanish.
     const ts = this.room.tileSize;
     const covers = this.coverObjects;
     this.coverObjects = [];
@@ -546,13 +546,16 @@ export class WorldScene extends Phaser.Scene {
         (d) => d.concealing === flag && d.slideTo,
       );
       if (deco?.slideTo) {
-        // Park the cover at its slid tile — stays visible and solid.
         const w = deco.wTiles ?? 1;
+        const h = deco.hTiles ?? 1;
         this.tweens.add({
           targets: c,
           x: deco.slideTo.tileX * ts + (w * ts) / 2,
+          y: deco.slideTo.tileY * ts + (h * ts) / 2,
+          alpha: deco.vanishAfterSlide ? 0 : 1,
           duration: 420,
           ease: "Cubic.easeOut",
+          onComplete: deco.vanishAfterSlide ? () => c.destroy() : undefined,
         });
       } else {
         this.tweens.add({

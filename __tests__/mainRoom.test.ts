@@ -67,18 +67,17 @@ describe("mainRoom world data", () => {
     expect(revealed.has(`${stairs.tileX},${stairs.tileY}`)).toBe(false);
   });
 
-  it("keeps the record crate in the world after the reveal, parked right of the stairs", () => {
-    // Both alcove crates share one art key now, so find the concealing one.
+  it("vanishes the record crate after it steps forward off the stairs", () => {
     const crate = (mainRoom.decorations ?? []).find((d) => d.concealing)!;
     expect(crate.tileX).toBe(6); // beside the right speaker (d5)
-    expect(crate.slideTo).toEqual({ tileX: 7, tileY: 4 }); // against the wall (d8+ is wall)
+    expect(crate.slideTo).toEqual({ tileX: 6, tileY: 5 }); // one tile forward (e6)
+    expect(crate.vanishAfterSlide).toBe(true);
     const revealed = new Set(["basement-entrance"]);
-    // Still active (slid, not despawned)…
-    expect(propActive(crate, revealed)).toBe(true);
-    // …and blocks its NEW tile, while the stairs tile (d6) is walkable.
+    // Despawned after the slide — not parked against the cut wall.
+    expect(propActive(crate, revealed)).toBe(false);
     const blocked = buildBlockedSet(mainRoom, revealed);
-    expect(blocked.has("7,4")).toBe(true);
-    expect(blocked.has("6,4")).toBe(false);
+    expect(blocked.has("6,4")).toBe(false); // stairs clear
+    expect(blocked.has("6,5")).toBe(false); // vanished, not parked
   });
 
   it("stairs sit under the crate at d6", () => {
@@ -100,9 +99,21 @@ describe("mainRoom world data", () => {
     expect(racks.map((r) => r.id)).toEqual(["rail-h"]);
   });
 
-  it("keeps the open carton in the clothing-rail corner", () => {
-    const box = (mainRoom.decorations ?? []).find((d) => d.artKey === "box-open");
-    expect(box).toMatchObject({ tileX: 14, tileY: 9, solid: true });
+  it("keeps open cartons on both ends of the clothing rail", () => {
+    const boxes = (mainRoom.decorations ?? []).filter((d) => d.artKey === "box-open");
+    expect(boxes).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ tileX: 7, tileY: 9, solid: true }),
+        expect.objectContaining({ tileX: 14, tileY: 9, solid: true }),
+      ]),
+    );
+    expect(boxes).toHaveLength(2);
+  });
+
+  it("cuts the top-right void through col 7 behind the clothing rail", () => {
+    expect(mainRoom.tiles[8][7]).toBe("wall"); // row h, col 7
+    expect(mainRoom.tiles[4][7]).toBe("wall"); // row d, col 7 — no sideways crate park
+    expect(mainRoom.tiles[9][7]).toBe("floor"); // row i, col 7 — box tile
   });
 
   it("treats out-of-bounds, wall, and the carved void as not walkable", () => {
