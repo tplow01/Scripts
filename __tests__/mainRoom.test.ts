@@ -99,6 +99,11 @@ describe("mainRoom world data", () => {
     expect(racks.map((r) => r.id)).toEqual(["rail-h"]);
   });
 
+  it("keeps the open carton in the clothing-rail corner", () => {
+    const box = (mainRoom.decorations ?? []).find((d) => d.artKey === "box-open");
+    expect(box).toMatchObject({ tileX: 14, tileY: 9, solid: true });
+  });
+
   it("treats out-of-bounds, wall, and the carved void as not walkable", () => {
     expect(isWalkable(mainRoom, -1, 0)).toBe(false);
     expect(isWalkable(mainRoom, 0, 0)).toBe(false); // corner wall
@@ -126,10 +131,10 @@ describe('music alcove symmetry', () => {
 
 describe('sofa collision', () => {
   it('blocks every sofa tile — cushions are not walkable', () => {
-    // Back e1 + cushions f1–f4.
+    // Back f1 + cushions g1–g4.
     const sofaTiles = [
-      { x: 1, y: 5 },
-      { x: 1, y: 6 }, { x: 2, y: 6 }, { x: 3, y: 6 }, { x: 4, y: 6 },
+      { x: 1, y: 6 },
+      { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 }, { x: 4, y: 7 },
     ]
     for (const t of sofaTiles) {
       expect(isWalkable(mainRoom, t.x, t.y), `sofa tile ${t.x},${t.y} should be solid`).toBe(false)

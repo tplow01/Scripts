@@ -7,8 +7,7 @@
  * a path (see `scripts/import-fixtures.py`).
  *
  *   box       — the Basement's stacked, taped-up carton (drawn on its grey floor)
- *   box-open  — the shop's open carton, filling the corner where the two
- *               clothing rails meet (drawn on the shop's off-white floor)
+ *   box-open  — the shop's open carton at the clothing-rail corner (i14)
  *   vinyl-crate — the record crate; one either side of the vinyl desk, so the
  *               music alcove reads as a matched pair
  *   speaker   — the alcove's monitors, flanking the deck

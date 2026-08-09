@@ -113,7 +113,7 @@ describe("patrolling NPCs", () => {
     const tp = patrols.find((p) => p.id === 'tp')!
     for (const p of tp.patrol!.waypoints) {
       expect(p.x).toBeLessThanOrEqual(4)
-      expect(p.y).toBeGreaterThanOrEqual(6)
+      expect(p.y).toBeGreaterThanOrEqual(8)
     }
   });
 });

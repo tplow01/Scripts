@@ -43,12 +43,10 @@ export const basementRoom: Room = {
   interactions: [
     // Spawn alcove (col 1): box d1, stairs e1 → back up to the Shop, box f1.
     { id: "stairs-up", type: "stairs", tileX: C(1), tileY: R("e"), artKey: "stairs-basement", solid: false,
-      // Shop-side landing is just below the secret stairs (now at c6 = 6,3).
+      // Shop-side landing is just below the secret stairs (d6 → spawn beside it).
       target: { roomId: "main", spawn: { tileX: 7, tileY: 4 } }, transition: "fade" },
-    // Rack room (right block): three rails framing the NPC.
+    // Rack room (right block): one horizontal rail with boxes on either end.
     { id: "rail-top", type: "rack", tileX: C(8), tileY: R("a"), artKey: "rack-h3", wTiles: 3, solid: true },
-    { id: "rail-left", type: "rack", tileX: C(7), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
-    { id: "rail-right", type: "rack", tileX: C(11), tileY: R("a"), artKey: "rack-v3", hTiles: 3, solid: true },
     // Heath again — an independent instance, never co-visible with the one
     // behind the shop counter.
     { id: "basement-npc", type: "npc", tileX: C(9), tileY: R("b"), artKey: "heath-down-both", solid: true },
@@ -69,6 +67,10 @@ export const basementRoom: Room = {
     // bottom strip. Chamfered on the left where it tapers into the void, square
     // on the right where it meets the right block's floor.
     ...mural("basement-ledge-wall", { tileX: C(1), tileY: R("c"), tiles: 6 }),
+
+    // Boxes flanking the horizontal rail (a7 left, a11 right).
+    { tileX: C(7), tileY: R("a"), artKey: "box", solid: true },
+    { tileX: C(11), tileY: R("a"), artKey: "box", solid: true },
 
     // Boxes: spawn alcove (d1, f1) + corners (f10, f11, e11).
     { tileX: C(1), tileY: R("d"), artKey: "box", solid: true },

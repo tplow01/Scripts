@@ -103,8 +103,6 @@ const PROMPTS: Record<string, PromptDef> = {
     kind: "basement",
   },
   "rail-top": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
-  "rail-left": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
-  "rail-right": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
 };
 
 // Heath's greeting on genuine first entry — he walks over from the counter to

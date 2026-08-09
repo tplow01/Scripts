@@ -50,7 +50,7 @@ const DECK_AT = { tileX: C(3), tileY: R("d") };
 const RAIL_H_AT = { tileX: C(8), tileY: R("i") };
 
 /** Top-left tile of the sofa — its back; the cushion row runs beneath it. */
-const SOFA_AT = { tileX: C(1), tileY: R("e") };
+const SOFA_AT = { tileX: C(1), tileY: R("f") };
 
 export const mainRoom: Room = {
   id: "main",
@@ -99,22 +99,23 @@ export const mainRoom: Room = {
       } },
 
     // TP paces the open floor between the sofa and the checkout: down column 4
-    // from row g to row n, then one tile west to the counter approach. Well
-    // clear of the floor logo at columns 7-9. Every waypoint is orthogonally
-    // adjacent to the last — this is a hand-authored route, not a pathfinder.
-    { id: "tp", type: "npc", tileX: C(4), tileY: R("g"), artKey: "tp-down-both", solid: false,
+    // from row h (clear of the sofa cushions on row g) to row n, then one tile
+    // west to the counter approach. Well clear of the floor logo at columns
+    // 7-9. Every waypoint is orthogonally adjacent to the last — this is a
+    // hand-authored route, not a pathfinder.
+    { id: "tp", type: "npc", tileX: C(4), tileY: R("h"), artKey: "tp-down-both", solid: false,
       patrol: {
         waypoints: [
-          { x: C(4), y: R("g") }, { x: C(4), y: R("h") },
+          { x: C(4), y: R("h") },
           { x: C(4), y: R("i") }, { x: C(4), y: R("j") }, { x: C(4), y: R("k") },
           { x: C(4), y: R("l") }, { x: C(4), y: R("m") }, { x: C(4), y: R("n") },
           { x: C(3), y: R("n") },
         ],
       } },
 
-    // Karl stands beside the couch's right edge (f6), facing out into the room.
+    // Karl stands beside the couch's right edge (g6), facing out into the room.
     // The source art has no seated pose, so he stands rather than fake-sitting.
-    { id: "karl", type: "npc", tileX: C(6), tileY: R("f"), artKey: "karl-down-both", solid: true },
+    { id: "karl", type: "npc", tileX: C(6), tileY: R("g"), artKey: "karl-down-both", solid: true },
   ],
   decorations: [
     // ── The shop's only two wall faces ──
@@ -150,8 +151,8 @@ export const mainRoom: Room = {
     { tileX: C(6), tileY: R("d"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
       slideTo: { tileX: C(7), tileY: R("d") } },
 
-    // Sofa — five hand-drawn slices: the back at e1, then the cushion row
-    // f1–f4 left to right. Fully solid — walk around it, not onto it.
+    // Sofa — five hand-drawn slices: the back at f1, then the cushion row
+    // g1–g4 left to right. Fully solid — walk around it, not onto it.
     ...sofa(SOFA_AT),
 
     // SCR!PTS floor logo — 3×3 canonical brand lockup, centred over the door
@@ -170,6 +171,9 @@ export const mainRoom: Room = {
 
     // Clothing rail art — horizontal only, six slices left to right.
     ...rail("rail-h", RAIL_H_AT),
+
+    // Open carton in the corner past the rail (i14), against the right wall.
+    { tileX: C(14), tileY: R("i"), artKey: "box-open", solid: true },
   ],
 };
 
