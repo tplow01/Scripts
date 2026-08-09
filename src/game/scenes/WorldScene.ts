@@ -55,6 +55,8 @@ export class WorldScene extends Phaser.Scene {
   private cashierImg?: Phaser.GameObjects.Image;
   /** Static (non-patrol) character props — face the player on talk. */
   private staticNpcImgs = new Map<string, { img: Phaser.GameObjects.Image; artKey: string; tileX: number; tileY: number }>();
+  /** After a stairs transition, step one tile into the room once the fade finishes. */
+  private pendingStairsExit: { x: number; y: number } | null = null;
   private facing: Facing = "down";
   /** The player's walk-cycle state (see art/walkCycle.ts). */
   private cycle = new WalkCycle();
@@ -389,9 +391,15 @@ export class WorldScene extends Phaser.Scene {
         footprint(i).some((t) => t.x === spawn.tileX && t.y === spawn.tileY),
     );
     this.lastInteractionId = landedStairs?.id ?? null;
+    this.pendingStairsExit = null;
     if (landedStairs) {
+      // Step one tile into the room off the stairs (basement opens right; shop down).
       this.facing = roomId === "basement" ? "right" : "down";
       this.setFrame("both");
+      this.pendingStairsExit =
+        roomId === "basement"
+          ? { x: this.tileX + 1, y: this.tileY }
+          : { x: this.tileX, y: this.tileY + 1 };
     }
 
     const ts = this.room.tileSize;
@@ -706,15 +714,18 @@ export class WorldScene extends Phaser.Scene {
 
   /** Intro only: Scribbs walks one tile up from the door spawn, shadow included. */
   private walkScribbsIntroStep(): Promise<void> {
+    return this.walkScribbsTo(this.tileX, this.tileY - 1, "up");
+  }
+
+  /** Scripted one-tile Scribbs walk (intro / stairs exit), shadow included. */
+  private walkScribbsTo(nx: number, ny: number, facing: Facing): Promise<void> {
     const ts = this.room.tileSize;
-    const nx = this.tileX;
-    const ny = this.tileY - 1;
     const cycle = new WalkCycle();
-    this.facing = "up";
-    this.scribbs.setTexture(characterFrame("scribbs", "up", cycle.step()));
+    this.facing = facing;
+    this.scribbs.setTexture(characterFrame("scribbs", facing, cycle.step()));
     this.time.delayedCall(SCRIPTED_STEP_MS * STRIDE_HOLD, () => {
       if (this.scribbs.active) {
-        this.scribbs.setTexture(characterFrame("scribbs", "up", cycle.rest()));
+        this.scribbs.setTexture(characterFrame("scribbs", facing, cycle.rest()));
       }
     });
     this.tweens.add({
@@ -734,9 +745,10 @@ export class WorldScene extends Phaser.Scene {
         onComplete: () => {
           this.tileX = nx;
           this.tileY = ny;
-          this.facing = "up";
+          this.facing = facing;
           this.setFrame(cycle.rest());
           this.syncScribbs();
+          this.saveSession();
           resolve();
         },
       });
@@ -1044,6 +1056,9 @@ export class WorldScene extends Phaser.Scene {
 
     if (hit.transition === "instant") {
       go();
+      void this.finishStairsExit().then(() => {
+        this.transitioning = false;
+      });
       return;
     }
     this.transitioning = true;
@@ -1053,9 +1068,19 @@ export class WorldScene extends Phaser.Scene {
       go();
       cam.fadeIn(FADE_MS);
       cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
-        this.transitioning = false;
+        void this.finishStairsExit().then(() => {
+          this.transitioning = false;
+        });
       });
     });
+  }
+
+  /** After landing on stairs, walk one tile into the room so we aren't stuck on the link. */
+  private async finishStairsExit() {
+    const step = this.pendingStairsExit;
+    if (!step) return;
+    this.pendingStairsExit = null;
+    await this.walkScribbsTo(step.x, step.y, this.facing);
   }
 
   /** Hand an interaction to React (prompts, cart, dialogue routing). */
