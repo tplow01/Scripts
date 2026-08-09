@@ -2,7 +2,7 @@ import type { Room, TileType } from "./types";
 import { mural } from "@/game/art/walls";
 import { entranceRug } from "@/game/art/floors";
 import { checkoutCounter } from "@/game/art/checkout";
-import { sofa, sofaCushions } from "@/game/art/sofa";
+import { sofa } from "@/game/art/sofa";
 import { rail } from "@/game/art/rails";
 import { vinylDeck } from "@/game/art/vinylDeck";
 
@@ -63,7 +63,7 @@ export const mainRoom: Room = {
   width: WIDTH,
   height: HEIGHT,
   tiles: buildTiles(WIDTH, HEIGHT),
-  // Spawn on the centre door (bottom). WorldScene walks Scribbs up on entry.
+  // Spawn on the centre door (bottom). Intro walks Scribbs up one tile (o8→n8).
   spawn: { tileX: C(8), tileY: R("o") },
   interactions: [
     // Basement entrance — SECRET stairs (top, c6). Hidden behind record crates
@@ -126,17 +126,6 @@ export const mainRoom: Room = {
     // The source art has no seated pose, so he stands rather than fake-sitting.
     { id: "karl", type: "npc", tileX: C(6), tileY: R("f"), artKey: "karl-down-both", solid: true },
   ],
-  // The sofa's cushions (row f, cols 1–4). Its back sits above the left
-  // cushion at e1 and is solid, so you sit by stepping DOWN from the open floor
-  // at e2–e4 and may then shuffle along the row — including under the back to
-  // the left-hand cushion, which has no approach of its own.
-  seats: [
-    {
-      enterDir: "down",
-      internalMoves: true,
-      tiles: sofaCushions(SOFA_AT),
-    },
-  ],
   decorations: [
     // ── The shop's only two wall faces ──
     // Every other wall tile renders as flat exterior black (see WorldScene), so
@@ -172,8 +161,7 @@ export const mainRoom: Room = {
       slideTo: { tileX: C(7), tileY: R("c") } },
 
     // Sofa — five hand-drawn slices: the back at e1, then the cushion row
-    // f1–f4 left to right. Only the back is solid; the cushions are a seat zone
-    // (see above), so Scribbs can step onto them.
+    // f1–f4 left to right. Fully solid — walk around it, not onto it.
     ...sofa(SOFA_AT),
 
     // SCR!PTS floor logo — 3×3 canonical brand lockup, centred over the door
@@ -206,8 +194,8 @@ export const mainRoom: Room = {
 /**
  * Heath's first-entry intro walk (see WorldScene.playHeathIntro). He fades in
  * beside the counter (j1), walks along column 3 and row n, and stops one tile
- * above the door spawn (n8). Scripted walks bypass collision, so keep this in
- * sync with the fixture layout above.
+ * above Scribbs' intro stop (m8 — Scribbs walks door o8 → n8 as Heath approaches).
+ * Scripted walks bypass collision, so keep this in sync with the fixture layout.
  */
 export const HEATH_INTRO_PATH: Array<{ x: number; y: number }> = [
   { x: C(1), y: R("j") },
@@ -222,6 +210,7 @@ export const HEATH_INTRO_PATH: Array<{ x: number; y: number }> = [
   { x: C(6), y: R("n") },
   { x: C(7), y: R("n") },
   { x: C(8), y: R("n") },
+  { x: C(8), y: R("m") },
 ];
 
 /** Where Heath stands as the static cashier prop — checkout-summon walks start here. */

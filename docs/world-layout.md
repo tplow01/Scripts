@@ -62,7 +62,7 @@ floor decal) · `D` doors (walk-in entrance, walkable)
 | Clothing rail — vertical | `rack` | 1×7 | 32×224 | `h15 i15 j15 k15 l15 m15 n15` |
 | Logo (floor decal, walkable) | `logo` | 5×3 | 160×96 | `k6`–`m10` (rows k–m × cols 6–10) |
 | Doors (3-wide, walkable) | `doors` | 3×1 | 96×32 | `o7 o8 o9` |
-| **Spawn** (centre door) | — | — | — | `o8` — auto-walks up on entry |
+| **Spawn** (centre door) | — | — | — | `o8` — intro walks Scribbs up to `n8` |
 
 ---
 

@@ -543,15 +543,26 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** Cover the viewport with the room and keep pixels crisp (integer zoom). */
+  /** Cover the viewport with the room; smaller screens zoom out slightly. */
   private updateZoom = () => {
     const ts = this.room.tileSize;
     const worldW = this.room.width * ts;
     const worldH = this.room.height * ts;
     const { width, height } = this.scale.gameSize;
-    const zoom = Math.max(2, Math.ceil(Math.max(width / worldW, height / worldH)));
-    this.cameras.main.setZoom(zoom);
+    const base = Math.max(2, Math.ceil(Math.max(width / worldW, height / worldH)));
+    this.cameras.main.setZoom(base * this.responsiveZoomOut());
   };
+
+  /**
+   * Tablet ~5% more zoomed out, phone ~10%. Desktop stays at the base zoom.
+   * Uses the same handheld breakpoint as the Game Boy shell.
+   */
+  private responsiveZoomOut(): number {
+    if (typeof window === "undefined") return 1;
+    const handheld = window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches;
+    if (!handheld) return 1;
+    return window.innerWidth < 768 ? 0.9 : 0.95;
+  }
 
   /**
    * Glide a character image tile-to-tile along a hand-authored path, animating
@@ -607,9 +618,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * First-entry intro: the player stays at the entrance while Heath fades in
-   * beside the counter, walks over, delivers the welcome (React dialogue), then
-   * walks back and takes his place behind the counter as the cashier NPC.
+   * First-entry intro: Scribbs steps in from the door (up one tile) while Heath
+   * fades in beside the counter, walks over, delivers the welcome (React
+   * dialogue), then walks back and takes his place behind the counter as the
+   * cashier NPC.
    */
   private async playHeathIntro() {
     this.transitioning = true;
@@ -630,10 +642,12 @@ export class WorldScene extends Phaser.Scene {
     await new Promise<void>((r) =>
       this.tweens.add({ targets: heath, alpha: 1, duration: 220, onComplete: () => r() }),
     );
-    // …and walk up to the player at the door. He arrives from the west but
-    // stops directly ABOVE the player, so he turns down to deliver the welcome
-    // face-to-face rather than staying in profile.
-    await this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down");
+    // Scribbs steps up from the door (o8→n8) while Heath walks over and stops
+    // one tile above him (m8), turning down for a face-to-face welcome.
+    await Promise.all([
+      this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down"),
+      this.walkScribbsIntroStep(),
+    ]);
 
     // Hand the mic to React (the welcome pages) and wait for the dialogue to
     // close — with a fallback so a lost event can never strand the intro.
@@ -657,6 +671,45 @@ export class WorldScene extends Phaser.Scene {
 
     this.transitioning = false;
     this.saveSession();
+  }
+
+  /** Intro only: Scribbs walks one tile up from the door spawn, shadow included. */
+  private walkScribbsIntroStep(): Promise<void> {
+    const ts = this.room.tileSize;
+    const nx = this.tileX;
+    const ny = this.tileY - 1;
+    const cycle = new WalkCycle();
+    this.facing = "up";
+    this.scribbs.setTexture(characterFrame("scribbs", "up", cycle.step()));
+    this.time.delayedCall(SCRIPTED_STEP_MS * STRIDE_HOLD, () => {
+      if (this.scribbs.active) {
+        this.scribbs.setTexture(characterFrame("scribbs", "up", cycle.rest()));
+      }
+    });
+    this.tweens.add({
+      targets: this.scribbsShadow,
+      x: nx * ts + ts / 2,
+      y: (ny + 1) * ts - ts * 0.08,
+      duration: SCRIPTED_STEP_MS,
+      ease: "Linear",
+    });
+    return new Promise((resolve) => {
+      this.tweens.add({
+        targets: this.scribbs,
+        x: nx * ts + ts / 2,
+        y: (ny + 1) * ts,
+        duration: SCRIPTED_STEP_MS,
+        ease: "Linear",
+        onComplete: () => {
+          this.tileX = nx;
+          this.tileY = ny;
+          this.facing = "up";
+          this.setFrame(cycle.rest());
+          this.syncScribbs();
+          resolve();
+        },
+      });
+    });
   }
 
   /**

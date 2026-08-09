@@ -5,9 +5,9 @@ import { WorldScene } from "./scenes/WorldScene";
 
 /**
  * Phaser game config. The canvas fills its container (RESIZE); the world scene
- * sets an integer camera zoom that covers the viewport and follows Scribbs, so
- * the room reads like a real overworld you explore rather than a framed
- * screenshot. `parent` is the DOM node the canvas mounts into.
+ * sets camera zoom that covers the viewport (tablet/phone zoom out slightly)
+ * and follows Scribbs, so the room reads like a real overworld you explore
+ * rather than a framed screenshot. `parent` is the DOM node the canvas mounts into.
  */
 export function createGameConfig(
   parent: HTMLElement,

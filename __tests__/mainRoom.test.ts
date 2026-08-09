@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { mainRoom } from "@/game/world/mainRoom";
-import { isWalkableIn as isWalkable, canStep, isWalkableIn } from "@/game/world/rooms";
+import { isWalkableIn as isWalkable } from "@/game/world/rooms";
 import { footprint, buildBlockedSet, propActive } from "@/game/world/types";
 
 describe("mainRoom world data", () => {
@@ -118,39 +118,16 @@ describe('music alcove symmetry', () => {
   })
 })
 
-describe('sofa reachability', () => {
-  it('lets the player reach every seat tile from outside the zone', () => {
-    for (const zone of mainRoom.seats ?? []) {
-      const key = (t: { x: number; y: number }) => `${t.x},${t.y}`
-      const inZone = (x: number, y: number) => zone.tiles.some((s) => s.x === x && s.y === y)
-
-      // Seeds: seat tiles you can step onto directly from outside the zone.
-      const seeds = zone.tiles.filter((t) =>
-        [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dy]) => {
-          const f = { x: t.x - dx, y: t.y - dy }
-          return !inZone(f.x, f.y) &&
-            isWalkableIn(mainRoom, f.x, f.y) &&
-            canStep(mainRoom, f.x, f.y, t.x, t.y)
-        }))
-      expect(seeds.length, `seat zone entered by "${zone.enterDir}" has no entrance`).toBeGreaterThan(0)
-
-      // Spread inward only where the zone permits shuffling between its tiles.
-      const reached = new Set(seeds.map(key))
-      if (zone.internalMoves) {
-        for (let grew = true; grew;) {
-          grew = false
-          for (const t of zone.tiles) {
-            if (reached.has(key(t))) continue
-            const adjacent = zone.tiles.some((s) =>
-              reached.has(key(s)) && Math.abs(s.x - t.x) + Math.abs(s.y - t.y) === 1)
-            if (adjacent) { reached.add(key(t)); grew = true }
-          }
-        }
-      }
-
-      for (const t of zone.tiles) {
-        expect(reached.has(key(t)), `seat ${key(t)} is unreachable`).toBe(true)
-      }
+describe('sofa collision', () => {
+  it('blocks every sofa tile — cushions are not walkable', () => {
+    // Back e1 + cushions f1–f4.
+    const sofaTiles = [
+      { x: 1, y: 5 },
+      { x: 1, y: 6 }, { x: 2, y: 6 }, { x: 3, y: 6 }, { x: 4, y: 6 },
+    ]
+    for (const t of sofaTiles) {
+      expect(isWalkable(mainRoom, t.x, t.y), `sofa tile ${t.x},${t.y} should be solid`).toBe(false)
     }
+    expect(mainRoom.seats ?? []).toHaveLength(0)
   })
 })
