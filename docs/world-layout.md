@@ -1,8 +1,12 @@
 # SCR!PTS — World Layout (Shop + Basement)
 
 > Exact tile layout of both areas, matching the measured wireframes and the implemented
-> room data ([`src/game/world/rooms/main.ts`](../src/game/world/rooms/main.ts),
-> [`basement.ts`](../src/game/world/rooms/basement.ts)). Last updated: 2026-06-29.
+> room data ([`src/game/world/mainRoom.ts`](../src/game/world/mainRoom.ts),
+> [`basement.ts`](../src/game/world/basement.ts)). Last updated: 2026-08-09.
+>
+> Recent layout notes: vinyl alcove + wall sit on rows **c–d** (top wall four tiles
+> thick on the music side); clothing rail is **horizontal only** (no right-side vertical
+> rail); Heath’s intro is a direct L along row j then down column 8.
 
 ## Coordinate system
 
@@ -62,7 +66,7 @@ floor decal) · `D` doors (walk-in entrance, walkable)
 | Clothing rail — vertical | `rack` | 1×7 | 32×224 | `h15 i15 j15 k15 l15 m15 n15` |
 | Logo (floor decal, walkable) | `logo` | 5×3 | 160×96 | `k6`–`m10` (rows k–m × cols 6–10) |
 | Doors (3-wide, walkable) | `doors` | 3×1 | 96×32 | `o7 o8 o9` |
-| **Spawn** (centre door) | — | — | — | `o8` — auto-walks up on entry |
+| **Spawn** (centre door) | — | — | — | `o8` — intro walks Scribbs up to `n8` |
 
 ---
 

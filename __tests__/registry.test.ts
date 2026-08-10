@@ -6,7 +6,9 @@ import { wallVariant } from "@/game/art/wallVariant";
 describe("art registry", () => {
   it("resolves known prop + wall-variant keys to texture keys", () => {
     expect(resolveTextureKey("rack")).toBe("rack");
-    expect(resolveTextureKey("floor")).toBe("floor");
+    expect(resolveTextureKey("shop-floor")).toBe("shop-floor");
+    expect(resolveTextureKey("basement-floor")).toBe("basement-floor");
+    expect(resolveTextureKey("entrance-rug-2")).toBe("entrance-rug-2");
     expect(resolveTextureKey("wall-top")).toBe("wall-top");
     expect(resolveTextureKey("wall-side")).toBe("wall-side");
     expect(resolveTextureKey("wall-bottom")).toBe("wall-bottom");
@@ -14,7 +16,8 @@ describe("art registry", () => {
 
   it("resolves every art key referenced by the main room", () => {
     for (const it of mainRoom.interactions) {
-      expect(() => resolveTextureKey(it.artKey)).not.toThrow();
+      if (!it.artKey) continue; // art-less props (the checkout) draw via decorations
+      expect(() => resolveTextureKey(it.artKey!)).not.toThrow();
     }
     for (const deco of mainRoom.decorations ?? []) {
       expect(() => resolveTextureKey(deco.artKey)).not.toThrow();
@@ -36,5 +39,13 @@ describe("art registry", () => {
 
   it("resolves the exterior void tile", () => {
     expect(resolveTextureKey("ext-void")).toBe("ext-void");
+  });
+});
+
+describe("retired art keys", () => {
+  it("no longer resolves floor-staff", () => {
+    // The behind-counter floor was removed with the authored floor panels;
+    // this proves the key is gone rather than orphaned in the registry.
+    expect(() => resolveTextureKey("floor-staff")).toThrow();
   });
 });

@@ -9,3 +9,9 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 .gstack/
+
+# Subagent-driven development scratch (ledgers, briefs, review packages)
+.superpowers/
+
+# Claude Code local state and git worktrees
+.claude/

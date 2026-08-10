@@ -1,68 +1,47 @@
 'use client'
 
 import { Press_Start_2P } from 'next/font/google'
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import type { Btn, UtilityAction } from '@/lib/controls'
+import { UTILITY_LABELS } from '@/lib/controls'
+import type { ShellLayout } from '@/lib/useShellLayout'
+import DPad from './shell/DPad'
+import RoundBtn from './shell/RoundBtn'
+import SystemOverlay from './shell/SystemOverlay'
+import { DmgBtn, FlatIconBtn, QuestionGlyph, SpeakerIcon } from './shell/UtilityBtn'
+import { SCREEN_GLASS, SHELL_BODY, STRIP_BLACK, WORDMARK_PINK } from './shell/theme'
+
+export type { Btn }
 
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 
-const BODY = `linear-gradient(160deg, #D4D4C8 0%, #BCBCB0 25%, #A8A89C 55%, #989890 75%, #8C8C84 100%)`
-
-export type Btn = 'up' | 'down' | 'left' | 'right' | 'A' | 'B' | 'MENU' | 'SELECT' | 'START'
-
-const pill: React.CSSProperties = {
-  width: 44, height: 13,
-  background: 'linear-gradient(180deg, #969690 0%, #808080 100%)',
-  borderRadius: 7,
-  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), inset 0 -1px 2px rgba(255,255,255,0.08)',
-}
-const pillLbl: React.CSSProperties = { fontSize: 5, color: '#555', letterSpacing: 0.5 }
-
-/** The LCD module — bezel + the recessed grey screen that hosts `children`. */
-function ScreenModule({
-  children,
-  mobile = false,
-  style = {},
-}: {
-  children: ReactNode
-  mobile?: boolean
-  style?: React.CSSProperties
+/**
+ * LCD with the flat SCR!PTS strip as its bottom band. `framePad` is the black
+ * frame shown around the LCD (CSS padding shorthand): desktop frames every
+ * edge, landscape only left/right, portrait none — the strip itself is always
+ * the bottom border.
+ */
+function ScreenModule({ children, overlay, stripHeight = 26, framePad = '0', lcdRadius = 0, style = {} }: {
+  children: ReactNode; overlay: ReactNode; stripHeight?: number; framePad?: string; lcdRadius?: number; style?: React.CSSProperties
 }) {
+  // Compute padding with bottom zeroed: convert shorthand to full form
+  const computePadding = (pad: string) => {
+    const parts = pad.split(' ')
+    if (parts.length === 1) return `${parts[0]} ${parts[0]} 0`
+    return `${parts[0]} ${parts[1]} 0`
+  }
+  const padding = computePadding(framePad)
   return (
-    <div style={{
-      background: '#111111',
-      display: 'flex', flexDirection: 'column',
-      overflow: 'visible', position: 'relative',
-      ...style,
-    }}>
-      {/* Screen light bleed */}
-      <div style={{
-        position: 'absolute',
-        top: mobile ? 14 : 18, left: mobile ? 14 : 18, right: mobile ? 14 : 18, bottom: mobile ? 30 : 38,
-        borderRadius: 4,
-        boxShadow: '0 0 24px 4px rgba(220,220,210,0.18)',
-        pointerEvents: 'none', zIndex: 0,
-      }} />
-
-      {/* The LCD itself — content (start screen or game canvas) clips inside. */}
-      <div style={{
-        flex: 1,
-        margin: mobile ? '14px 14px 0 14px' : '18px 18px 0 18px',
-        background: '#DCDCDA',
-        borderRadius: 4,
-        position: 'relative',
-        overflow: 'hidden',
-        zIndex: 1,
-      }}>
+    <div style={{ background: STRIP_BLACK, display: 'flex', flexDirection: 'column', padding, ...style }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: STRIP_BLACK }}>
         {children}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
+        {overlay}
       </div>
-
-      <div style={{
-        height: mobile ? 30 : 38,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, zIndex: 1,
-      }}>
+      <div style={{ height: stripHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <span className={pressStart.className} style={{
-          fontSize: mobile ? 6 : 8, color: '#3A3A3A', letterSpacing: 4,
+          fontSize: Math.round(stripHeight * 0.34), color: WORDMARK_PINK, letterSpacing: 5,
+          textShadow: '0 0 6px rgba(255,138,199,0.35)',
         }}>
           SCR!PTS
         </span>
@@ -71,175 +50,256 @@ function ScreenModule({
   )
 }
 
-/** A pill button (MENU / SELECT / START) with its label. */
-function PillBtn({ label, onPress }: { label: Btn; onPress: (b: Btn) => void }) {
-  return (
-    <div
-      onPointerDown={(e) => { e.preventDefault(); onPress(label) }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer', touchAction: 'none' }}
-    >
-      <div style={pill} />
-      <span className={pressStart.className} style={pillLbl}>{label}</span>
-    </div>
-  )
+/** Live viewport size — used to size controls proportionally to the screen. */
+function useViewport(): [number, number] {
+  const [size, setSize] = useState<[number, number]>(() =>
+    typeof window === 'undefined' ? [390, 750] : [window.innerWidth, window.innerHeight])
+  useEffect(() => {
+    const update = () => setSize([window.innerWidth, window.innerHeight])
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return size
 }
 
 export default function GameBoyShell({
-  screen,
-  onPress,
-  onRelease,
-  mobile,
+  screen, onPress, onRelease, layout, onInventory, muted, onToggleMute, onOverlayChange,
 }: {
   screen: ReactNode
   onPress: (b: Btn) => void
   /** Fired when a held button is let go (D-pad hold-to-walk). */
   onRelease?: (b: Btn) => void
-  mobile: boolean
+  layout: ShellLayout
+  onInventory: () => void
+  muted: boolean
+  onToggleMute: () => void
+  /** SystemOverlay open/close — the page freezes Phaser input while open. */
+  onOverlayChange?: (open: boolean) => void
 }) {
+  const [overlayKind, setOverlayKind] = useState<'social' | 'help' | null>(null)
+  const [vw, vh] = useViewport()
+
+  const setOverlay = useCallback((k: 'social' | 'help' | null) => {
+    setOverlayKind((prev) => {
+      const next = prev === k ? null : k
+      onOverlayChange?.(next !== null)
+      return next
+    })
+  }, [onOverlayChange])
+
+  const closeOverlay = useCallback(() => {
+    setOverlayKind((prev) => {
+      if (prev !== null) onOverlayChange?.(false)
+      return null
+    })
+  }, [onOverlayChange])
+
+  // Desktop keys close an open overlay (X / Escape), matching B on touch.
+  useEffect(() => {
+    if (!overlayKind) return
+    const onKey = (e: KeyboardEvent) => {
+      if (['KeyX', 'Escape'].includes(e.code)) { e.preventDefault(); closeOverlay() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [overlayKind, closeOverlay])
+
+  // Spec: overlays close on layout change (rotation would strand a stale overlay).
+  useEffect(() => { closeOverlay() }, [layout, closeOverlay])
+
   const press = (b: Btn) => (e: React.PointerEvent) => {
     e.preventDefault()
-    // Capture the pointer so the release always lands on this zone, even if
-    // the finger drifts off it mid-hold. (Can throw for already-gone pointers.)
     try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* noop */ }
+    if (overlayKind && (b === 'B' || b === 'A')) { closeOverlay(); return }
     onPress(b)
   }
   const release = (b: Btn) => (e: React.PointerEvent) => { e.preventDefault(); onRelease?.(b) }
-  /** Press/release handler set for a holdable zone (the D-pad arms). */
   const hold = (b: Btn) => ({
     onPointerDown: press(b),
     onPointerUp: release(b),
     onPointerCancel: release(b),
   })
+  const pressPlain = (b: Btn) => {
+    if (overlayKind && (b === 'B' || b === 'A')) { closeOverlay(); return }
+    onPress(b)
+  }
 
-  // ── DESKTOP: full-bleed bezel, keyboard-driven (no on-screen buttons).
-  if (!mobile) {
+  const onUtility = (a: UtilityAction) => {
+    if (a === 'inventory') { closeOverlay(); onInventory(); return }
+    if (a === 'mute') { onToggleMute(); return }
+    setOverlay(a === 'social' ? 'social' : 'help')
+  }
+
+  const overlay = overlayKind
+    ? <SystemOverlay kind={overlayKind} mobile={layout !== 'desktop'} onClose={closeOverlay} />
+    : null
+
+  const rootStyle: React.CSSProperties = {
+    background: SHELL_BODY, userSelect: 'none', WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none',
+  }
+
+  // ── DESKTOP: 16:9 LCD wrapped by the black strip on all four sides,
+  // wordmark in the bottom band, utility row below the frame on flat pink.
+  if (layout === 'desktop') {
+    const stripH = 28
+    const frame = 16
+    const railH = 56
+    // Largest 16:9 screen that fits beside slim margins and the utility rail.
+    const margin = 0.025 * Math.min(vw, vh)
+    const maxW = vw - 2 * margin - 2 * frame
+    const maxH = vh - 2 * margin - railH - stripH - frame
+    const lcdW = Math.min(maxW, maxH * (16 / 9))
+    const lcdH = lcdW * (9 / 16)
     return (
-      <div className="h-dvh w-screen" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
-        <div className="flex items-center justify-center w-full h-full" style={{ position: 'relative' }}>
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            background: `
-              linear-gradient(135deg, rgba(255,255,255,0.22) 0px, transparent 160px),
-              linear-gradient(315deg, rgba(0,0,0,0.18) 0px, transparent 160px)
-            `,
-          }} />
-          <div style={{
-            position: 'relative',
-            width: 'calc(100vw - 80px)', height: 'calc(100vh - 80px)',
-            borderRadius: 16, overflow: 'hidden',
-            boxShadow: '0 2px 0 rgba(255,255,255,0.12), 0 8px 32px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.5)',
-          }}>
-            <ScreenModule style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
-            <div style={{
-              position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16,
-              boxShadow: 'inset 0 6px 16px rgba(0,0,0,0.95), inset 0 -3px 8px rgba(0,0,0,0.6), inset 5px 0 12px rgba(0,0,0,0.6), inset -5px 0 12px rgba(0,0,0,0.6)',
-            }} />
-            <div style={{
-              position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16,
-              background: `
-                linear-gradient(90deg, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.05) 3px, transparent 10px),
-                linear-gradient(180deg, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.04) 3px, transparent 10px)
-              `,
-            }} />
+      <div className="w-screen flex flex-col items-center justify-center" style={{ ...rootStyle, height: '100dvh', gap: 6 }}>
+        <div style={{
+          background: STRIP_BLACK, borderRadius: 10, padding: `${frame}px ${frame}px 0`,
+          boxShadow: '0 10px 26px rgba(0,0,0,0.35)',
+        }}>
+          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: STRIP_BLACK }}>
+            {screen}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
+            {overlay}
+          </div>
+          <div style={{ height: stripH, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span className={pressStart.className} style={{
+              fontSize: Math.round(stripH * 0.34), color: WORDMARK_PINK, letterSpacing: 5,
+              textShadow: '0 0 6px rgba(255,138,199,0.35)',
+            }}>
+              SCR!PTS
+            </span>
+          </div>
+        </div>
+        <div style={{
+          height: railH, width: lcdW + 2 * frame, position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ position: 'absolute', left: 0 }}>
+            <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+              <SpeakerIcon size={19} muted={muted} />
+            </FlatIconBtn>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+            <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
+            <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
+          </div>
+          <div style={{ position: 'absolute', right: 0 }}>
+            <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+              <QuestionGlyph size={18} />
+            </FlatIconBtn>
           </div>
         </div>
       </div>
     )
   }
 
-  // ── MOBILE: split — LCD on top, Delta-style controls below.
-  return (
-    <div className="h-dvh w-screen flex flex-col" style={{ background: BODY, userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent', touchAction: 'none' }}>
-      {/* Top: screen */}
-      <div style={{ height: '50%', background: BODY, padding: '16px 16px 0 16px', display: 'flex', alignItems: 'stretch', position: 'relative' }}>
+  // ── LANDSCAPE / TABLET: LCD centre; D-pad + A/B in flanks; utilities on a
+  // bottom bar (mute | SOCIALS+INVENTORY | ?) so they never overlap the game.
+  if (layout === 'landscape') {
+    const utilBarH = Math.max(48, Math.min(0.14 * vh, 64))
+    const safeLeft = 8
+    const safeRight = 8
+    // Flank width from available width, then size controls to fit inside it —
+    // never grow the flank past ~18vw or let controls spill into the LCD.
+    const flankW = Math.min(0.18 * vw, Math.max(0.12 * vw, 72))
+    const dpadSize = Math.min(flankW - 16, 0.22 * (vh - utilBarH), 100)
+    const absSize = Math.min((flankW - 16) / 2.15, 0.14 * (vh - utilBarH), 58)
+    const dmgPill = Math.max(32, Math.min(0.05 * vw, 40))
+    return (
+      <div style={{ ...rootStyle, position: 'relative', height: '100dvh', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: flankW, right: flankW, top: 0, bottom: utilBarH }}>
+          <ScreenModule overlay={overlay} stripHeight={22} framePad="0 10px" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+        </div>
+        {/* Left flank: D-pad only */}
         <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `
-            linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 3px, transparent 10px),
-            linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
-          `,
-        }} />
-        <ScreenModule mobile style={{
-          flex: 1, borderRadius: '10px 10px 0 0', overflow: 'hidden',
-          boxShadow: 'inset 0 3px 8px rgba(0,0,0,0.8), inset 2px 0 6px rgba(0,0,0,0.4), inset -2px 0 6px rgba(0,0,0,0.4)',
+          position: 'absolute', left: 0, width: flankW, top: 0, bottom: utilBarH,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)',
+          boxSizing: 'border-box', overflow: 'hidden',
         }}>
-          {screen}
-        </ScreenModule>
-      </div>
-
-      {/* Bottom: controls */}
-      <div style={{ height: '50%', background: BODY, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '12px 28px 20px 28px', position: 'relative' }}>
+          <DPad size={dpadSize} hold={hold} />
+        </div>
+        {/* Right flank: A/B only */}
         <div style={{
-          position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `
-            linear-gradient(90deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.04) 3px, transparent 10px),
-            linear-gradient(180deg, rgba(255,255,255,0.10) 0px, rgba(255,255,255,0.03) 3px, transparent 10px)
-          `,
-        }} />
-        <div style={{ height: 1, background: 'rgba(0,0,0,0.12)' }} />
-
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, marginTop: 12 }}>
-
-          {/* Row 1: D-pad + A/B */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            {/* D-Pad — arms are individual touch zones */}
-            <div style={{ position: 'relative', width: 110, height: 110, touchAction: 'none' }}>
-              <div style={{
-                position: 'absolute', top: '33%', left: 0, right: 0, height: '34%',
-                background: 'linear-gradient(180deg, #969690 0%, #808080 100%)', borderRadius: 6,
-                boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 2px rgba(255,255,255,0.08)',
-              }} />
-              <div style={{
-                position: 'absolute', left: '33%', top: 0, bottom: 0, width: '34%',
-                background: 'linear-gradient(90deg, #969690 0%, #808080 100%)', borderRadius: 6,
-                boxShadow: 'inset 2px 0 5px rgba(0,0,0,0.55), inset -1px 0 2px rgba(255,255,255,0.08)',
-              }} />
-              <div style={{ position: 'absolute', top: '33%', left: '33%', width: '34%', height: '34%', background: '#7A7A74', borderRadius: 3 }} />
-              {/* touch zones */}
-              <div {...hold('up')} style={{ position: 'absolute', top: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div {...hold('down')} style={{ position: 'absolute', bottom: 0, left: '28%', width: '44%', height: '40%' }} />
-              <div {...hold('left')} style={{ position: 'absolute', left: 0, top: '28%', width: '40%', height: '44%' }} />
-              <div {...hold('right')} style={{ position: 'absolute', right: 0, top: '28%', width: '40%', height: '44%' }} />
-            </div>
-
-            {/* A / B — B lower-left, A upper-right (Delta diagonal) */}
-            <div style={{ position: 'relative', width: 120, height: 110, touchAction: 'none' }}>
-              <div
-                onPointerDown={press('B')}
-                style={{
-                  position: 'absolute', bottom: 0, left: 0, width: 56, height: 56, borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #C0396A 0%, #8B1A42 100%)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 3px rgba(0,0,0,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                }}
-              >
-                <span className={pressStart.className} style={{ fontSize: 12, color: '#fff' }}>B</span>
-              </div>
-              <div
-                onPointerDown={press('A')}
-                style={{
-                  position: 'absolute', top: 0, right: 0, width: 56, height: 56, borderRadius: '50%',
-                  background: 'linear-gradient(145deg, #C0396A 0%, #8B1A42 100%)',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -2px 3px rgba(0,0,0,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                }}
-              >
-                <span className={pressStart.className} style={{ fontSize: 12, color: '#fff' }}>A</span>
-              </div>
-            </div>
+          position: 'absolute', right: 0, width: flankW, top: 0, bottom: utilBarH,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          paddingTop: 'env(safe-area-inset-top)', paddingRight: 'env(safe-area-inset-right)',
+          boxSizing: 'border-box', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'relative', width: absSize * 2.1, height: absSize * 1.8, touchAction: 'none', maxWidth: '100%' }}>
+            <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={absSize} /></div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={absSize} /></div>
           </div>
-
-          {/* Row 2: MENU · SELECT · START (Delta placement) */}
-          <div style={{ position: 'relative', height: 26, marginBottom: 2, touchAction: 'none' }}>
-            <div style={{ position: 'absolute', left: 0, bottom: 0 }}>
-              <PillBtn label="MENU" onPress={onPress} />
-            </div>
-            <div style={{ position: 'absolute', left: '50%', bottom: 0, transform: 'translateX(-50%)', display: 'flex', gap: 22 }}>
-              <PillBtn label="SELECT" onPress={onPress} />
-              <PillBtn label="START" onPress={onPress} />
-            </div>
+        </div>
+        {/* Utility bar: mute left · SOCIALS + INVENTORY centre · ? right */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, height: utilBarH,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          paddingLeft: `max(${safeLeft}px, env(safe-area-inset-left))`,
+          paddingRight: `max(${safeRight}px, env(safe-area-inset-right))`,
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          boxSizing: 'border-box',
+        }}>
+          <div style={{ position: 'absolute', left: `max(${safeLeft}px, env(safe-area-inset-left))` }}>
+            <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+              <SpeakerIcon size={18} muted={muted} />
+            </FlatIconBtn>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: Math.min(20, 0.04 * vw) }}>
+            <DmgBtn label={UTILITY_LABELS.social} pillWidth={dmgPill} onPress={() => onUtility('social')} />
+            <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={dmgPill} onPress={() => onUtility('inventory')} />
+          </div>
+          <div style={{ position: 'absolute', right: `max(${safeRight}px, env(safe-area-inset-right))` }}>
+            <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+              <QuestionGlyph size={17} />
+            </FlatIconBtn>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
+  // ── PORTRAIT: full-bleed LCD top 50%, flat pink deck below.
+  const portraitDpadSize = Math.min(0.36 * vw, 150)
+  const portraitAbsSize = Math.min(0.22 * vw, 96)
+  const dmgPillWidth = Math.max(38, Math.min(0.12 * vw, 48))
+  return (
+    <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh' }}>
+      <div style={{ height: '50%', overflow: 'hidden' }}>
+        <ScreenModule overlay={overlay} stripHeight={24} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+      </div>
+      <div style={{ flex: 1, position: 'relative' }}>
+        {/* Control clusters */}
+        <div style={{ position: 'absolute', left: '7%', top: '10%' }}>
+          <DPad size={portraitDpadSize} hold={hold} />
+        </div>
+        <div style={{
+          position: 'absolute', right: '6%', top: '12%',
+          width: portraitAbsSize * 2.1, height: portraitAbsSize * 1.8, touchAction: 'none',
+        }}>
+          <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={portraitAbsSize} /></div>
+          <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={portraitAbsSize} /></div>
+        </div>
+        {/* SOCIALS + INVENTORY centred in the space below the clusters */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, top: '62%',
+          display: 'flex', justifyContent: 'center', gap: 20,
+        }}>
+          <DmgBtn label={UTILITY_LABELS.social} pillWidth={dmgPillWidth} onPress={() => onUtility('social')} />
+          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={dmgPillWidth} onPress={() => onUtility('inventory')} />
+        </div>
+        {/* Flat icons in the bottom corners */}
+        <div style={{ position: 'absolute', left: 'calc(10px + env(safe-area-inset-left))', bottom: 'calc(6px + env(safe-area-inset-bottom))' }}>
+          <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+            <SpeakerIcon size={20} muted={muted} />
+          </FlatIconBtn>
+        </div>
+        <div style={{ position: 'absolute', right: 'calc(10px + env(safe-area-inset-right))', bottom: 'calc(6px + env(safe-area-inset-bottom))' }}>
+          <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+            <QuestionGlyph size={19} />
+          </FlatIconBtn>
         </div>
       </div>
     </div>

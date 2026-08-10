@@ -1,16 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import NavBar from '@/components/NavBar'
 import BasementNavBar from '@/components/BasementNavBar'
 import FooterLinks from '@/components/FooterLinks'
 import BasementFooter from '@/components/BasementFooter'
-import type { Product } from '@/types/product'
+import type { Product, ProductVariant } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
+import { variantTitle, deriveAvailability } from '@/lib/admin/variants'
+import { LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
+import { colorwayLabel, siblingColorways } from '@/lib/products'
 
 const STATUS_LABEL: Record<string, string> = {
   'pre-order': 'PRE-ORDER',
@@ -18,20 +22,46 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default function ProductDetail({ product, dark = false }: { product: Product; dark?: boolean }) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(null)
+  const sizeAxis = product.options.findIndex((o) => o.name === 'Size')
+  const siblings = siblingColorways(product)
+
+  const [size, setSize] = useState<string | null>(null)
   const [activeImage, setActiveImage] = useState(0)
   const [added, setAdded] = useState(false)
   const reduced = useReducedMotion()
   const { add, openCart } = useCart()
   const { notify } = useToast()
-  const isSoldOut = product.status === 'sold-out'
+  const availability = deriveAvailability(product)
+  const isSoldOut = availability === 'sold-out'
+
+  const variantFor = (s: string) =>
+    product.variants.find((v) => sizeAxis < 0 || v.optionValues[sizeAxis] === s)
+
+  const selected = size ? variantFor(size) : undefined
+  const sellable = (v: ProductVariant | undefined) =>
+    !!v && (!v.trackInventory || v.stock > 0 || v.allowBackorder)
+
+  // One colourway per product, so the gallery is simply this product's media
+  // in position order — no filtering needed.
+  const images = product.media.map((m) => m.url)
+
+  const heroUrl =
+    product.media.find((m) => m.id === variantFor(size ?? product.options[sizeAxis]?.values[0] ?? '')?.imageId)?.url
+    ?? images[0]
+    ?? null
+
+  useEffect(() => {
+    const idx = heroUrl ? images.indexOf(heroUrl) : -1
+    setActiveImage(idx >= 0 ? idx : 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroUrl])
 
   function handleAddToBag() {
-    if (!selectedSize) return
+    if (!selected || !sellable(selected)) return
     try {
-      add(product, selectedSize)
+      add(product, selected)
       setAdded(true)
-      notify(`${product.emotion} (${selectedSize}) added to bag`, 'success')
+      notify(`${product.emotion} (${variantTitle(selected.optionValues)}) added to bag`, 'success')
       setTimeout(() => {
         setAdded(false)
         openCart()
@@ -41,7 +71,6 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
     }
   }
 
-  const images = [product.image, product.backImage].filter(Boolean) as string[]
   const panelStagger = reduced ? {} : stagger(0.09)
   const item         = reduced ? {} : fadeIn
   const imgVariant   = reduced ? {} : fadeIn
@@ -121,15 +150,26 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               </AnimatePresence>
 
               {images.length > 1 && (
-                <button
-                  onClick={() => setActiveImage((i) => (i + 1) % images.length)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
-                  aria-label="Next image"
-                >
-                  <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
-                    <path d="M1 1L9 9L1 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+                <>
+                  <button
+                    onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
+                    aria-label="Previous image"
+                  >
+                    <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                      <path d="M9 1L1 9L9 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setActiveImage((i) => (i + 1) % images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
+                    aria-label="Next image"
+                  >
+                    <svg width="10" height="18" viewBox="0 0 10 18" fill="none">
+                      <path d="M1 1L9 9L1 17" stroke={chevron} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </>
               )}
             </div>
 
@@ -177,29 +217,63 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
             </motion.h1>
 
             <motion.p variants={item} className="text-[22px] font-bold mb-[28px]">
-              ${product.price.toFixed(2)}
+              ${(selected?.price ?? product.variants[0]?.price ?? 0).toFixed(2)}
             </motion.p>
+
+            {siblings.length > 0 && (
+              <motion.div variants={item} className="mb-5">
+                <span className={`block text-[11px] uppercase tracking-[0.14em] ${textMuted} mb-2`}>
+                  Other colourways
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {siblings.map((s) => (
+                    <Link
+                      key={s.slug}
+                      href={`/products/${s.slug}`}
+                      className={`h-11 px-4 flex items-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${sizeUnselected}`}
+                    >
+                      {colorwayLabel(s)}
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[12px]`}>
               Size
             </motion.p>
 
-            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[20px]">
-              {product.sizes.map((size) => (
-                <motion.button
-                  key={size}
-                  onClick={() => setSelectedSize(size === selectedSize ? null : size)}
-                  whileHover={reduced ? {} : { scale: 1.05 }}
-                  whileTap={reduced ? {} : { scale: 0.97 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className={`w-[64px] h-[44px] flex items-center justify-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${selectedSize === size ? sizeSelected : sizeUnselected}`}
-                >
-                  {size}
-                </motion.button>
-              ))}
+            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[8px]">
+              {(sizeAxis >= 0 ? product.options[sizeAxis].values : []).map((s) => {
+                const v = variantFor(s)
+                const ok = sellable(v)
+                return (
+                  <motion.button
+                    key={s}
+                    type="button"
+                    disabled={!ok}
+                    aria-disabled={!ok}
+                    onClick={() => setSize(s === size ? null : s)}
+                    whileHover={reduced || !ok ? {} : { scale: 1.05 }}
+                    whileTap={reduced || !ok ? {} : { scale: 0.97 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className={`w-[64px] h-[44px] flex items-center justify-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${
+                      size === s ? sizeSelected : sizeUnselected
+                    } ${ok ? '' : 'opacity-40 line-through cursor-not-allowed'}`}
+                  >
+                    {s}
+                  </motion.button>
+                )
+              })}
             </motion.div>
 
-            <motion.div variants={item}>
+            {selected && selected.trackInventory && selected.stock > 0 && selected.stock <= LOW_STOCK_THRESHOLD && (
+              <motion.p variants={item} className="text-[11px] text-pink-deep mb-[12px]">
+                Only {selected.stock} left
+              </motion.p>
+            )}
+
+            <motion.div variants={item} className="mt-[12px]">
               {isSoldOut ? (
                 <p className="text-[13px] font-bold tracking-[0.1em] uppercase mb-[24px]">
                   Sorry Sold Out
@@ -209,12 +283,12 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                   onClick={handleAddToBag}
                   whileTap={reduced ? {} : { scale: 0.98 }}
                   transition={{ duration: 0.2, ease: 'easeOut' }}
-                  disabled={!selectedSize}
+                  disabled={!selected || !sellable(selected)}
                   className={`w-full py-[14px] text-[13px] font-bold tracking-[0.06em] uppercase border rounded mb-[24px] transition-colors duration-200 ${
-                    added ? btnAdded : selectedSize ? btnActive : btnDisabled
+                    added ? btnAdded : selected ? btnActive : btnDisabled
                   }`}
                 >
-                  {added ? 'Added ✓' : selectedSize ? 'Add to Bag' : 'Select a Size'}
+                  {added ? 'Added ✓' : selected ? 'Add to Bag' : 'Select a Size'}
                 </motion.button>
               )}
             </motion.div>
@@ -223,16 +297,16 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               variants={item}
               className={`text-[12px] font-bold tracking-[0.04em] uppercase leading-relaxed mb-[32px] ${text}`}
             >
-              {product.colorway} colorway. {product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;Emotions&rdquo; collection. {product.modelNote}
+              {colorwayLabel(product) && `${colorwayLabel(product)} colorway. `}{product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;{product.collection}&rdquo; collection. {product.modelNote}
             </motion.p>
 
             <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[32px]">
               <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
                 {product.collection}
               </span>
-              {product.status !== 'available' && (
+              {availability !== 'available' && (
                 <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
-                  {STATUS_LABEL[product.status]}
+                  {STATUS_LABEL[availability]}
                 </span>
               )}
             </motion.div>

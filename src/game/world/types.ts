@@ -32,7 +32,7 @@ interface Placed {
    */
   holes?: Array<{ dx: number; dy: number }>;
   /** Key into the art registry — never an asset path. */
-  artKey: string;
+  artKey?: string;
   /** Mirror the art horizontally (e.g. an NPC facing the other way). */
   flip?: boolean;
   /**
@@ -43,19 +43,54 @@ interface Placed {
    */
   revealedBy?: string;
   concealing?: string;
+  /**
+   * Where a `concealing` prop slides when its flag reveals. With `slideTo` alone
+   * the prop parks there (drawn + solid). With `vanishAfterSlide` it animates to
+   * `slideTo` then despawns — e.g. a crate that steps forward and disappears.
+   */
+  slideTo?: { tileX: number; tileY: number };
+  vanishAfterSlide?: boolean;
 }
 
 /** Whether a flag-gated prop is currently present in the world. */
 export function propActive(p: Placed, revealed: Set<string>): boolean {
   if (p.revealedBy && !revealed.has(p.revealedBy)) return false;
-  if (p.concealing && revealed.has(p.concealing)) return false;
+  if (p.concealing && revealed.has(p.concealing) && (!p.slideTo || p.vanishAfterSlide)) {
+    return false;
+  }
   return true;
 }
 
+/**
+ * A patrolling NPC's route. The actor walks the waypoints in order, then back,
+ * for ever. Consecutive waypoints must be orthogonally adjacent — this is a
+ * hand-authored route, not a pathfinder.
+ *
+ * A patrolling NPC is NOT part of the static blocked set (its authored tile is
+ * only a starting point); the scene tracks its live tile instead.
+ */
+export interface Patrol {
+  waypoints: Array<{ x: number; y: number }>;
+  /** ms per tile. Defaults to the shared walk pace. */
+  stepMs?: number;
+  /** ms spent standing still at each end of the route. */
+  pauseMs?: number;
+  /** Facing held while paused (e.g. turning to face the rail). */
+  restFacing?: "up" | "down" | "left" | "right";
+}
+
 export interface Interaction extends Placed {
+  /**
+   * Omitted on an interaction that exists purely for collision and its
+   * behaviour, whose art is supplied by separate decorations (the checkout
+   * counter — see art/checkout.ts).
+   */
+  artKey?: string;
   /** Stable unique id within the room. */
   id: string;
   type: InteractionType;
+  /** Present on an `npc` that walks a route instead of standing still. */
+  patrol?: Patrol;
   /** Present on transitions (stairs) — stepping here moves to another room. */
   target?: { roomId: string; spawn?: { tileX: number; tileY: number } };
   /** How the transition plays. Defaults to "fade" when a target is present. */
@@ -67,7 +102,10 @@ export interface Interaction extends Placed {
  * solid obstacle like a speaker or box). `solid` decorations block movement but
  * have no interaction.
  */
-export interface Decoration extends Placed {}
+export interface Decoration extends Placed {
+  /** Decorations exist to be seen, so their art key is never optional. */
+  artKey: string;
+}
 
 /**
  * A group of walkable tiles (e.g. sofa cushions) that may only be ENTERED from
@@ -77,6 +115,12 @@ export interface Decoration extends Placed {}
 export interface SeatZone {
   tiles: Array<{ x: number; y: number }>;
   enterDir: "up" | "down" | "left" | "right";
+  /**
+   * Allow moving between tiles inside this zone. Default (absent/false) is the
+   * planted behaviour: sitting down commits you, and the only move is back out
+   * the way you came. The couch arm sets this so you can shuffle along it.
+   */
+  internalMoves?: boolean;
 }
 
 export interface Room {
@@ -93,6 +137,13 @@ export interface Room {
   decorations?: Decoration[];
   /** Optional darkening overlay drawn over the whole room (e.g. the Basement). */
   ambient?: { color: number; alpha: number };
+  /**
+   * Multiply-tint applied to every character in the room. The ambient overlay
+   * sits below the player, so without this he reads as lit while the room
+   * around him is in shadow. Tinting rather than raising the overlay keeps him
+   * readable — under the overlay he would darken exactly as much as the floor.
+   */
+  characterTint?: number;
   /** Tiles you can only step onto from a specific side (e.g. sofa cushions). */
   seats?: SeatZone[];
 }
@@ -119,8 +170,11 @@ export function buildBlockedSet(room: Room, revealed: Set<string> = new Set()): 
   const blocked = new Set<string>();
   const add = (p: Placed) => {
     if (!p.solid || !propActive(p, revealed)) return;
-    const holes = new Set((p.holes ?? []).map((h) => `${p.tileX + h.dx},${p.tileY + h.dy}`));
-    for (const t of footprint(p)) {
+    const slid = p.concealing && p.slideTo && revealed.has(p.concealing)
+      ? { ...p, tileX: p.slideTo.tileX, tileY: p.slideTo.tileY }
+      : p;
+    const holes = new Set((slid.holes ?? []).map((h) => `${slid.tileX + h.dx},${slid.tileY + h.dy}`));
+    for (const t of footprint(slid)) {
       const key = `${t.x},${t.y}`;
       if (!holes.has(key)) blocked.add(key);
     }

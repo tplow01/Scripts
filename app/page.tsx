@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type Phaser from "phaser";
 import GameBoyShell, { type Btn } from "@/components/GameBoyShell";
+import { KEY_TO_BTN } from "@/lib/controls";
 import StartScreen from "@/components/StartScreen";
 import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt";
 import { useCart } from "@/lib/cart";
 import { gameSession } from "@/lib/gameSession";
+import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
+import { useShellLayout } from "@/lib/useShellLayout";
 
 // In-world fixtures that open a Yes/No prompt, and what "Yes" does. Keyed by
 // interaction id first, then type — so the basement NPC routes differently from
@@ -19,66 +22,95 @@ type PromptKind = "inventory" | "cart" | "basement";
 // pages that END in a Yes/No choice (the basement NPC's secretive pitch).
 // `speaker` names the nameplate tab above the box — omitted for system prompts
 // (rack/checkout) and anonymous floor shoppers, who stay untagged.
+type PromptPage = string | (() => string);
+
 type PromptDef =
+  | { variant: "choice"; question: string; kind: PromptKind; speaker?: string }
+  | { variant: "message"; pages: PromptPage[]; speaker?: string }
+  | { variant: "messageChoice"; pages: PromptPage[]; question: string; kind: PromptKind; speaker?: string };
+
+// Open prompt state (paged prompts also track the current page via `page`;
+// a messageChoice at page === pages.length is in its choice phase). Unlike
+// PromptDef, an ActivePrompt's pages are always plain strings — any
+// function-valued page (e.g. npc-checkout's random product line) is resolved
+// ONCE, when the prompt opens, so an unrelated re-render (tapping MUTE while
+// reading) can't re-roll it or restart the typewriter.
+type ActivePrompt =
   | { variant: "choice"; question: string; kind: PromptKind; speaker?: string }
   | { variant: "message"; pages: string[]; speaker?: string }
   | { variant: "messageChoice"; pages: string[]; question: string; kind: PromptKind; speaker?: string };
 
-// Open prompt state (paged prompts also track the current page via `page`;
-// a messageChoice at page === pages.length is in its choice phase).
-type ActivePrompt = PromptDef;
+// Resolve a page's text — plain string, or a function evaluated once here.
+const pageText = (p: PromptPage) => (typeof p === "function" ? p() : p);
+
+// Materialize a PromptDef into an ActivePrompt, resolving any function pages
+// at open time rather than at render time.
+const materialize = (p: PromptDef): ActivePrompt =>
+  p.variant === "choice" ? p : { ...p, pages: p.pages.map(pageText) };
 
 const PROMPTS: Record<string, PromptDef> = {
   // Lobby (by type)
   rack: { variant: "choice", question: "View the inventory?", kind: "inventory" },
   // Heath physically walks over to ask this one (see WorldScene.playHeathCheckout).
-  checkout: { variant: "choice", question: "Are you ready to checkout?", kind: "cart", speaker: "Heath" },
+  // A quick word, then the Yes/No.
+  checkout: {
+    variant: "messageChoice",
+    speaker: "Heath",
+    pages: ["You find some dope pieces?"],
+    question: "Checkout?",
+    kind: "cart",
+  },
   // Lobby cashier NPC (by id) — the cashier IS Heath. Speech, no navigation.
   cashier: {
     variant: "message",
     speaker: "Heath",
     pages: ["Heath here — take your time looking around.", "When you're ready, bring your pieces to the counter."],
   },
-  // Floor shoppers (by id) — flavour speech, no navigation.
-  "npc-rail": {
+  // The cast on the shop floor (by id) — flavour speech, no navigation.
+  teo: {
     variant: "message",
-    pages: ["These just dropped this morning.", "Heavier than they look — there's proper weight to 'em."],
-  },
-  "npc-gazer": {
-    variant: "message",
-    pages: ["Green or white… I genuinely can't choose.", "…might just get both. Don't tell my bank."],
-  },
-  "npc-sofa": {
-    variant: "message",
+    speaker: "Teo",
     pages: [
-      "Best seat in the house.",
-      "Throw a record on and take a load off.",
-      "…they say the right record opens more than your ears. Try the decks.",
+      "These just dropped this morning.",
+      "I think there's only a few pairs left though.",
+      "There's so many sick pieces, I can't choose which one to get… might js have to get a few, don't tell my bank.",
     ],
   },
-  "npc-checkout": {
+  tp: {
     variant: "message",
-    pages: ["Just copped the RAGE tee.", "Staff here are sound — the line moves quick."],
+    speaker: "TP",
+    pages: [
+      () => {
+        const p = CYBER_LOVE_PRODUCTS[Math.floor(Math.random() * CYBER_LOVE_PRODUCTS.length)];
+        return `Just copped the ${p.emotion} tee.`;
+      },
+      "This spot is sweeeeeet! The staff is awesome and the pieces are sick!",
+    ],
   },
-  // Basement (by id — overrides the "rack" type so it routes to the pieces page)
-  // Down here the tone is hushed — you found the secret, after all.
+  karl: {
+    variant: "message",
+    speaker: "Karl",
+    pages: ["This pretty sick store huh? I'd check out the vinyls — some of my favorites in there."],
+  },
+  // Basement (by id — overrides the "rack" type so it routes to the pieces page).
+  // This is Heath again, down in the secret room; the tone is hushed, because
+  // you found the place you weren't supposed to.
   "basement-npc": {
     variant: "messageChoice",
-    pages: ["Shhh… how did you find this place?", "…Well. Since you're already down here —"],
+    speaker: "Heath",
+    pages: ["Shhh… how did you find this place?", "You have to check these pieces out, they are insane!"],
     question: "Check out my favourite pieces?",
     kind: "basement",
   },
   "rail-top": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
-  "rail-left": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
-  "rail-right": { variant: "choice", question: "Take a look at the pieces?", kind: "basement" },
 };
 
 // Heath's greeting on genuine first entry — he walks over from the counter to
 // deliver it. {A} becomes the platform's interact button (A on mobile, Z on web).
 const HEATH_INTRO_PAGES = [
-  "Yo! Welcome to SCR!PTS — a home for creative culture. I'm Heath.",
-  "Walk up to anything and press {A} to check it out.",
-  "When you're ready, bring your pieces to the counter. I'll sort you out.",
+  "… Yooo. My name is Heath. I'm the founder of SCR!PTS. Welcome to our world!",
+  "Walk up to anything and press {A} to check it out — {B} to go back.",
+  "When you're ready, come back up — I'll check you out!",
 ];
 
 // Routes reachable from the game — prefetched on start so navigation is instant.
@@ -86,6 +118,11 @@ const GAME_ROUTES = ["/inventory", "/basement", "/cart"];
 
 // Phaser is client-only — never server-rendered.
 const PhaserGame = dynamic(() => import("@/game/PhaserGame"), { ssr: false });
+
+// KEY_TO_BTN is keyed by KeyboardEvent.key; arrows are verbatim ("ArrowUp") but
+// letters are lowercase ("z"/"x"), so a Shift/CapsLock-held "Z" (e.key === "Z")
+// still resolves — try the raw key first, then its lowercase form.
+const keyToBtn = (e: KeyboardEvent): Btn | undefined => KEY_TO_BTN[e.key] ?? KEY_TO_BTN[e.key.toLowerCase()];
 
 // Semantic button → KeyboardEvent.code the WorldScene understands.
 const CODE: Partial<Record<Btn, string>> = {
@@ -95,34 +132,18 @@ const CODE: Partial<Record<Btn, string>> = {
   right: "ArrowRight",
   A: "KeyZ", // interact / confirm
   B: "KeyX", // cancel
-  START: "Enter",
 };
 
-/**
- * True when the on-screen Game Boy controls should show: any touch-input device
- * (phones, tablets, touch laptops) or a viewport ≤1024px. Mouse-driven desktops
- * keep the full-bleed bezel. null until mounted.
- */
-function useIsMobile(): boolean | null {
-  const [mobile, setMobile] = useState<boolean | null>(null);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1024px), (pointer: coarse)");
-    const update = () => setMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return mobile;
-}
-
 export default function Home() {
-  const mobile = useIsMobile();
+  const layout = useShellLayout();
+  const mobile = layout === null ? null : layout !== "desktop";
   const router = useRouter();
   const { openCart, isOpen: cartIsOpen } = useCart();
   const [started, setStarted] = useState(false);
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
   const [page, setPage] = useState(0); // current page of an open message prompt
+  const [muted, setMuted] = useState(false);
 
   // Set once the Phaser game exists; forwards on-screen buttons into the scene
   // with press/release semantics so a held D-pad arm keeps Scribbs walking.
@@ -143,15 +164,17 @@ export default function Home() {
       setPage(0);
       if (!revealed) {
         gameRef.current?.events.emit("reveal", "basement-entrance");
-        setPrompt({
-          variant: "message",
-          pages: [
-            "You thumb through a crate of records…",
-            "One sticks. You pull it — and a panel by the wall slides aside.",
-          ],
-        });
+        setPrompt(
+          materialize({
+            variant: "message",
+            pages: [
+              "You thumb through a crate of records…",
+              "One sticks. You pull it — and a panel by the wall slides aside.",
+            ],
+          }),
+        );
       } else {
-        setPrompt({ variant: "message", pages: ["The record's still spinning."] });
+        setPrompt(materialize({ variant: "message", pages: ["The record's still spinning."] }));
       }
       gameRef.current?.events.emit("dialog", true);
       return;
@@ -160,7 +183,7 @@ export default function Home() {
     if (!p) return;
     setSel("yes");
     setPage(0);
-    setPrompt(p);
+    setPrompt(materialize(p));
     gameRef.current?.events.emit("dialog", true);
   };
 
@@ -168,7 +191,7 @@ export default function Home() {
   const welcomeRef = useRef<() => void>(() => {});
   welcomeRef.current = () => {
     setPage(0);
-    setPrompt({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" });
+    setPrompt(materialize({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" }));
     gameRef.current?.events.emit("dialog", true);
   };
 
@@ -180,6 +203,7 @@ export default function Home() {
     // Handshake: a fresh game (e.g. remounted after the inventory detour) must
     // never inherit a stale "dialog open" flag from a prompt the old game saw.
     game.events.emit("dialog", false);
+    game.events.emit("overlay", false);
     game.events.emit("cart", false);
   }, []);
 
@@ -226,11 +250,11 @@ export default function Home() {
       // Dialogue open: controls drive the prompt, not Scribbs.
       if (prompt) {
         if (inMessagePhase) {
-          // Speech: A / B / START advance pages. Arrows do nothing.
-          if (b === "A" || b === "B" || b === "START") advanceMessage();
+          // Speech: A / B advance pages. Arrows do nothing.
+          if (b === "A" || b === "B") advanceMessage();
         } else if (b === "up" || b === "down" || b === "left" || b === "right") {
           toggleSel();
-        } else if (b === "A" || b === "START") {
+        } else if (b === "A") {
           choose(sel);
         } else if (b === "B") {
           choose("no");
@@ -238,8 +262,8 @@ export default function Home() {
         return;
       }
       if (!started) {
-        // Pre-game: A / START (and a tap, handled by StartScreen) begin play.
-        if (b === "A" || b === "START") setStarted(true);
+        // Pre-game: A (and a tap, handled by StartScreen) begins play.
+        if (b === "A") setStarted(true);
         return;
       }
       const code = CODE[b];
@@ -281,11 +305,11 @@ export default function Home() {
     GAME_ROUTES.forEach((r) => router.prefetch(r));
   }, [started, router]);
 
-  // Desktop start gate: Enter / Space / Z begins play (Phaser owns keys after).
+  // Desktop start gate: Z begins play (Phaser owns keys after).
   useEffect(() => {
     if (started) return;
     const onKey = (e: KeyboardEvent) => {
-      if (["Enter", "Space", "KeyZ"].includes(e.code)) setStarted(true);
+      if (keyToBtn(e) === "A") setStarted(true);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -296,21 +320,22 @@ export default function Home() {
   useEffect(() => {
     if (!prompt) return;
     const onKey = (e: KeyboardEvent) => {
+      const b = keyToBtn(e);
       if (inMessagePhase) {
-        // Speech: confirm/cancel keys advance pages; arrows ignored.
-        if (["Enter", "KeyZ", "Space", "KeyX", "Escape"].includes(e.code)) {
+        // Speech: A / B advance pages; Escape too (mirrors B). Arrows ignored.
+        if (b === "A" || b === "B" || e.key === "Escape") {
           e.preventDefault();
           advanceMessage();
         }
         return;
       }
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+      if (b === "up" || b === "down" || b === "left" || b === "right") {
         e.preventDefault();
         toggleSel();
-      } else if (["Enter", "KeyZ", "Space"].includes(e.code)) {
+      } else if (b === "A") {
         e.preventDefault();
         choose(sel);
-      } else if (["KeyX", "Escape"].includes(e.code)) {
+      } else if (b === "B" || e.key === "Escape") {
         e.preventDefault();
         choose("no");
       }
@@ -330,8 +355,10 @@ export default function Home() {
     return <main className="h-dvh w-screen bg-ink" />;
   }
 
-  // Swap {A} for the platform's interact button (mobile A button / desktop Z key).
-  const btnify = (s: string) => s.replaceAll("{A}", mobile ? "A" : "Z");
+  // Swap {A}/{B} for the platform's interact/cancel buttons (mobile A/B buttons
+  // / desktop Z/X keys).
+  const btnify = (s: string) =>
+    s.replaceAll("{A}", mobile ? "A" : "Z").replaceAll("{B}", mobile ? "B" : "X");
 
   const screen = started ? (
     <>
@@ -363,7 +390,16 @@ export default function Home() {
 
   return (
     <main className="h-dvh w-screen overflow-hidden">
-      <GameBoyShell mobile={mobile} screen={screen} onPress={handlePress} onRelease={handleRelease} />
+      <GameBoyShell
+        layout={layout!}
+        screen={screen}
+        onPress={handlePress}
+        onRelease={handleRelease}
+        onInventory={() => router.push("/inventory")}
+        muted={muted}
+        onToggleMute={() => setMuted((m) => !m)}
+        onOverlayChange={(open) => gameRef.current?.events.emit("overlay", open)}
+      />
     </main>
   );
 }

@@ -7,14 +7,13 @@
  *   • exit inventory/basement  → resume at the exact tile we left from
  *   • hard refresh             → fresh start screen (PRESS START)
  */
-export type Facing = "down" | "up" | "side";
+export type Facing = "down" | "up" | "left" | "right";
 
 export interface GamePos {
   roomId: string;
   tileX: number;
   tileY: number;
   facing: Facing;
-  flip: boolean;
 }
 
 export const gameSession: {

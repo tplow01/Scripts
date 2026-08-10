@@ -4,11 +4,37 @@
 > Every row maps 1:1 to an **`artKey`** resolved by [`src/game/art/registry.ts`](../src/game/art/registry.ts).
 > Lock the `artKey` and animation-tag names — they're the contract between art and code. Swapping a
 > placeholder for real art is a one-line registry change; world data (`rooms/*.ts`) never changes.
-> Last updated: 2026-06-29 (Map v3).
+> Last updated: 2026-07-12 (32px production-art branch).
+
+## 2026-07-12 production-art override
+
+The active production implementation is now `src/game/art/hiresArt.ts`:
+
+- environment tiles: **32×32 native**;
+- characters: **32×40 native**, bottom-centred on a 1×1 collision tile;
+- original hair families: star spikes, curtains, wolf cut, curls, sweep, twists;
+- outfit-specific character graphics for Scribbs, Heath, LOVE, CONFUSION,
+  ARE YOU OKAY, RAGE, and the Basement;
+- 12 Scribbs movement frames (idle/lead/pass/trail × down/up/side) and four
+  profile-walk phases for Heath;
+- high-resolution floor, Basement floor, wall variants, racks, checkout, stairs,
+  speakers, boxes, vinyl desk, crates, couch, and entrance mat;
+- no third-party character frames are loaded by `BootScene`.
+
+Brand-locked exceptions: `emblem` and `mat` deliberately use the exact
+pre-overhaul `sprites.ts` definitions. The emblem is the approved comet plus
+`scr!pts` wordmark; the entrance is plain pink and carries no invented mark.
+
+Runtime update: `emblem` now preloads `public/assets/logo-floor-96.png`, a
+nearest-neighbour 96px derivative of the canonical 480px master. The older
+code-authored emblem remains a fallback only.
+
+The older 16px tables below remain useful as historical footprint contracts.
+Their `placeholder` labels do not describe the active high-resolution overrides.
 
 ## Conventions
 
-- **Tile:** 32px on screen. **Author at 16px logical** for tiles/props; **characters 16×24–16×32**
+- **Tile:** 32px on screen and **author at 32px logical** for production tiles/props; **characters 32×40**
   (FireRed head-overhang), **anchored bottom-center**.
 - **Palette:** brand only ([`src/theme/tokens.ts`](../src/theme/tokens.ts)) — ink `#0D0D0D`,
   paper `#F7F7F5`, pink `#FF8AC7`, pinkDeep `#FF4FA3`, grey `#6F6F73`. Indexed, no anti-aliasing

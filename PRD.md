@@ -11,7 +11,7 @@
 
 **Status:** Canonical · Launch Version
 **Owner:** Heath (founder, SCR!PTS)
-**Last meaningful update:** 2026-06-25 (reconciled with locked UX decisions)
+**Last meaningful update:** 2026-08-01 (five-character cast + FireRed walk cycle)
 
 ---
 
@@ -118,12 +118,21 @@ Showcase new arrivals, upcoming collections, key products — visual storytellin
 ### Poster walls
 Contain photoshoots, campaign imagery, collection stories, creative inspirations, future teasers, artist references — they build the SCR!PTS universe.
 
-### NPC system
-NPCs bring the store to life; dialogue updates with future collections. Examples:
-- **Record Collector** — *"This track changed my life."*
-- **Basement Rumor Guy** — *"I heard there's another room here."*
-- **Loyal Customer** — *"Been here since Drop 01."*
-- **Creative Friend** — *"You ever get an idea so good you can't sleep?"*
+### The cast
+The store is populated by **five named, hand-drawn characters** — no anonymous
+background shoppers. Dialogue updates with future collections.
+
+| Character | Where | Behaviour |
+|---|---|---|
+| **Scribbs** | everywhere | The player's avatar |
+| **Heath** | behind the checkout | Greets you on first entry; walks the counter at checkout |
+| **Heath** | the Basement | A second, independent instance guarding the secret rack |
+| **Teo** | the vertical clothing rail | Browses — shuffles a couple of tiles up and down |
+| **TP** | sofa ↔ checkout | Walks a fixed route across the shop floor |
+| **Karl** | beside the sofa | Stands and talks |
+
+Every character is authored as 4 facings × 3 walk frames and imported by
+`scripts/import-sprites.py`; left and right are distinct art, never mirrored.
 
 ### Lounge area (interactive lore zone)
 The Lounge is an **interactive lure environment** — not an optional/hidden afterthought. It's where the SCR!PTS universe deepens and where the brand's external channels live.
@@ -206,6 +215,18 @@ Browser-native, Pokémon-style movement, tilemaps, lightweight, mobile-friendly,
 ### Pixel art pipeline
 Aseprite · Tiled · Photoshop · Illustrator.
 
+**Production resolution:** 32px native environment tiles and approximately
+32×40px compact overworld characters, rendered only at integer scale with smoothing disabled.
+World positions and collision remain grid-based. Character and prop art stays
+behind the art registry so visual upgrades never rewrite room logic. Production
+atlases should use PNG + JSON frame metadata; deterministic code-authored art is
+allowed for assets that benefit from exact palette and grid control.
+
+The character direction is original anime-fashion editorial: model-like
+proportions, distinctive hair silhouettes, visible SCR!PTS garments, and subtle
+idle/walk personality. Third-party game sprites may be studied for readability
+but cannot be copied, traced, extracted, or shipped.
+
 ### Backend
 - **Supabase** + **PostgreSQL** + **Next.js API Routes**
 - Stores: products, inventory, orders, variants, images, customers.
@@ -221,6 +242,10 @@ Primary: **Vercel**. Alternative: Cloudflare Pages.
 
 ### Admin system
 Custom SCR!PTS dashboard at protected route **`/admin`**: add / edit / delete products, upload images, manage inventory, manage pricing, view orders, manage Basement products. **No developer needed for future product drops.**
+
+Products are modelled Shopify-style as **options → variants**: a product declares up to three options (e.g. Size, Colour), and every combination of option values generates a variant carrying its own SKU, stock count, and price/compare-at/cost. There is no hand-set "status" field on a product — **availability is derived** from the variants themselves (sellable stock present, or backorder allowed, falls through to sold-out). Editing options in the admin (add/remove/rename/reorder a value, add/remove an option) reconciles the variant list live, preserving stock and hand-edited SKUs on every surviving combination and seeding new ones at zero stock. The full product editor is a **dedicated full-page route** (`/admin/products/[id]/edit`), not a slide-over drawer — it holds the options editor, a variant table (desktop) / variant cards (mobile), and the product's other sections (media, pricing, organization, etc).
+
+The storefront catalog ships with **12 products** — 8 in the inventory collection and 4 in the Basement — one per emotion/colourway pair. Each product carries a single **Size** axis; the product detail page links **sibling colourways** as separate products, with stock-aware size selection layered on top.
 
 ---
 
@@ -277,3 +302,14 @@ Record meaningful changes to this playbook here so the project's direction has a
 - **2026-06-25** — **Reconciled with locked UX decisions.** Defined the game-layer / web-layer boundary: Lobby + Basement are Phaser game; product listings, product pages, cart and checkout are normal ecommerce. Clothing racks now route to a normal ecommerce inventory/product page (not an in-game menu). Loading simplified to a loading screen + "Enter to play" prompt. Lounge upgraded from optional/hidden to an **interactive lure zone** with lore, music toggle, and social links. Checkout desk now routes straight to the normal ecommerce cart (Heath dialogue optional flavor only). **Basement promoted to the main game experience**: discover products by exploring → Basement NPC → swipeable "choose your piece" special rack (Pokémon starter-ball moment) → selecting a piece opens a normal ecommerce product page. Added a Layer & Page Summary table.
 - **2026-06-28** — **Added the canonical brand bible [`BRAND.md`](./BRAND.md)** (from Heath's Brand Identity doc) — audience, positioning, personality, voice, fonts (Pixel Operator Bold / Fashion Whacks / Inter·Geist), and colour tokens (`#0D0D0D`, `#F7F7F5`, `#FF8AC7`, `#FF4FA3`, `#6F6F73`). It must always be followed for design/copy; `CLAUDE.md` now requires reading it each session. Clarified the rack interaction: it opens an **AWGE-style editorial shopping interface**. **Map v2** captured in `docs/world-map-notes.md`: three areas (Main, Basement, Lounge); Lounge is now a **music/vinyl lounge** (vinyl desk + speakers); display tables & mannequins kept; Basement reached via stairs hinted by a book + a poster-button.
 - **2026-06-28** — **v0 app scaffold landed.** Stood up the Next.js 15 + React 19 + TypeScript + Phaser 3 + Tailwind + Vitest foundation with brand tokens as a single source of truth and the **swappable-visuals architecture** (world data separated from an art registry). One playable placeholder Main room: Scribbs moves on a tile grid, camera follows, and rack/checkout/stairs tiles fire a stub interaction. Spec: `docs/superpowers/specs/2026-06-28-app-scaffold-design.md`; plan: `docs/superpowers/plans/2026-06-28-app-scaffold.md`. Still stubs/TODO: real art, AWGE shopping UI, Supabase/Stripe/Resend, `/admin`, mobile D-pad, Lounge + Basement rooms.
+- **2026-07-12** — **Locked the production visual direction.** Upgraded the game from mixed 16px/external sprite inputs to an original 32px SCR!PTS art system: 32×48 model-proportioned characters, six fashion/anime hairstyle families, garment-specific NPC styling, higher-resolution architectural tiles/racks/core fixtures, animated Heath walk frames, localized light pools and dust, plus an original rainy-city title loop. Added the explicit rule that third-party game art is reference-only and may never be copied or shipped.
+- **2026-07-12** — **Gen 4/5 overworld refinement.** After researching PokeMMO's current player-sprite and vanity construction as reference only, expanded Scribbs to 12 directional frames (four phases per direction), expanded Heath's profile walk to four phases, and added a passing-pose lift plus arm/leg counter-swing. Replaced procedural floor-logo drawing with a native 96px nearest-neighbour derivative of the canonical 480px SCR!PTS master, and biased the camera toward the world ahead so the full mark stays visible on mobile.
+- **2026-07-12** — **Compact character direction locked from supplied reference.** Changed characters only from 32×48 model proportions to 32×40 Gen 4-overworld proportions: heads occupy roughly half the silhouette, with shorter torsos/limbs, larger shoes, compact facial placement, and direction-specific hair. Environment, racks, logo, lighting, camera, and UI were deliberately unchanged.
+- **2026-07-28** — **Console shell redesigned.** Mobile overlay now features a flat #FF4FA3 pink shell across all devices with black SCR!PTS strip, seamless symmetric D-pad, black A/B buttons with pink letters, DMG-style blank-pill utilities with printed labels, and flat mute/? icons. Speaker-dot motif and shell cart removed; Delta emulator aesthetic refined for product-forward interaction.
+- **2026-07-30** — **Admin dashboard prototype shipped.** Hidden back office at a secret slug (no auth yet — auth arrives with Supabase): Overview stats, product management with real-model add/edit drawer and image dropzones, order management with live status changes; all mock state in a localStorage-persisted provider, ready to swap internals for Supabase.
+- **2026-07-31** — **Admin v2 shipped.** Order detail drawer (customer contact/address, line items with thumbnails, totals, payment badge, status timeline with auto-stamping), product gallery images (front/back + up to 6), and Overview analytics (stat deltas, traffic + revenue SVG charts, top products, status and customer breakdowns) — still mock-data, localStorage v2 schema.
+- **2026-07-31** — **Admin metric drill-downs shipped.** Each Overview stat card opens a full SaaS-style detail page (/metrics/revenue·orders·aov·visitors): 7/14/30d range toggle, large charts with hover value readouts and day ticks, per-metric breakdowns (revenue by product, payment split, status mix, avg items, high/low orders, conversion rate, top pages, device split) and range-filtered drill-down tables. Stats logic extracted to lib/admin/stats.ts; traffic mock extended to 30 days.
+- **2026-07-31** — **Admin responsive UX pass.** Three breakpoints (phone <640 / tablet / desktop ≥1024): phone bottom nav replaces the sidebar, tables become stacked cards, and drill-downs gained a sticky header (back + metric + range pills) plus a dedicated headline stat card with a delta chip. Fixed tables bleeding past their card borders and values wrapping mid-token.
+- **2026-08-01** — **Admin rebuilt around a Shopify-style product variant model.** Products now declare options (e.g. Size, Colour) that expand into variants, each with its own SKU, stock, and pricing; the old hand-set product status field is gone — **availability is derived** from variant stock/backorder state. The product editor moved from a slide-over drawer to a **dedicated full-page route** with an options editor and a variant table/cards. The storefront catalog now ships **6 products**, and the product detail page gained a **colourway swatch picker** for choosing a variant directly. Products-list table rows were also consolidated to a single stretched-link click target per row (was four redundant links) for cleaner keyboard/screen-reader navigation.
+- **2026-08-01** — **Five-character cast + FireRed walk cycle.** Replaced the one-authored-player/six-procedural-NPC setup with five hand-drawn characters — Scribbs (player), Heath (checkout + a second instance in the Basement), Teo (browsing the vertical rail), TP (walking a sofa↔checkout route) and Karl (beside the sofa). All procedural character art was deleted from `hiresArt.ts`; the cast now loads from authored PNGs via `art/characters.ts` and `scripts/import-sprites.py`, which scales every character to a common content height so the cast is one size. Movement moved to a shared `WalkCycle`: one stride held per tile with the feet alternating, neutral only at a standstill, ~250ms/tile, plus FireRed **turn-in-place** (a tap turns, only a held press walks). Patrolling NPCs run on a new `NpcActor` that holds position when blocked rather than clipping through. Spec: `docs/superpowers/specs/2026-08-01-five-character-cast-design.md`.
+- **2026-08-03** — **Catalog split one product per colourway.** `migrateProducts` now groups by `collection|emotion|colorway`, so the catalog is **12 products** (8 inventory + 4 Basement) with a single **Size** axis each, keeping the original pre-split slugs (`anxiety-white`). The PDP's colourway swatch picker is replaced by **"Other colourways"** links to sibling products, and `LEGACY_SLUG_REDIRECTS` inverts to send merged slugs (`/products/anxiety`) to that emotion's White colourway. The admin now seeds from `ALL_PRODUCTS`, so the **Basement's 4 products reach the back office for the first time**, managed in the same list with a Collection column and filter. Storage key bumped to `scripts-admin-v3` (the v2 payload's ids, slugs and axes no longer match). Spec: `docs/superpowers/specs/2026-08-01-catalog-split-and-basement-admin-design.md`.

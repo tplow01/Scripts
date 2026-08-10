@@ -68,7 +68,7 @@ export function canStep(room: Room, fromX: number, fromY: number, toX: number, t
     const fromIn = inZone(fromX, fromY);
     const toIn = inZone(toX, toY);
     if (!fromIn && toIn && dir !== zone.enterDir) return false; // sit down from the open side only
-    if (fromIn && toIn) return false; // seated = planted; no sliding along the couch
+    if (fromIn && toIn) return zone.internalMoves === true; // seated = planted, unless the zone allows shuffling
     if (fromIn && !toIn && dir !== OPPOSITE[zone.enterDir]) return false; // stand up the way you sat
   }
   return true;
