@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -22,13 +23,21 @@ export default function ProductCard({ product }: ProductCardProps) {
   const image = product.media[0]?.url ?? null
   const backImage = product.media[1]?.url ?? null
   const price = product.variants[0]?.price ?? 0
+  // Pointer-driven flip — CSS :hover can stick on mount if the cursor already
+  // sits over a card when the inventory grid fades in.
+  const [flipped, setFlipped] = useState(false)
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block w-full">
+    <Link
+      href={`/products/${product.slug}`}
+      className="block w-full"
+      onPointerEnter={() => setFlipped(true)}
+      onPointerLeave={() => setFlipped(false)}
+    >
 
       <motion.div
         className="relative w-full aspect-square"
-        whileHover={reduced ? {} : { scale: 1.02 }}
+        animate={reduced ? undefined : { scale: flipped ? 1.02 : 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
         {image && (
@@ -36,7 +45,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={image}
             alt={product.name}
             fill
-            className="object-contain transition-opacity duration-300 group-hover:opacity-0"
+            className={`object-contain transition-opacity duration-300 ${flipped && backImage ? 'opacity-0' : 'opacity-100'}`}
           />
         )}
         {backImage && (
@@ -44,7 +53,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={backImage}
             alt={`${product.name} — back`}
             fill
-            className="absolute inset-0 object-contain opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            className={`absolute inset-0 object-contain transition-opacity duration-300 ${flipped ? 'opacity-100' : 'opacity-0'}`}
           />
         )}
       </motion.div>

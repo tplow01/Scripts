@@ -33,7 +33,7 @@ function ScreenModule({ children, overlay, stripHeight = 26, framePad = '0', lcd
   const padding = computePadding(framePad)
   return (
     <div style={{ background: STRIP_BLACK, display: 'flex', flexDirection: 'column', padding, ...style }}>
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden', borderRadius: lcdRadius, background: STRIP_BLACK }}>
         {children}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
         {overlay}
@@ -158,7 +158,7 @@ export default function GameBoyShell({
           background: STRIP_BLACK, borderRadius: 10, padding: `${frame}px ${frame}px 0`,
           boxShadow: '0 10px 26px rgba(0,0,0,0.35)',
         }}>
-          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: 'linear-gradient(160deg, #E2E2DE 0%, #D6D6D2 100%)' }}>
+          <div style={{ width: lcdW, height: lcdH, position: 'relative', overflow: 'hidden', borderRadius: 4, background: STRIP_BLACK }}>
             {screen}
             <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: SCREEN_GLASS }} />
             {overlay}
@@ -172,65 +172,90 @@ export default function GameBoyShell({
             </span>
           </div>
         </div>
-        <div style={{ height: railH, display: 'flex', alignItems: 'center', gap: 26 }}>
-          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
-          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
-          <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
-            <SpeakerIcon size={19} muted={muted} />
-          </FlatIconBtn>
-          <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
-            <QuestionGlyph size={18} />
-          </FlatIconBtn>
+        <div style={{
+          height: railH, width: lcdW + 2 * frame, position: 'relative',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{ position: 'absolute', left: 0 }}>
+            <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+              <SpeakerIcon size={19} muted={muted} />
+            </FlatIconBtn>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+            <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
+            <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
+          </div>
+          <div style={{ position: 'absolute', right: 0 }}>
+            <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+              <QuestionGlyph size={18} />
+            </FlatIconBtn>
+          </div>
         </div>
       </div>
     )
   }
 
-  // ── LANDSCAPE: LCD centre with strip below; controls ride high on flat pink
-  // flanks, each flank's utility stack beneath its cluster.
+  // ── LANDSCAPE / TABLET: LCD centre; D-pad + A/B in flanks; utilities on a
+  // bottom bar (mute | SOCIALS+INVENTORY | ?) so they never overlap the game.
   if (layout === 'landscape') {
-    const dpadSize = Math.max(96, Math.min(0.20 * vh, 0.115 * vw))
-    const absSize = Math.max(56, Math.min(0.13 * vh, 0.075 * vw))
-    // Flank must contain the clamped D-pad / A-B cluster — on small viewports
-    // the clamp floors win over 13vw, so the flank grows to avoid clipping.
-    const flankW = Math.max(0.13 * vw, dpadSize + 12, absSize * 2.1 + 12)
+    const utilBarH = Math.max(48, Math.min(0.14 * vh, 64))
+    const safeLeft = 8
+    const safeRight = 8
+    // Flank width from available width, then size controls to fit inside it —
+    // never grow the flank past ~18vw or let controls spill into the LCD.
+    const flankW = Math.min(0.18 * vw, Math.max(0.12 * vw, 72))
+    const dpadSize = Math.min(flankW - 16, 0.22 * (vh - utilBarH), 100)
+    const absSize = Math.min((flankW - 16) / 2.15, 0.14 * (vh - utilBarH), 58)
+    const dmgPill = Math.max(32, Math.min(0.05 * vw, 40))
     return (
-      <div style={{ ...rootStyle, position: 'relative', height: '100dvh' }}>
-        <div style={{ position: 'absolute', left: flankW, right: flankW, top: 0, bottom: 0 }}>
-          <ScreenModule overlay={overlay} stripHeight={22} framePad="0 14px" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+      <div style={{ ...rootStyle, position: 'relative', height: '100dvh', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: flankW, right: flankW, top: 0, bottom: utilBarH }}>
+          <ScreenModule overlay={overlay} stripHeight={22} framePad="0 10px" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
         </div>
-        {/* Left flank: D-pad high, SOCIALS + speaker below it */}
+        {/* Left flank: D-pad only */}
         <div style={{
-          position: 'absolute', left: 0, width: flankW, top: 0, bottom: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          paddingTop: 'max(6vh, env(safe-area-inset-top))', paddingLeft: 'env(safe-area-inset-left)',
-          paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
+          position: 'absolute', left: 0, width: flankW, top: 0, bottom: utilBarH,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          paddingTop: 'env(safe-area-inset-top)', paddingLeft: 'env(safe-area-inset-left)',
+          boxSizing: 'border-box', overflow: 'hidden',
         }}>
-          <div style={{ flexBasis: '18%' }} />
           <DPad size={dpadSize} hold={hold} />
-          <div style={{ flex: 1 }} />
-          <DmgBtn label={UTILITY_LABELS.social} pillWidth={40} onPress={() => onUtility('social')} />
-          <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
-            <SpeakerIcon size={18} muted={muted} />
-          </FlatIconBtn>
         </div>
-        {/* Right flank: A/B high, INVENTORY + ? below */}
+        {/* Right flank: A/B only */}
         <div style={{
-          position: 'absolute', right: 0, width: flankW, top: 0, bottom: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          paddingTop: 'max(6vh, env(safe-area-inset-top))', paddingRight: 'env(safe-area-inset-right)',
-          paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
+          position: 'absolute', right: 0, width: flankW, top: 0, bottom: utilBarH,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          paddingTop: 'env(safe-area-inset-top)', paddingRight: 'env(safe-area-inset-right)',
+          boxSizing: 'border-box', overflow: 'hidden',
         }}>
-          <div style={{ flexBasis: '18%' }} />
-          <div style={{ position: 'relative', width: absSize * 2.1, height: absSize * 1.8, touchAction: 'none' }}>
+          <div style={{ position: 'relative', width: absSize * 2.1, height: absSize * 1.8, touchAction: 'none', maxWidth: '100%' }}>
             <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={absSize} /></div>
             <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={absSize} /></div>
           </div>
-          <div style={{ flex: 1 }} />
-          <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={40} onPress={() => onUtility('inventory')} />
-          <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
-            <QuestionGlyph size={17} />
-          </FlatIconBtn>
+        </div>
+        {/* Utility bar: mute left · SOCIALS + INVENTORY centre · ? right */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, height: utilBarH,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          paddingLeft: `max(${safeLeft}px, env(safe-area-inset-left))`,
+          paddingRight: `max(${safeRight}px, env(safe-area-inset-right))`,
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          boxSizing: 'border-box',
+        }}>
+          <div style={{ position: 'absolute', left: `max(${safeLeft}px, env(safe-area-inset-left))` }}>
+            <FlatIconBtn ariaLabel={muted ? 'Unmute' : 'Mute'} onPress={() => onUtility('mute')}>
+              <SpeakerIcon size={18} muted={muted} />
+            </FlatIconBtn>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: Math.min(20, 0.04 * vw) }}>
+            <DmgBtn label={UTILITY_LABELS.social} pillWidth={dmgPill} onPress={() => onUtility('social')} />
+            <DmgBtn label={UTILITY_LABELS.inventory} pillWidth={dmgPill} onPress={() => onUtility('inventory')} />
+          </div>
+          <div style={{ position: 'absolute', right: `max(${safeRight}px, env(safe-area-inset-right))` }}>
+            <FlatIconBtn ariaLabel="Help" onPress={() => onUtility('help')}>
+              <QuestionGlyph size={17} />
+            </FlatIconBtn>
+          </div>
         </div>
       </div>
     )

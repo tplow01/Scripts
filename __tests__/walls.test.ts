@@ -67,6 +67,23 @@ describe("mural() expansion", () => {
       /vinyl-wall has 7 slices/,
     );
   });
+
+  it("can hang a custom slice order (skip middle, keep the end)", () => {
+    const tiles = mural("vinyl-wall", {
+      tileX: 1,
+      tileY: 3,
+      slices: [1, 2, 3, 4, 5, 7],
+    });
+    expect(tiles.map((t) => t.artKey)).toEqual([
+      "vinyl-wall-1",
+      "vinyl-wall-2",
+      "vinyl-wall-3",
+      "vinyl-wall-4",
+      "vinyl-wall-5",
+      "vinyl-wall-7",
+    ]);
+    expect(tiles.map((t) => t.tileX)).toEqual([1, 2, 3, 4, 5, 6]);
+  });
 });
 
 const PUBLIC = join(process.cwd(), "public");
@@ -105,15 +122,33 @@ describe("murals in the shop", () => {
     expect(slices).toHaveLength(14);
   });
 
-  it("hangs the vinyl wall along row b, cols 1-7", () => {
+  it("hangs vinyl slices 1–5+7 on row c, cols 1-6 (slice 6 dropped)", () => {
     const vinyl = slices.filter((d) => d.artKey.startsWith("vinyl-wall"));
-    expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6, 7]);
-    expect(vinyl.every((d) => d.tileY === 2)).toBe(true);
+    expect(vinyl.map((d) => d.artKey)).toEqual([
+      "vinyl-wall-1",
+      "vinyl-wall-2",
+      "vinyl-wall-3",
+      "vinyl-wall-4",
+      "vinyl-wall-5",
+      "vinyl-wall-7",
+    ]);
+    expect(vinyl.map((d) => d.tileX)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(vinyl.every((d) => d.tileY === 3)).toBe(true);
   });
 
-  it("hangs the clothing wall along row h, cols 8-14", () => {
+  it("hangs clothing wall on row h, cols 7-14 (duplicate slice-1 above the left box)", () => {
     const cloth = slices.filter((d) => d.artKey.startsWith("clothing-wall"));
-    expect(cloth.map((d) => d.tileX)).toEqual([8, 9, 10, 11, 12, 13, 14]);
+    expect(cloth.map((d) => d.artKey)).toEqual([
+      "clothing-wall-1",
+      "clothing-wall-1",
+      "clothing-wall-2",
+      "clothing-wall-3",
+      "clothing-wall-4",
+      "clothing-wall-5",
+      "clothing-wall-6",
+      "clothing-wall-7",
+    ]);
+    expect(cloth.map((d) => d.tileX)).toEqual([7, 8, 9, 10, 11, 12, 13, 14]);
     expect(cloth.every((d) => d.tileY === 8)).toBe(true);
   });
 

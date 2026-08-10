@@ -44,17 +44,20 @@ interface Placed {
   revealedBy?: string;
   concealing?: string;
   /**
-   * Where a `concealing` prop parks after its flag reveals. With `slideTo` the
-   * prop STAYS in the world post-reveal (drawn + solid at the new tile) instead
-   * of despawning — e.g. the record crate sliding off the secret stairs.
+   * Where a `concealing` prop slides when its flag reveals. With `slideTo` alone
+   * the prop parks there (drawn + solid). With `vanishAfterSlide` it animates to
+   * `slideTo` then despawns — e.g. a crate that steps forward and disappears.
    */
   slideTo?: { tileX: number; tileY: number };
+  vanishAfterSlide?: boolean;
 }
 
 /** Whether a flag-gated prop is currently present in the world. */
 export function propActive(p: Placed, revealed: Set<string>): boolean {
   if (p.revealedBy && !revealed.has(p.revealedBy)) return false;
-  if (p.concealing && !p.slideTo && revealed.has(p.concealing)) return false;
+  if (p.concealing && revealed.has(p.concealing) && (!p.slideTo || p.vanishAfterSlide)) {
+    return false;
+  }
   return true;
 }
 

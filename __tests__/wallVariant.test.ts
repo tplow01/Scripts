@@ -7,8 +7,9 @@ describe("wallVariant (neighbour-based)", () => {
   const maxY = mainRoom.height - 1;
 
   it("caps a top wall whose face the player sees (floor below)", () => {
-    // Top wall is 3 thick: row 2 is the capped face, rows 0-1 fully enclosed.
-    expect(wallVariant(mainRoom, 5, 2)).toBe("wall-top");
+    // Top wall is 4 thick: row 3 is the capped face, rows 0-2 fully enclosed.
+    expect(wallVariant(mainRoom, 5, 3)).toBe("wall-top");
+    expect(wallVariant(mainRoom, 5, 2)).toBe("wall-fill");
     expect(wallVariant(mainRoom, 5, 1)).toBe("wall-fill");
     expect(wallVariant(mainRoom, 5, 0)).toBe("wall-fill");
   });
@@ -29,7 +30,7 @@ describe("wallVariant (neighbour-based)", () => {
   });
 
   it("caps the top-right cutout's bottom edge (floor below it)", () => {
-    // Cutout is cols 8–15 × rows a–h (y1–8); (10,8) has floor at (10,9) below.
+    // Cutout is cols 7–15 × rows a–h (y1–8); (10,8) has floor at (10,9) below.
     expect(wallVariant(mainRoom, 10, 8)).toBe("wall-top");
   });
 });

@@ -53,6 +53,10 @@ export class WorldScene extends Phaser.Scene {
   private pendingCartClose: (() => void) | null = null;
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
+  /** Static (non-patrol) character props — face the player on talk. */
+  private staticNpcImgs = new Map<string, { img: Phaser.GameObjects.Image; artKey: string; tileX: number; tileY: number }>();
+  /** After a stairs transition, step one tile into the room once the fade finishes. */
+  private pendingStairsExit: { x: number; y: number } | null = null;
   private facing: Facing = "down";
   /** The player's walk-cycle state (see art/walkCycle.ts). */
   private cycle = new WalkCycle();
@@ -130,6 +134,8 @@ export class WorldScene extends Phaser.Scene {
         // A patrolling NPC we were talking to picks its route back up.
         this.talkingTo?.resume(this.time.now);
         this.talkingTo = null;
+        // Static NPCs return to their authored facing after the chat.
+        this.restoreStaticNpcFacing();
         if (this.pendingDialogClose) {
           const done = this.pendingDialogClose;
           this.pendingDialogClose = null;
@@ -270,11 +276,9 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects = [];
     this.coverObjects = [];
 
-    // ── Exterior treatment: the void beyond the walls is a flat SCR!PTS-black
-    // fill, Pokémon-style — each room reads as a solid block sitting on the
-    // overworld, not a street scene. Both the Shop and the Basement use it, so
-    // they share one wall language.
-    this.cameras.main.setBackgroundColor("#0D0D0D");
+    // ── Exterior treatment: flat void beyond the walls, a shade off the LCD
+    // bezel black so the shop/basement read as blocks on the overworld.
+    this.cameras.main.setBackgroundColor("#16161A");
     for (let y = -EXTERIOR_APRON; y < this.room.height + EXTERIOR_APRON; y++) {
       for (let x = -EXTERIOR_APRON; x < this.room.width + EXTERIOR_APRON; x++) {
         const inside = x >= 0 && x < this.room.width && y >= 0 && y < this.room.height;
@@ -324,6 +328,7 @@ export class WorldScene extends Phaser.Scene {
     // are standing fixtures with a shadow. Flag-gated ones (hidden stairs) are
     // skipped until revealed.
     this.cashierImg = undefined;
+    this.staticNpcImgs.clear();
     this.npcs = [];
     this.talkingTo = null;
     for (const it of this.room.interactions) {
@@ -345,6 +350,14 @@ export class WorldScene extends Phaser.Scene {
       else {
         const img = this.placeProp(it, 2, true);
         if (it.id === "cashier") this.cashierImg = img;
+        if (it.type === "npc" && it.artKey) {
+          this.staticNpcImgs.set(it.id, {
+            img,
+            artKey: it.artKey,
+            tileX: it.tileX,
+            tileY: it.tileY,
+          });
+        }
       }
     }
 
@@ -370,6 +383,25 @@ export class WorldScene extends Phaser.Scene {
     this.tileY = spawn.tileY;
     this.syncScribbs();
 
+    // Landing on stairs must not immediately bounce us back through the link.
+    const landedStairs = this.room.interactions.find(
+      (i) =>
+        i.type === "stairs" &&
+        propActive(i, gameSession.revealed) &&
+        footprint(i).some((t) => t.x === spawn.tileX && t.y === spawn.tileY),
+    );
+    this.lastInteractionId = landedStairs?.id ?? null;
+    this.pendingStairsExit = null;
+    if (landedStairs) {
+      // Step one tile into the room off the stairs (basement opens right; shop down).
+      this.facing = roomId === "basement" ? "right" : "down";
+      this.setFrame("both");
+      this.pendingStairsExit =
+        roomId === "basement"
+          ? { x: this.tileX + 1, y: this.tileY }
+          : { x: this.tileX, y: this.tileY + 1 };
+    }
+
     const ts = this.room.tileSize;
     // Both rooms sit on the black apron, so both pan over it.
     const a = EXTERIOR_APRON * ts;
@@ -378,7 +410,6 @@ export class WorldScene extends Phaser.Scene {
     // of the room is visible ahead. The Basement is short, so it needs less.
     this.cameras.main.setFollowOffset(0, roomId === "main" ? ts * 2.35 : ts * 0.45);
     this.updateZoom();
-    this.lastInteractionId = null;
     // Room lighting: the player carries across rooms, so his tint is set on
     // every load rather than once at creation.
     if (this.room.characterTint !== undefined) this.scribbs.setTint(this.room.characterTint);
@@ -475,7 +506,7 @@ export class WorldScene extends Phaser.Scene {
 
     if (roomId === "main") {
       glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
-      glow(4, 3.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
+      glow(4, 4.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
       glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
     } else {
       glow(9.5, 3.2, 0xff4fa3, 4.8, 0.09); // secret rack spotlight
@@ -506,7 +537,7 @@ export class WorldScene extends Phaser.Scene {
     gameSession.revealed.add(flag);
     invalidateBlocked(this.room.id);
 
-    // Slide + fade the covers, then destroy them.
+    // Slide + fade the covers, then destroy them when they vanish.
     const ts = this.room.tileSize;
     const covers = this.coverObjects;
     this.coverObjects = [];
@@ -515,13 +546,16 @@ export class WorldScene extends Phaser.Scene {
         (d) => d.concealing === flag && d.slideTo,
       );
       if (deco?.slideTo) {
-        // Park the cover at its slid tile — stays visible and solid.
         const w = deco.wTiles ?? 1;
+        const h = deco.hTiles ?? 1;
         this.tweens.add({
           targets: c,
           x: deco.slideTo.tileX * ts + (w * ts) / 2,
+          y: deco.slideTo.tileY * ts + (h * ts) / 2,
+          alpha: deco.vanishAfterSlide ? 0 : 1,
           duration: 420,
           ease: "Cubic.easeOut",
+          onComplete: deco.vanishAfterSlide ? () => c.destroy() : undefined,
         });
       } else {
         this.tweens.add({
@@ -543,15 +577,26 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** Cover the viewport with the room and keep pixels crisp (integer zoom). */
+  /** Cover the viewport with the room; smaller screens zoom out slightly. */
   private updateZoom = () => {
     const ts = this.room.tileSize;
     const worldW = this.room.width * ts;
     const worldH = this.room.height * ts;
     const { width, height } = this.scale.gameSize;
-    const zoom = Math.max(2, Math.ceil(Math.max(width / worldW, height / worldH)));
-    this.cameras.main.setZoom(zoom);
+    const base = Math.max(2, Math.ceil(Math.max(width / worldW, height / worldH)));
+    this.cameras.main.setZoom(base * this.responsiveZoomOut());
   };
+
+  /**
+   * Tablet ~5% more zoomed out, phone ~10%. Desktop stays at the base zoom.
+   * Uses the same handheld breakpoint as the Game Boy shell.
+   */
+  private responsiveZoomOut(): number {
+    if (typeof window === "undefined") return 1;
+    const handheld = window.matchMedia("(max-width: 1024px), (pointer: coarse)").matches;
+    if (!handheld) return 1;
+    return window.innerWidth < 768 ? 0.9 : 0.95;
+  }
 
   /**
    * Glide a character image tile-to-tile along a hand-authored path, animating
@@ -607,9 +652,10 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * First-entry intro: the player stays at the entrance while Heath fades in
-   * beside the counter, walks over, delivers the welcome (React dialogue), then
-   * walks back and takes his place behind the counter as the cashier NPC.
+   * First-entry intro: Scribbs steps in from the door (up one tile) while Heath
+   * fades in beside the counter, walks over, delivers the welcome (React
+   * dialogue), then walks back and takes his place behind the counter as the
+   * cashier NPC.
    */
   private async playHeathIntro() {
     this.transitioning = true;
@@ -630,10 +676,12 @@ export class WorldScene extends Phaser.Scene {
     await new Promise<void>((r) =>
       this.tweens.add({ targets: heath, alpha: 1, duration: 220, onComplete: () => r() }),
     );
-    // …and walk up to the player at the door. He arrives from the west but
-    // stops directly ABOVE the player, so he turns down to deliver the welcome
-    // face-to-face rather than staying in profile.
-    await this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down");
+    // Scribbs steps up from the door (o8→n8) while Heath walks over and stops
+    // one tile above him (m8), turning down for a face-to-face welcome.
+    await Promise.all([
+      this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down"),
+      this.walkScribbsIntroStep(),
+    ]);
 
     // Hand the mic to React (the welcome pages) and wait for the dialogue to
     // close — with a fallback so a lost event can never strand the intro.
@@ -653,10 +701,61 @@ export class WorldScene extends Phaser.Scene {
     // Only now draw the static cashier prop (loadRoom skipped it).
     this.introPending = false;
     const cashier = this.room.interactions.find((i) => i.id === "cashier");
-    if (cashier) this.cashierImg = this.placeProp(cashier, 2, true);
+    if (cashier?.artKey) {
+      this.cashierImg = this.placeProp(cashier, 2, true);
+      this.staticNpcImgs.set(cashier.id, {
+        img: this.cashierImg,
+        artKey: cashier.artKey,
+        tileX: cashier.tileX,
+        tileY: cashier.tileY,
+      });
+    }
 
     this.transitioning = false;
     this.saveSession();
+  }
+
+  /** Intro only: Scribbs walks one tile up from the door spawn, shadow included. */
+  private walkScribbsIntroStep(): Promise<void> {
+    return this.walkScribbsTo(this.tileX, this.tileY - 1, "up");
+  }
+
+  /** Scripted one-tile Scribbs walk (intro / stairs exit), shadow included. */
+  private walkScribbsTo(nx: number, ny: number, facing: Facing): Promise<void> {
+    const ts = this.room.tileSize;
+    const cycle = new WalkCycle();
+    this.facing = facing;
+    this.scribbs.setTexture(characterFrame("scribbs", facing, cycle.step()));
+    this.time.delayedCall(SCRIPTED_STEP_MS * STRIDE_HOLD, () => {
+      if (this.scribbs.active) {
+        this.scribbs.setTexture(characterFrame("scribbs", facing, cycle.rest()));
+      }
+    });
+    this.tweens.add({
+      targets: this.scribbsShadow,
+      x: nx * ts + ts / 2,
+      y: (ny + 1) * ts - ts * 0.08,
+      duration: SCRIPTED_STEP_MS,
+      ease: "Linear",
+    });
+    return new Promise((resolve) => {
+      this.tweens.add({
+        targets: this.scribbs,
+        x: nx * ts + ts / 2,
+        y: (ny + 1) * ts,
+        duration: SCRIPTED_STEP_MS,
+        ease: "Linear",
+        onComplete: () => {
+          this.tileX = nx;
+          this.tileY = ny;
+          this.facing = facing;
+          this.setFrame(cycle.rest());
+          this.syncScribbs();
+          this.saveSession();
+          resolve();
+        },
+      });
+    });
   }
 
   /**
@@ -917,7 +1016,10 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
     }
-    if (hit && !hit.target) this.fireInteraction(hit);
+    if (hit && !hit.target) {
+      if (hit.type === "npc") this.faceStaticNpc(hit);
+      this.fireInteraction(hit);
+    }
   }
 
   /** Start a conversation with a patrolling NPC: they stop and turn to face us. */
@@ -929,6 +1031,27 @@ export class WorldScene extends Phaser.Scene {
     if (entry) this.fireInteraction(entry);
   }
 
+  /** Turn a static character prop to face Scribbs. */
+  private faceStaticNpc(hit: Interaction) {
+    const entry = this.staticNpcImgs.get(hit.id);
+    if (!entry?.img.active) return;
+    const frame = parseCharacterFrame(entry.artKey);
+    if (!frame) return;
+    const dx = this.tileX - entry.tileX;
+    const dy = this.tileY - entry.tileY;
+    if (dx === 0 && dy === 0) return;
+    const facing: Facing =
+      Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
+    entry.img.setTexture(characterFrame(frame.id, facing, "both"));
+  }
+
+  /** Reset static NPCs to the facing encoded in their artKey. */
+  private restoreStaticNpcFacing() {
+    for (const entry of this.staticNpcImgs.values()) {
+      if (entry.img.active) entry.img.setTexture(resolveTextureKey(entry.artKey));
+    }
+  }
+
   /** Move to another room, fading the camera (or instantly). */
   private startTransition(hit: Interaction) {
     const target = hit.target!;
@@ -936,6 +1059,9 @@ export class WorldScene extends Phaser.Scene {
 
     if (hit.transition === "instant") {
       go();
+      void this.finishStairsExit().then(() => {
+        this.transitioning = false;
+      });
       return;
     }
     this.transitioning = true;
@@ -945,9 +1071,19 @@ export class WorldScene extends Phaser.Scene {
       go();
       cam.fadeIn(FADE_MS);
       cam.once(Phaser.Cameras.Scene2D.Events.FADE_IN_COMPLETE, () => {
-        this.transitioning = false;
+        void this.finishStairsExit().then(() => {
+          this.transitioning = false;
+        });
       });
     });
+  }
+
+  /** After landing on stairs, walk one tile into the room so we aren't stuck on the link. */
+  private async finishStairsExit() {
+    const step = this.pendingStairsExit;
+    if (!step) return;
+    this.pendingStairsExit = null;
+    await this.walkScribbsTo(step.x, step.y, this.facing);
   }
 
   /** Hand an interaction to React (prompts, cart, dialogue routing). */
