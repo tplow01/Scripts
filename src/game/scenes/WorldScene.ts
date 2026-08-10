@@ -343,7 +343,7 @@ export class WorldScene extends Phaser.Scene {
         continue;
       }
       // A prop with no artKey is collision + interaction only; its art comes
-      // from decorations (the checkout counter).
+      // from decorations (the checkout counter, the clothing rails).
       if (!it.artKey) continue;
       if (it.type === "stairs") this.placeProp(it, 0.5, false);
       else if (it.type === "poster") this.placeProp(it, 1, false);
@@ -506,11 +506,7 @@ export class WorldScene extends Phaser.Scene {
 
     if (roomId === "main") {
       glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
-      glow(4, 4.0, 0xffd7a8, 4.6, 0.07); // vinyl lounge
       glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
-    } else {
-      glow(9.5, 3.2, 0xff4fa3, 4.8, 0.09); // secret rack spotlight
-      glow(2.0, 5.0, 0x6db1dc, 3.2, 0.045); // cold stair spill
     }
 
     const dustCount = roomId === "main" ? 14 : 8;

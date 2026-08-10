@@ -6,7 +6,8 @@ import type { Decoration } from "@/game/world/types";
  * the seam, so they only read together and in that order.
  *
  * The deck's collision and its "play the record" behaviour stay on the
- * `vinylDesk` interaction in `mainRoom.ts` — these are art only.
+ * `vinylDesk` interaction in `mainRoom.ts`; `solid` here only drives each
+ * slice's contact shadow.
  */
 
 export const DECK_SLICES = 2;
@@ -32,5 +33,6 @@ export function vinylDeck(at: { tileX: number; tileY: number }): Decoration[] {
     tileX: at.tileX + index - 1,
     tileY: at.tileY,
     artKey: deckTileKey(index),
+    solid: true,
   }));
 }

@@ -142,13 +142,16 @@ describe('music alcove symmetry', () => {
 })
 
 describe('sofa collision', () => {
-  it('blocks every sofa tile — cushions are not walkable', () => {
-    // Back f1 + cushions g1–g4.
-    const sofaTiles = [
-      { x: 1, y: 6 },
+  it('blocks every cushion tile but leaves the back walkable', () => {
+    // Back f1 is walkable; cushions g1–g4 stay solid.
+    const walkableTiles = [{ x: 1, y: 6 }]
+    const solidTiles = [
       { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 }, { x: 4, y: 7 },
     ]
-    for (const t of sofaTiles) {
+    for (const t of walkableTiles) {
+      expect(isWalkable(mainRoom, t.x, t.y), `sofa tile ${t.x},${t.y} should be walkable`).toBe(true)
+    }
+    for (const t of solidTiles) {
       expect(isWalkable(mainRoom, t.x, t.y), `sofa tile ${t.x},${t.y} should be solid`).toBe(false)
     }
     expect(mainRoom.seats ?? []).toHaveLength(0)

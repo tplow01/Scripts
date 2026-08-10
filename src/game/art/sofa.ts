@@ -13,7 +13,8 @@ import type { Decoration } from "@/game/world/types";
  *
  * Sequential segments, not variants — 3 only reads between 2 and 4.
  *
- * Every slice is solid — the sofa is furniture you walk around, not onto.
+ * Every slice is solid except the back (slice 1, the topmost tile) — the
+ * player can walk onto that one square, as if perched on the sofa back.
  */
 
 export const SOFA_SLICES = 5;
@@ -52,13 +53,13 @@ export function sofaCushions(at: { tileX: number; tileY: number }): Array<{ x: n
 
 /**
  * Expand the sofa into its per-tile decorations, anchored at the back's tile.
- * All five slices block movement.
+ * Every slice blocks movement except the back (slice 1), which is walkable.
  */
 export function sofa(at: { tileX: number; tileY: number }): Decoration[] {
   return SLICE_OFFSETS.map((off, i) => ({
     tileX: at.tileX + off.dx,
     tileY: at.tileY + off.dy,
     artKey: sofaTileKey(i + 1),
-    solid: true,
+    solid: i !== 0,
   }));
 }

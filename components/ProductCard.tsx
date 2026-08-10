@@ -49,7 +49,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
     >
 
       <motion.div
-        className="peer relative w-full aspect-square"
+        className="relative w-full aspect-square"
         animate={reduced ? undefined : { scale: flipped ? 1.02 : 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
@@ -72,12 +72,12 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
       </motion.div>
 
       {/* Pills */}
-      <div className="flex flex-wrap gap-[8px] mt-[8px] justify-center peer-hover:[&>span]:bg-[#FF8AC7] peer-hover:[&>span]:text-[#0d0d0d]">
-        <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300`}>
+      <div className="flex flex-wrap gap-[8px] mt-[8px] justify-center">
+        <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]`}>
           {product.collection}
         </span>
         {availability !== 'available' && (
-          <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em] transition-colors duration-300`}>
+          <span className={`inline-flex items-center ${pill} text-[12px] font-bold px-[12px] py-[4px] rounded whitespace-nowrap leading-normal tracking-[0.04em]`}>
             {STATUS_LABELS[availability]}
           </span>
         )}

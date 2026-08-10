@@ -50,7 +50,9 @@ export const isRailTile = (key: string): boolean => TILE_KEYS.has(key);
  * Expand a rail into its per-tile decorations, laid from the anchor — left to
  * right for horizontal runs, top to bottom for the vertical one.
  *
- * Collision comes from the matching `rack` interaction; these are art only.
+ * Collision comes from the matching `rack` interaction; these are art only —
+ * the rack interaction also draws the rail's single contact shadow, spanning
+ * its whole run rather than one per slice.
  */
 export function rail(id: RailId, at: { tileX: number; tileY: number }): Decoration[] {
   const horizontal = id !== "rail-v";

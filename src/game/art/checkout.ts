@@ -52,13 +52,14 @@ export const isCheckoutTile = (key: string): boolean => TILE_KEYS.has(key);
 /**
  * Expand the counter into its per-tile decorations, anchored at the L's
  * top-left tile. The counter's collision and its "talk to the cashier"
- * behaviour still come from the single `checkout` interaction in `mainRoom.ts`
- * — these are art only.
+ * behaviour still come from the single `checkout` interaction in `mainRoom.ts`;
+ * `solid` here only drives each slice's contact shadow.
  */
 export function checkoutCounter(at: { tileX: number; tileY: number }): Decoration[] {
   return SLICE_OFFSETS.map((off, i) => ({
     tileX: at.tileX + off.dx,
     tileY: at.tileY + off.dy,
     artKey: checkoutTileKey(i + 1),
+    solid: true,
   }));
 }

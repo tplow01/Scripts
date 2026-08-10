@@ -209,6 +209,17 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
             initial="hidden"
             animate="show"
           >
+            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[12px]">
+              <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
+                {product.collection}
+              </span>
+              {availability !== 'available' && (
+                <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
+                  {STATUS_LABEL[availability]}
+                </span>
+              )}
+            </motion.div>
+
             <motion.h1
               variants={item}
               className="text-[28px] font-extrabold leading-[1.2] tracking-[0.02em] uppercase mb-[12px]"
@@ -299,17 +310,6 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
             >
               {colorwayLabel(product) && `${colorwayLabel(product)} colorway. `}{product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;{product.collection}&rdquo; collection. {product.modelNote}
             </motion.p>
-
-            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[32px]">
-              <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
-                {product.collection}
-              </span>
-              {availability !== 'available' && (
-                <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
-                  {STATUS_LABEL[availability]}
-                </span>
-              )}
-            </motion.div>
 
             <motion.div variants={item} className={`border-t ${borderMuted} pt-[24px]`}>
               <p className={`text-[11px] font-bold tracking-[0.08em] uppercase ${textMuted} mb-[12px]`}>Care</p>
