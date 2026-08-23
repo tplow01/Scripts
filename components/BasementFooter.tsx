@@ -51,7 +51,7 @@ export default function BasementFooter() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              className="flex-1 border border-[#f7f7f5] border-r-0 px-[16px] py-[13px] text-[13px] font-bold text-[#f7f7f5] placeholder:text-[#555] placeholder:font-normal bg-transparent outline-none rounded-l"
+              className="flex-1 border border-[#f7f7f5] border-r-0 px-[16px] py-[13px] text-[13px] font-bold text-[#f7f7f5] placeholder:text-[#555] placeholder:font-normal bg-[#0d0d0d] outline-none rounded-l"
             />
             <button
               type="submit"

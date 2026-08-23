@@ -6,12 +6,12 @@ import type { Product } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 
 const CONTAINER_CLASS = {
-  3: 'flex flex-wrap justify-center gap-x-4 gap-y-8 md:gap-y-[56px]',
-  2: 'grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-8 md:gap-y-[56px] max-w-2xl mx-auto w-full',
+  3: 'flex flex-wrap justify-center gap-x-3 gap-y-8 md:gap-y-[56px]',
+  2: 'grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-8 md:gap-y-[56px] max-w-2xl mx-auto w-full',
 } as const
 
 const ITEM_CLASS = {
-  3: 'w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.333%-11px)]',
+  3: 'w-full sm:w-[calc(50%-6px)] lg:w-[calc(33.333%-8px)]',
   2: '',
 } as const
 

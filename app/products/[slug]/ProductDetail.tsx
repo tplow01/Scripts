@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import NavBar from '@/components/NavBar'
 import BasementNavBar from '@/components/BasementNavBar'
 import FooterLinks from '@/components/FooterLinks'
 import BasementFooter from '@/components/BasementFooter'
+import PageEdgeArt from '@/components/PageEdgeArt'
 import type { Product, ProductVariant } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
 import { variantTitle, deriveAvailability } from '@/lib/admin/variants'
 import { LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
-import { colorwayLabel, siblingColorways } from '@/lib/products'
+import { colorwayLabel } from '@/lib/products'
 
 const STATUS_LABEL: Record<string, string> = {
   'pre-order': 'PRE-ORDER',
@@ -23,7 +23,6 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function ProductDetail({ product, dark = false }: { product: Product; dark?: boolean }) {
   const sizeAxis = product.options.findIndex((o) => o.name === 'Size')
-  const siblings = siblingColorways(product)
 
   const [size, setSize] = useState<string | null>(null)
   const [activeImage, setActiveImage] = useState(0)
@@ -83,8 +82,6 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   const textMuted   = dark ? 'text-[#aaa]'      : 'text-[#888]'
   const textSubtle  = dark ? 'text-[#aaa]'      : 'text-[#444]'
   const chevron     = dark ? '#f7f7f5'           : '#0d0d0d'
-  const dotActive   = dark ? 'bg-[#f7f7f5]'     : 'bg-[#0d0d0d]'
-  const dotInactive = dark ? 'bg-[#f7f7f5]/25'  : 'bg-[#0d0d0d]/25'
   const thumbActive = dark ? 'border-[#f7f7f5]' : 'border-[#0d0d0d]'
   const thumbInact  = dark ? 'border-[#333]'    : 'border-[#e5e5e5]'
 
@@ -93,19 +90,17 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
     ? 'bg-[#f7f7f5] text-[#0d0d0d] border-[#f7f7f5]'
     : 'bg-[#0d0d0d] text-white border-[#0d0d0d]'
   const sizeUnselected = dark
-    ? 'bg-transparent text-[#f7f7f5] border-[#f7f7f5] hover:bg-[#f7f7f5] hover:text-[#0d0d0d]'
+    ? 'bg-[#0d0d0d] text-[#f7f7f5] border-[#f7f7f5] hover:bg-[#f7f7f5] hover:text-[#0d0d0d]'
     : 'bg-white text-[#0d0d0d] border-[#0d0d0d] hover:bg-[#0d0d0d] hover:text-white'
 
   // Add to bag button
   const btnActive   = dark
-    ? 'bg-[#f7f7f5] text-[#0d0d0d] border-[#f7f7f5] hover:bg-transparent hover:text-[#f7f7f5]'
+    ? 'bg-[#f7f7f5] text-[#0d0d0d] border-[#f7f7f5] hover:bg-[#0d0d0d] hover:text-[#f7f7f5]'
     : 'bg-[#0d0d0d] text-white border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d]'
   const btnAdded    = dark
-    ? 'bg-transparent text-[#f7f7f5] border-[#f7f7f5]'
+    ? 'bg-[#0d0d0d] text-[#f7f7f5] border-[#f7f7f5]'
     : 'bg-white text-[#0d0d0d] border-[#0d0d0d]'
-  const btnDisabled = dark
-    ? 'bg-[#f7f7f5]/30 text-[#0d0d0d] border-transparent cursor-not-allowed'
-    : 'bg-[#0d0d0d]/30 text-white border-transparent cursor-not-allowed'
+  const btnDisabled = 'bg-[#6f6f73] text-white border-transparent cursor-not-allowed'
 
   // Pills
   const pill = dark
@@ -115,19 +110,28 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   return (
     <div className={`min-h-screen ${bg} ${text} flex flex-col`}>
 
+      <PageEdgeArt
+        left={dark ? '/decor/basement-left.png' : '/decor/inventory-left.png'}
+        right={dark ? '/decor/basement-right.png' : '/decor/inventory-right.png'}
+        leftAlt=""
+        rightAlt=""
+        mobile={dark ? '/decor/phone-basement.png' : '/decor/phone-inventory.png'}
+        mobileAlt=""
+      />
+
       {dark ? <BasementNavBar backHref="/basement" /> : <NavBar showBack backHref="/inventory" />}
 
-      <main className="px-4 md:px-16 lg:px-[200px] pb-[120px] flex-1">
-        <div className="flex flex-col lg:flex-row gap-[80px] items-start">
+      <main className="relative z-10 px-4 md:px-16 lg:px-[200px] pb-[120px] flex-1">
+        <div className="flex flex-col md:flex-row gap-[48px] lg:gap-[80px] items-start">
 
           {/* Left — image */}
           <motion.div
-            className="w-full lg:flex-[55] min-w-0"
+            className="w-full mt-[140px] md:mt-0 md:flex-[55] min-w-0"
             variants={imgVariant}
             initial="hidden"
             animate="show"
           >
-            <div className="relative w-full aspect-square">
+            <div className="relative w-full aspect-[87/61]">
               <AnimatePresence mode="wait">
                 {images[activeImage] && (
                   <motion.div
@@ -175,19 +179,6 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
 
             {images.length > 1 && (
               <div className="flex justify-center gap-[8px] mt-[16px]">
-                {images.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImage(i)}
-                    className={`w-[8px] h-[8px] rounded transition-colors ${i === activeImage ? dotActive : dotInactive}`}
-                    aria-label={`Image ${i + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-
-            {images.length > 1 && (
-              <div className="flex gap-[8px] mt-[16px]">
                 {images.map((img, i) => (
                   <button
                     key={i}
@@ -204,12 +195,12 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
 
           {/* Right — info panel */}
           <motion.div
-            className="w-full lg:flex-[45] min-w-0 flex flex-col pt-[8px]"
+            className="w-full md:flex-[45] min-w-0 flex flex-col items-center text-center pt-[8px]"
             variants={panelStagger}
             initial="hidden"
             animate="show"
           >
-            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[12px]">
+            <motion.div variants={item} className="flex flex-wrap justify-center gap-[8px] mb-[12px]">
               <span className={`inline-flex items-center text-[12px] font-bold px-[12px] py-[4px] rounded tracking-[0.04em] ${pill}`}>
                 {product.collection}
               </span>
@@ -231,30 +222,11 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               ${(selected?.price ?? product.variants[0]?.price ?? 0).toFixed(2)}
             </motion.p>
 
-            {siblings.length > 0 && (
-              <motion.div variants={item} className="mb-5">
-                <span className={`block text-[11px] uppercase tracking-[0.14em] ${textMuted} mb-2`}>
-                  Other colourways
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {siblings.map((s) => (
-                    <Link
-                      key={s.slug}
-                      href={`/products/${s.slug}`}
-                      className={`h-11 px-4 flex items-center text-[12px] font-bold tracking-[0.04em] border rounded transition-colors duration-150 ${sizeUnselected}`}
-                    >
-                      {colorwayLabel(s)}
-                    </Link>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
             <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[12px]`}>
               Size
             </motion.p>
 
-            <motion.div variants={item} className="flex flex-wrap gap-[8px] mb-[8px]">
+            <motion.div variants={item} className="flex flex-wrap justify-center gap-[8px] mb-[8px]">
               {(sizeAxis >= 0 ? product.options[sizeAxis].values : []).map((s) => {
                 const v = variantFor(s)
                 const ok = sellable(v)
@@ -284,7 +256,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               </motion.p>
             )}
 
-            <motion.div variants={item} className="mt-[12px]">
+            <motion.div variants={item} className="w-full mt-[12px]">
               {isSoldOut ? (
                 <p className="text-[13px] font-bold tracking-[0.1em] uppercase mb-[24px]">
                   Sorry Sold Out
@@ -322,7 +294,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
         </div>
       </main>
 
-      <footer>
+      <footer className="relative z-10">
         {dark ? <BasementFooter /> : <FooterLinks />}
       </footer>
 

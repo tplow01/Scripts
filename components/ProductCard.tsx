@@ -49,7 +49,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
     >
 
       <motion.div
-        className="relative w-full aspect-square"
+        className="relative w-full aspect-[87/61]"
         animate={reduced ? undefined : { scale: flipped ? 1.02 : 1 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       >
