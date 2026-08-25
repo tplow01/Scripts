@@ -41,7 +41,7 @@ export default function NewsletterFooter() {
             />
             <button
               type="submit"
-              className="bg-transparent text-[#0d0d0d] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#0d0d0d] rounded-r hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150 whitespace-nowrap"
+              className="bg-white text-[#0d0d0d] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#0d0d0d] rounded-r hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150 whitespace-nowrap"
             >
               Sign Up
             </button>

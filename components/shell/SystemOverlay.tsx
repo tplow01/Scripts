@@ -5,9 +5,9 @@ import { Press_Start_2P } from 'next/font/google'
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 
 const SOCIALS = [
-  { label: 'Instagram', href: 'https://instagram.com' },
+  { label: 'Instagram', href: 'https://www.instagram.com/scripts.studio/' },
   { label: 'YouTube', href: 'https://youtube.com' },
-  { label: 'TikTok', href: 'https://tiktok.com' },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@scripts.studio' },
 ]
 
 /**

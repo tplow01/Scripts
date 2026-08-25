@@ -192,7 +192,7 @@ export default function CheckoutPage() {
           <div className="mt-[28px] flex w-full flex-col gap-[12px]">
             <Link
               href="/inventory"
-              className="w-full py-[16px] bg-[#0d0d0d] text-white text-[12px] font-extrabold tracking-[0.12em] uppercase rounded text-center hover:bg-[#FF4FA3] transition-colors duration-200"
+              className="w-full py-[16px] bg-[#0d0d0d] text-white text-[12px] font-extrabold tracking-[0.12em] uppercase rounded text-center border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200"
             >
               Continue shopping
             </Link>
@@ -336,7 +336,7 @@ export default function CheckoutPage() {
             type="submit"
             disabled={placing}
             whileTap={reduced || placing ? {} : { scale: 0.98 }}
-            className="w-full mt-[18px] py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-[#FF4FA3] hover:border-[#FF4FA3] transition-colors duration-200 disabled:opacity-60 disabled:hover:bg-[#0d0d0d] disabled:hover:border-[#0d0d0d]"
+            className="w-full mt-[18px] py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200 disabled:opacity-60 disabled:hover:bg-[#0d0d0d] disabled:hover:text-white"
           >
             {placing ? 'Processing…' : `Pay $${grandTotal.toFixed(2)}`}
           </motion.button>

@@ -1,10 +1,10 @@
 import Link from 'next/link'
 
 const SOCIALS = [
-  { label: 'Instagram', href: 'https://instagram.com' },
+  { label: 'Instagram', href: 'https://www.instagram.com/scripts.studio/' },
   { label: 'YouTube',   href: 'https://youtube.com' },
   { label: 'Email',     href: 'mailto:hello@scripts.com' },
-  { label: 'TikTok',    href: 'https://tiktok.com' },
+  { label: 'TikTok',    href: 'https://www.tiktok.com/@scripts.studio' },
 ]
 
 const LEGAL = [

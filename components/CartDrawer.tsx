@@ -25,21 +25,17 @@ export default function CartDrawer() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <motion.div
+          {/* Click-outside catcher — no dark overlay, page stays visible */}
+          <div
             key="backdrop"
-            className="fixed inset-0 z-40 bg-black/40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="fixed inset-0 z-40"
             onClick={closeCart}
           />
 
           {/* Drawer */}
           <motion.div
             key="drawer"
-            className="fixed top-0 right-0 h-full z-50 bg-white text-[#0d0d0d] flex flex-col w-full md:w-[min(520px,90vw)]"
+            className="fixed top-0 right-0 h-full z-50 bg-white text-[#0d0d0d] border-l border-[#0d0d0d] flex flex-col w-full md:w-[min(520px,90vw)]"
             initial={reduced ? {} : { x: '100%' }}
             animate={{ x: 0 }}
             exit={reduced ? {} : { x: '100%' }}
@@ -58,7 +54,7 @@ export default function CartDrawer() {
                 </div>
                 <button
                   onClick={closeCart}
-                  className="hover:opacity-50 transition-opacity mt-[4px]"
+                  className="hover:opacity-60 transition-opacity mt-[4px]"
                   aria-label="Close cart"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -121,20 +117,20 @@ export default function CartDrawer() {
                           <div className="flex items-center gap-[4px] mt-[12px]">
                             <button
                               onClick={() => decrement(item.variant.id)}
-                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
+                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:bg-[#0d0d0d] hover:text-white hover:border-[#0d0d0d] transition-colors duration-150"
                             >
                               −
                             </button>
                             <span className="w-[32px] text-center text-[13px] font-bold">{item.quantity}</span>
                             <button
                               onClick={() => increment(item.variant.id)}
-                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:border-[#0d0d0d] transition-colors"
+                              className="w-[28px] h-[28px] flex items-center justify-center border border-[#d0d0d0] rounded text-[14px] font-bold leading-none hover:bg-[#0d0d0d] hover:text-white hover:border-[#0d0d0d] transition-colors duration-150"
                             >
                               +
                             </button>
                             <button
                               onClick={() => remove(item.variant.id)}
-                              className="ml-[8px] hover:opacity-50 transition-opacity"
+                              className="ml-[8px] hover:opacity-60 transition-opacity"
                               aria-label="Remove item"
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">

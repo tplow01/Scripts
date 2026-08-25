@@ -12,7 +12,7 @@ import type { Product, ProductVariant } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
-import { variantTitle, deriveAvailability } from '@/lib/admin/variants'
+import { deriveAvailability } from '@/lib/admin/variants'
 import { LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
 import { colorwayLabel } from '@/lib/products'
 
@@ -60,7 +60,6 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
     try {
       add(product, selected)
       setAdded(true)
-      notify(`${product.emotion} (${variantTitle(selected.optionValues)}) added to bag`, 'success')
       setTimeout(() => {
         setAdded(false)
         openCart()
@@ -184,7 +183,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                     key={i}
                     onClick={() => setActiveImage(i)}
                     className={`relative w-[80px] h-[80px] border rounded transition-colors ${i === activeImage ? thumbActive : thumbInact}`}
-                    aria-label={i === 0 ? 'Front' : 'Back'}
+                    aria-label={`View image ${i + 1} of ${images.length}`}
                   >
                     <Image src={img} alt="" fill className="object-contain" />
                   </button>
@@ -278,17 +277,10 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
 
             <motion.p
               variants={item}
-              className={`text-[12px] font-bold tracking-[0.04em] uppercase leading-relaxed mb-[32px] ${text}`}
+              className={`text-[14px] font-normal normal-case tracking-normal leading-relaxed mb-[32px] max-w-[46ch] ${textSubtle}`}
             >
               {colorwayLabel(product) && `${colorwayLabel(product)} colorway. `}{product.fit} {product.fabric}, {product.fabricWeight}. Printed graphic on front. Part of the &ldquo;{product.collection}&rdquo; collection. {product.modelNote}
             </motion.p>
-
-            <motion.div variants={item} className={`border-t ${borderMuted} pt-[24px]`}>
-              <p className={`text-[11px] font-bold tracking-[0.08em] uppercase ${textMuted} mb-[12px]`}>Care</p>
-              <ul className={`text-[12px] ${textSubtle} space-y-[4px]`}>
-                {product.careInstructions.map((c, i) => <li key={i}>{c}</li>)}
-              </ul>
-            </motion.div>
 
           </motion.div>
         </div>

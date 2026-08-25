@@ -12,7 +12,7 @@ interface NavBarProps {
 const ICON_CLS = 'flex items-center justify-center w-[36px] h-[36px] hover:opacity-60 transition-opacity'
 
 export default function NavBar({ showBack = false, backHref = '/' }: NavBarProps) {
-  const { count, openCart } = useCart()
+  const { count, isOpen, openCart } = useCart()
 
   return (
     <header className="sticky top-0 z-50 bg-white flex items-center px-4 md:px-16 lg:px-[200px] pt-6 md:pt-10 lg:pt-[64px] pb-4 md:pb-8 lg:pb-[48px]">
@@ -53,7 +53,7 @@ export default function NavBar({ showBack = false, backHref = '/' }: NavBarProps
               </svg>
             )}
           </span>
-          {count > 0 && (
+          {count > 0 && !isOpen && (
             <span
               className="absolute w-[16px] h-[16px] rounded-full bg-[#0d0d0d] text-white text-[9px] font-bold flex items-center justify-center leading-none"
               style={{ bottom: '-2px', right: '-6px' }}
