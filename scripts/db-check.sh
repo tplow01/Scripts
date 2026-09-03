@@ -30,7 +30,7 @@ until docker exec "$CONTAINER" pg_isready -U postgres >/dev/null 2>&1; do sleep 
 # Supabase supplies these two roles; vanilla Postgres does not, and the RLS
 # policies reference them by name.
 docker exec "$CONTAINER" psql -U postgres -q \
-  -c "create role anon nologin; create role authenticated nologin;" >/dev/null
+  -c "create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;" >/dev/null
 
 for file in "$MIGRATIONS_DIR"/*.sql; do
   echo "Applying $(basename "$file")…"
@@ -70,5 +70,18 @@ if [ "$LEAKED" != "0" ]; then
   exit 1
 fi
 
+# The server must actually be able to read its own tables. Unchecking
+# "Automatically expose new tables" strips grants from service_role too, and
+# service_role bypasses RLS but not table privileges — this caught that.
+# `|| true` matters: this psql is *expected* to fail when the grant is missing,
+# and `set -e` would otherwise kill the script before the check below reports it.
+DENIED=$({ docker exec "$CONTAINER" psql -U postgres -tAc "
+  set role service_role; select count(*) from products;" 2>&1 || true; } | tail -1 | tr -d '[:space:]')
+if ! [[ "$DENIED" =~ ^[0-9]+$ ]]; then
+  echo "FAIL: service_role cannot read products — missing GRANT? ($DENIED)" >&2
+  exit 1
+fi
+
 echo
-echo "OK — migrations apply cleanly, RLS is on everywhere, Basement stays hidden."
+echo "OK — migrations apply cleanly, RLS is on everywhere, service_role can read,"
+echo "     and the Basement stays hidden from the public role."
