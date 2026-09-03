@@ -6,6 +6,7 @@ import type { Product } from '@/types/product'
 import { reconcileVariants, type VariantDefaults } from './variants'
 import { isMigrated, migrateProducts, type LegacyProduct } from './migrate'
 import { MOCK_ORDERS } from './mockOrders'
+import { useToast } from '@/lib/toast'
 import type { AdminOrder, OrderStatus } from './types'
 
 export interface AdminState {
@@ -13,11 +14,11 @@ export interface AdminState {
   orders: AdminOrder[]
 }
 
-const STORAGE_KEY = 'scripts-admin-v3'
-
 /** Shared physical-product fields a brand-new product inherits. */
 export const NEW_PRODUCT_DEFAULTS = {
   collection: '1-800-Cyber-Love',
+  // New products are storefront pieces; the Basement is opt-in only.
+  isBasement: false,
   productType: 'Tee',
   vendor: 'SCR!PTS',
   tags: [] as string[],
@@ -153,39 +154,134 @@ const AdminContext = createContext<AdminApi | null>(null)
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AdminState>(seedState)
-  // True once the rehydration effect below has run, whether or not a stored payload existed.
-  // Consumers that capture state.products into local component state (e.g. the edit-product
-  // form) must wait for this before mounting, or they lock onto seed data on a hard reload.
+  // True once the server load has settled, successfully or not. Consumers that
+  // copy state.products into local state (the product editor) must wait for it.
   const [hydrated, setHydrated] = useState(false)
-  // True once the persist effect has run at least once. The very first render/commit uses
-  // seed state — persisting it before rehydration lands would clobber whatever was stored.
-  const persistedOnce = useRef(false)
+  const { notify } = useToast()
 
-  // Rehydrate after mount (localStorage is client-only; seeds render on the server pass).
+  // Latest state, readable outside a setState updater so mutations can capture
+  // a rollback point without making the updater impure (React StrictMode
+  // double-invokes updaters — a fetch fired inside one would run twice).
+  const stateRef = useRef(state)
   useEffect(() => {
-    const stored = parseStoredState(localStorage.getItem(STORAGE_KEY))
-    if (stored) setState(stored)
-    try { localStorage.removeItem('scripts-admin-v2') } catch { /* storage blocked: safe to skip cleanup */ }
-    setHydrated(true)
-  }, [])
-
-  // Persist on every change. Object-URL images won't survive reload — pages render a placeholder then.
-  useEffect(() => {
-    if (!persistedOnce.current) {
-      persistedOnce.current = true
-      return
-    }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch { /* storage full/blocked: demo continues in memory */ }
+    stateRef.current = state
   }, [state])
 
-  const add = useCallback((p: Product) => setState((s) => addProduct(s, p)), [])
-  const update = useCallback((p: Product) => setState((s) => updateProduct(s, p)), [])
-  const remove = useCallback((id: string) => setState((s) => deleteProduct(s, id)), [])
-  const togglePublishedCb = useCallback((id: string) => setState((s) => togglePublished(s, id)), [])
+  // Load the catalog and orders from the server. Until Supabase is configured
+  // these endpoints serve the seed catalog, so the back office looks the same
+  // as it always has.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const [productsRes, ordersRes] = await Promise.all([
+          fetch('/api/admin/products'),
+          fetch('/api/admin/orders'),
+        ])
+        if (!productsRes.ok || !ordersRes.ok) throw new Error('Could not load the back office.')
+        const [{ products }, { orders }] = await Promise.all([
+          productsRes.json() as Promise<{ products: Product[] }>,
+          ordersRes.json() as Promise<{ orders: AdminOrder[] }>,
+        ])
+        if (!cancelled) setState({ products, orders })
+      } catch {
+        if (!cancelled) notify('Could not load the back office. Showing seed data.', 'error')
+      } finally {
+        if (!cancelled) setHydrated(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [notify])
+
+  /**
+   * Apply the change locally at once, then confirm it with the server. If the
+   * request fails the previous state goes back and the reason is shown — the
+   * screen never claims a save that did not happen.
+   */
+  const mutate = useCallback(
+    (optimistic: (s: AdminState) => AdminState, request: () => Promise<Response>) => {
+      const previous = stateRef.current
+      setState(optimistic(previous))
+      void (async () => {
+        try {
+          const res = await request()
+          if (!res.ok) {
+            const body = (await res.json().catch(() => null)) as
+              | { error?: { message?: string } }
+              | null
+            throw new Error(body?.error?.message ?? `That change was not saved (${res.status}).`)
+          }
+        } catch (err) {
+          setState(previous)
+          notify(err instanceof Error ? err.message : 'That change was not saved.', 'error')
+        }
+      })()
+    },
+    [notify],
+  )
+
+  const json = (body: unknown): RequestInit => ({
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+
+  const add = useCallback(
+    (p: Product) =>
+      mutate(
+        (s) => addProduct(s, p),
+        () => fetch('/api/admin/products', { method: 'POST', ...json(p) }),
+      ),
+    [mutate],
+  )
+
+  const update = useCallback(
+    (p: Product) =>
+      mutate(
+        (s) => updateProduct(s, p),
+        () => fetch(`/api/admin/products/${encodeURIComponent(p.id)}`, { method: 'PUT', ...json(p) }),
+      ),
+    [mutate],
+  )
+
+  const remove = useCallback(
+    (id: string) =>
+      mutate(
+        (s) => deleteProduct(s, id),
+        () => fetch(`/api/admin/products/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+      ),
+    [mutate],
+  )
+
+  const togglePublishedCb = useCallback(
+    (id: string) => {
+      const current = stateRef.current.products.find((p) => p.id === id)
+      const publishedStatus = current?.publishedStatus === 'active' ? 'draft' : 'active'
+      mutate(
+        (s) => togglePublished(s, id),
+        () =>
+          fetch(`/api/admin/products/${encodeURIComponent(id)}`, {
+            method: 'PATCH',
+            ...json({ publishedStatus }),
+          }),
+      )
+    },
+    [mutate],
+  )
+
   const setOrder = useCallback(
     (orderId: string, status: OrderStatus) =>
-      setState((s) => setOrderStatus(s, orderId, status, new Date().toISOString())),
-    [])
+      mutate(
+        (s) => setOrderStatus(s, orderId, status, new Date().toISOString()),
+        () =>
+          fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
+            method: 'PATCH',
+            ...json({ status }),
+          }),
+      ),
+    [mutate],
+  )
 
   return (
     <AdminContext.Provider

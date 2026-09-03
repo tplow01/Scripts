@@ -34,9 +34,13 @@ export function buildLegacyIndex(products: Product[]): LegacyIndex {
 
 interface LegacyStoredItem { id: string; size: string; quantity: number }
 
+/**
+ * `index` may be null, which skips local id validation — used once products
+ * live in the database and only the server knows which variants exist.
+ */
 export function parseStoredCart(
   raw: string | null,
-  index: Map<string, VariantRef>,
+  index: Map<string, VariantRef> | null,
   legacy: LegacyIndex,
 ): StoredItem[] {
   if (!raw) return []
@@ -50,7 +54,7 @@ export function parseStoredCart(
     if (!Number.isFinite(quantity) || quantity <= 0) continue
 
     if (typeof entry.variantId === 'string') {
-      if (index.has(entry.variantId)) out.push({ variantId: entry.variantId, quantity })
+      if (!index || index.has(entry.variantId)) out.push({ variantId: entry.variantId, quantity })
       continue
     }
     if (typeof entry.id === 'string' && typeof entry.size === 'string') {

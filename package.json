@@ -2,16 +2,18 @@
   "name": "scripts-arcade",
   "version": "0.1.0",
   "private": true,
-  "description": "SCR!PTS — a browser-based Pokémon-FireRed-style pixel world that is the brand's flagship store.",
+  "description": "SCR!PTS \u2014 a browser-based Pok\u00e9mon-FireRed-style pixel world that is the brand's flagship store.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed": "vite-node --config vitest.config.ts scripts/seed.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.115.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.0",
     "lucide-react": "^1.28.0",
@@ -19,7 +21,9 @@
     "phaser": "^3.87.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.6.0"
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

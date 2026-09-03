@@ -6,12 +6,32 @@ import FooterLinks from '@/components/FooterLinks'
 export default function NewsletterFooter() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!email) return
-    setSubmitted(true)
-    setEmail('')
+    if (!email || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source: 'footer' }),
+      })
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
+        setError(body?.error?.message ?? 'That did not go through. Try again.')
+        return
+      }
+      setSubmitted(true)
+      setEmail('')
+    } catch {
+      setError('Could not reach the server. Check your connection and try again.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -41,11 +61,18 @@ export default function NewsletterFooter() {
             />
             <button
               type="submit"
-              className="bg-white text-[#0d0d0d] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#0d0d0d] rounded-r hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150 whitespace-nowrap"
+              disabled={busy}
+              className="bg-white text-[#0d0d0d] text-[13px] font-bold tracking-[0.06em] uppercase px-[24px] py-[13px] border border-[#0d0d0d] rounded-r hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150 whitespace-nowrap disabled:opacity-50"
             >
-              Sign Up
+              {busy ? 'Signing up…' : 'Sign Up'}
             </button>
           </form>
+        )}
+
+        {error && (
+          <p role="alert" className="mt-[12px] text-[12px] font-bold tracking-[0.04em] text-[#c0392b]">
+            {error}
+          </p>
         )}
       </div>
 

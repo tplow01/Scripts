@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       // Mirror tsconfig's fallback: "@/*" → ./src/* first, then repo root.
       "@/lib": fileURLToPath(new URL("./lib", import.meta.url)),
+      "@/types": fileURLToPath(new URL("./types", import.meta.url)),
       "@/components": fileURLToPath(new URL("./components", import.meta.url)),
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },

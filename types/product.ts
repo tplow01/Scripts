@@ -44,6 +44,12 @@ export interface Product {
   emotion: string
   description: string
   collection: string
+  /**
+   * Basement pieces are hidden by contract: never indexed, never in nav,
+   * search or collections. A boolean, not a collection-name convention —
+   * renaming a collection must never be able to publish a hidden piece.
+   */
+  isBasement: boolean
   productType: string
   vendor: string
   tags: string[]
