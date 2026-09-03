@@ -39,6 +39,8 @@ export class WorldScene extends Phaser.Scene {
   private tileX = 0;
   private tileY = 0;
   private moving = false;
+  /** True for the duration of one held-into-a-wall attempt, so "bump" fires once per press, not once per frame. */
+  private bumping = false;
   private transitioning = false;
   private dialogOpen = false;
   private overlayOpen = false;
@@ -76,6 +78,8 @@ export class WorldScene extends Phaser.Scene {
   private npcs: NpcActor[] = [];
   /** The NPC currently mid-conversation, so its patrol can resume on close. */
   private talkingTo: NpcActor | null = null;
+  /** Pokémon-style "this NPC is talking" bubble, shown above their head. */
+  private talkBubble: Phaser.GameObjects.Container | null = null;
 
   /**
    * Direction codes currently held (keyboard keys or on-screen D-pad), most
@@ -136,6 +140,7 @@ export class WorldScene extends Phaser.Scene {
         this.talkingTo = null;
         // Static NPCs return to their authored facing after the chat.
         this.restoreStaticNpcFacing();
+        this.hideTalkBubble();
         if (this.pendingDialogClose) {
           const done = this.pendingDialogClose;
           this.pendingDialogClose = null;
@@ -211,11 +216,14 @@ export class WorldScene extends Phaser.Scene {
   update(time: number) {
     const code = this.held[this.held.length - 1];
     if (code) this.stepToward(code);
-    else if (!this.moving && this.walking) {
-      // Input released — come to rest on the neutral frame. (Mid-walk the
-      // stride frame is held for the whole tile; see art/walkCycle.ts.)
-      this.walking = false;
-      this.setFrame(this.cycle.rest());
+    else {
+      this.bumping = false;
+      if (!this.moving && this.walking) {
+        // Input released — come to rest on the neutral frame. (Mid-walk the
+        // stride frame is held for the whole tile; see art/walkCycle.ts.)
+        this.walking = false;
+        this.setFrame(this.cycle.rest());
+      }
     }
     this.updateNpcs(time);
   }
@@ -233,6 +241,8 @@ export class WorldScene extends Phaser.Scene {
       this.facing = dir.facing;
       this.setFrame(this.cycle.rest());
       this.turnUntil = this.time.now + TURN_MS;
+      // A new direction deserves its own bump attempt, even if the old one was blocked.
+      this.bumping = false;
       return;
     }
     if (this.time.now < this.turnUntil) return;
@@ -331,6 +341,7 @@ export class WorldScene extends Phaser.Scene {
     this.staticNpcImgs.clear();
     this.npcs = [];
     this.talkingTo = null;
+    this.hideTalkBubble();
     for (const it of this.room.interactions) {
       if (!propActive(it, gameSession.revealed)) continue;
       // During the intro, Heath (the cashier) is a walking actor, not a prop —
@@ -488,8 +499,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Layered, pixel-clean light pools and dust motes give the boutique depth
-   * without applying a blurry post-processing filter to the artwork.
+   * Pixel-clean light pools give the boutique depth without applying a blurry
+   * post-processing filter to the artwork.
    */
   private addAtmosphere(roomId: string) {
     const ts = this.room.tileSize;
@@ -507,23 +518,6 @@ export class WorldScene extends Phaser.Scene {
     if (roomId === "main") {
       glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
       glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
-    }
-
-    const dustCount = roomId === "main" ? 14 : 8;
-    for (let i = 0; i < dustCount; i++) {
-      const dust = this.add
-        .rectangle(((i * 47) % (this.room.width * 29)) + ts * 0.5, ((i * 83) % (this.room.height * 27)) + ts * 0.5, 1, 1, i % 3 ? 0xf7f7f5 : 0xff8ac7, roomId === "main" ? 0.24 : 0.16)
-        .setDepth(6);
-      this.roomObjects.push(dust);
-      this.tweens.add({
-        targets: dust,
-        y: dust.y - ts * (0.35 + (i % 4) * 0.12),
-        alpha: { from: dust.alpha, to: 0.04 },
-        yoyo: true,
-        repeat: -1,
-        duration: 1800 + i * 137,
-        ease: "Sine.easeInOut",
-      });
     }
   }
 
@@ -885,9 +879,14 @@ export class WorldScene extends Phaser.Scene {
     if (!canStep(this.room, this.tileX, this.tileY, nx, ny) || this.npcAt(nx, ny)) {
       this.walking = false;
       this.setFrame(this.cycle.rest());
+      if (!this.bumping) {
+        this.bumping = true;
+        this.game.events.emit("bump");
+      }
       return;
     }
 
+    this.bumping = false;
     this.moving = true;
     this.walking = true;
     // One tile, one full step: lead on the stride, settle onto neutral partway
@@ -1023,6 +1022,8 @@ export class WorldScene extends Phaser.Scene {
     npc.suspend();
     npc.faceTile(this.tileX, this.tileY);
     this.talkingTo = npc;
+    const a = npc.headAnchor;
+    this.showTalkBubble(a.x, a.y);
     const entry = this.room.interactions.find((i) => i.id === npc.id);
     if (entry) this.fireInteraction(entry);
   }
@@ -1031,6 +1032,8 @@ export class WorldScene extends Phaser.Scene {
   private faceStaticNpc(hit: Interaction) {
     const entry = this.staticNpcImgs.get(hit.id);
     if (!entry?.img.active) return;
+    const b = entry.img.getBounds();
+    this.showTalkBubble(entry.img.x, b.top);
     const frame = parseCharacterFrame(entry.artKey);
     if (!frame) return;
     const dx = this.tileX - entry.tileX;
@@ -1048,10 +1051,52 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Drop a small FireRed-white speech bubble (three "..." dots) just above an
+   * NPC's head for the length of the conversation, so it's obvious who's
+   * talking. Drawn in world space, so it scales with the camera on any device.
+   */
+  private showTalkBubble(x: number, y: number) {
+    this.hideTalkBubble();
+    const ts = this.room.tileSize;
+    const w = Math.round(ts * 0.78);
+    const h = Math.round(ts * 0.5);
+    const g = this.add.graphics();
+    // navy border, white fill, faceted (1px stair-stepped) corners
+    g.fillStyle(0x0d0d0d, 1).fillRect(-w / 2 - 2, -h - 2, w + 4, h + 4);
+    g.fillStyle(0xf7f7f5, 1).fillRect(-w / 2, -h, w, h);
+    // little tail pointing down at the head
+    g.fillStyle(0x0d0d0d, 1).fillTriangle(-3, 0, 3, 0, 0, 5);
+    g.fillStyle(0xf7f7f5, 1).fillTriangle(-2, -1, 2, -1, 0, 3);
+    // three dots
+    const d = Math.max(2, Math.round(ts * 0.09));
+    g.fillStyle(0xff8ac7, 1);
+    for (let i = -1; i <= 1; i++) g.fillRect(i * d * 2 - d / 2, -h / 2 - d / 2, d, d);
+
+    const bubble = this.add.container(x, y - 4, [g]).setDepth(20);
+    this.talkBubble = bubble;
+    this.tweens.add({
+      targets: bubble,
+      y: y - 8,
+      duration: 520,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+  }
+
+  private hideTalkBubble() {
+    if (!this.talkBubble) return;
+    this.tweens.killTweensOf(this.talkBubble);
+    this.talkBubble.destroy();
+    this.talkBubble = null;
+  }
+
   /** Move to another room, fading the camera (or instantly). */
   private startTransition(hit: Interaction) {
     const target = hit.target!;
     const go = () => this.loadRoom(target.roomId, target.spawn);
+    this.game.events.emit("roomTransition");
 
     if (hit.transition === "instant") {
       go();
