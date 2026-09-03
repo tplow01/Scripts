@@ -78,8 +78,6 @@ export class WorldScene extends Phaser.Scene {
   private npcs: NpcActor[] = [];
   /** The NPC currently mid-conversation, so its patrol can resume on close. */
   private talkingTo: NpcActor | null = null;
-  /** Pokémon-style "this NPC is talking" bubble, shown above their head. */
-  private talkBubble: Phaser.GameObjects.Container | null = null;
 
   /**
    * Direction codes currently held (keyboard keys or on-screen D-pad), most
@@ -140,7 +138,6 @@ export class WorldScene extends Phaser.Scene {
         this.talkingTo = null;
         // Static NPCs return to their authored facing after the chat.
         this.restoreStaticNpcFacing();
-        this.hideTalkBubble();
         if (this.pendingDialogClose) {
           const done = this.pendingDialogClose;
           this.pendingDialogClose = null;
@@ -341,7 +338,6 @@ export class WorldScene extends Phaser.Scene {
     this.staticNpcImgs.clear();
     this.npcs = [];
     this.talkingTo = null;
-    this.hideTalkBubble();
     for (const it of this.room.interactions) {
       if (!propActive(it, gameSession.revealed)) continue;
       // During the intro, Heath (the cashier) is a walking actor, not a prop —
@@ -1014,7 +1010,18 @@ export class WorldScene extends Phaser.Scene {
     if (hit && !hit.target) {
       if (hit.type === "npc") this.faceStaticNpc(hit);
       this.fireInteraction(hit);
+      if (hit.type === "npc") {
+        const e = this.staticNpcImgs.get(hit.id);
+        if (e) this.game.events.emit("speaker", this.speakerFrac(e.img.x, e.img.getBounds().top));
+      }
     }
+  }
+
+  /** A world point as a fraction of the camera viewport (0..1 across / down),
+   *  resolution-independent so the React overlay can place a tail apex on it. */
+  private speakerFrac(worldX: number, worldY: number): { xFrac: number; yFrac: number } {
+    const v = this.cameras.main.worldView;
+    return { xFrac: (worldX - v.x) / v.width, yFrac: (worldY - v.y) / v.height };
   }
 
   /** Start a conversation with a patrolling NPC: they stop and turn to face us. */
@@ -1022,18 +1029,16 @@ export class WorldScene extends Phaser.Scene {
     npc.suspend();
     npc.faceTile(this.tileX, this.tileY);
     this.talkingTo = npc;
-    const a = npc.headAnchor;
-    this.showTalkBubble(a.x, a.y);
     const entry = this.room.interactions.find((i) => i.id === npc.id);
     if (entry) this.fireInteraction(entry);
+    const a = npc.headAnchor;
+    this.game.events.emit("speaker", this.speakerFrac(a.x, a.y));
   }
 
   /** Turn a static character prop to face Scribbs. */
   private faceStaticNpc(hit: Interaction) {
     const entry = this.staticNpcImgs.get(hit.id);
     if (!entry?.img.active) return;
-    const b = entry.img.getBounds();
-    this.showTalkBubble(entry.img.x, b.top);
     const frame = parseCharacterFrame(entry.artKey);
     if (!frame) return;
     const dx = this.tileX - entry.tileX;
@@ -1049,47 +1054,6 @@ export class WorldScene extends Phaser.Scene {
     for (const entry of this.staticNpcImgs.values()) {
       if (entry.img.active) entry.img.setTexture(resolveTextureKey(entry.artKey));
     }
-  }
-
-  /**
-   * Drop a small pixel speech bubble (three "..." dots) just above an
-   * NPC's head for the length of the conversation, so it's obvious who's
-   * talking. Drawn in world space, so it scales with the camera on any device.
-   */
-  private showTalkBubble(x: number, y: number) {
-    this.hideTalkBubble();
-    const ts = this.room.tileSize;
-    const w = Math.round(ts * 0.78);
-    const h = Math.round(ts * 0.5);
-    const g = this.add.graphics();
-    // ink border, paper fill, faceted (1px stair-stepped) corners
-    g.fillStyle(0x0d0d0d, 1).fillRect(-w / 2 - 2, -h - 2, w + 4, h + 4);
-    g.fillStyle(0xf7f7f5, 1).fillRect(-w / 2, -h, w, h);
-    // little tail pointing down at the head
-    g.fillStyle(0x0d0d0d, 1).fillTriangle(-3, 0, 3, 0, 0, 5);
-    g.fillStyle(0xf7f7f5, 1).fillTriangle(-2, -1, 2, -1, 0, 3);
-    // three dots
-    const d = Math.max(2, Math.round(ts * 0.09));
-    g.fillStyle(0xff8ac7, 1);
-    for (let i = -1; i <= 1; i++) g.fillRect(i * d * 2 - d / 2, -h / 2 - d / 2, d, d);
-
-    const bubble = this.add.container(x, y - 4, [g]).setDepth(20);
-    this.talkBubble = bubble;
-    this.tweens.add({
-      targets: bubble,
-      y: y - 8,
-      duration: 520,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.easeInOut",
-    });
-  }
-
-  private hideTalkBubble() {
-    if (!this.talkBubble) return;
-    this.tweens.killTweensOf(this.talkBubble);
-    this.talkBubble.destroy();
-    this.talkBubble = null;
   }
 
   /** Move to another room, fading the camera (or instantly). */
