@@ -144,6 +144,7 @@ export default function Home() {
   const [started, setStarted] = useState(false);
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
+  const [speakerPos, setSpeakerPos] = useState<{ xFrac: number; yFrac: number } | null>(null);
   const [page, setPage] = useState(0); // current page of an open message prompt
   const [muted, setMuted] = useState(false);
 
@@ -162,6 +163,7 @@ export default function Home() {
   // needs current router/cart/state each render).
   const interactionRef = useRef<(hit: { id: string; type: string }) => void>(() => {});
   interactionRef.current = (hit) => {
+    setSpeakerPos(null);
     // The vinyl deck is the secret switch: first play reveals the hidden
     // basement entrance; afterwards it's just an idle line.
     if (hit.id === "vinyl") {
@@ -199,6 +201,7 @@ export default function Home() {
   // Heath's greeting — fired once by the scene when he reaches the player.
   const welcomeRef = useRef<() => void>(() => {});
   welcomeRef.current = () => {
+    setSpeakerPos(null);
     sfx.play("expand");
     setPage(0);
     setPrompt(materialize({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" }));
@@ -210,6 +213,7 @@ export default function Home() {
     pressRef.current = (code: string, down: boolean) => game.events.emit("vbutton", code, down);
     game.events.on("interaction", (hit: { id: string; type: string }) => interactionRef.current(hit));
     game.events.on("welcome", () => welcomeRef.current());
+    game.events.on("speaker", (p: { xFrac: number; yFrac: number } | null) => setSpeakerPos(p));
     game.events.on("bump", () => sfx.play("blocked"));
     game.events.on("roomTransition", () => sfx.play("forward"));
     // Handshake: a fresh game (e.g. remounted after the inventory detour) must
@@ -227,6 +231,7 @@ export default function Home() {
   const closePrompt = useCallback(() => {
     sfx.play("collapse");
     confirmHeldRef.current = false;
+    setSpeakerPos(null);
     setPrompt(null);
     setPage(0);
     gameRef.current?.events.emit("dialog", false);
@@ -409,6 +414,7 @@ export default function Home() {
             text={btnify(prompt.question)}
             mobile={mobile}
             heldRef={confirmHeldRef}
+            speakerPos={speakerPos}
             speaker={prompt.speaker}
             sel={sel}
             onChoose={choose}
@@ -420,6 +426,7 @@ export default function Home() {
             text={btnify(prompt.pages[page])}
             mobile={mobile}
             heldRef={confirmHeldRef}
+            speakerPos={speakerPos}
             speaker={prompt.speaker}
             onAdvance={advanceMessage}
           />
