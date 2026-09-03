@@ -353,6 +353,7 @@ export default function Home() {
         if (b === "A" || b === "B" || e.key === "Escape") {
           e.preventDefault();
           if (b === "A") confirmHeldRef.current = true;
+          if (e.repeat) return; // held key: fast-forward the typewriter only, don't auto-advance pages
           advanceMessage();
         }
         return;

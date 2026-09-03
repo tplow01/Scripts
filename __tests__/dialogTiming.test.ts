@@ -6,6 +6,10 @@ describe("nextDelay", () => {
     expect(nextDelay("a", "b", false)).toBe(TYPE_BASE_MS);
   });
 
+  it("uses the base rate before the first character (empty prev)", () => {
+    expect(nextDelay("", "H", false)).toBe(TYPE_BASE_MS);
+  });
+
   it("adds a pause after sentence punctuation", () => {
     for (const p of [".", "!", "?", "…"]) {
       expect(nextDelay(p, "A", false)).toBe(TYPE_BASE_MS + PUNCT_PAUSE_MS);

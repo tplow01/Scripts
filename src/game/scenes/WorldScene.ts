@@ -1052,7 +1052,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /**
-   * Drop a small FireRed-white speech bubble (three "..." dots) just above an
+   * Drop a small pixel speech bubble (three "..." dots) just above an
    * NPC's head for the length of the conversation, so it's obvious who's
    * talking. Drawn in world space, so it scales with the camera on any device.
    */
@@ -1062,7 +1062,7 @@ export class WorldScene extends Phaser.Scene {
     const w = Math.round(ts * 0.78);
     const h = Math.round(ts * 0.5);
     const g = this.add.graphics();
-    // navy border, white fill, faceted (1px stair-stepped) corners
+    // ink border, paper fill, faceted (1px stair-stepped) corners
     g.fillStyle(0x0d0d0d, 1).fillRect(-w / 2 - 2, -h - 2, w + 4, h + 4);
     g.fillStyle(0xf7f7f5, 1).fillRect(-w / 2, -h, w, h);
     // little tail pointing down at the head

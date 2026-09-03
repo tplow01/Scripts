@@ -133,6 +133,7 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
   onAdvance?: () => void
 }>(function DialogPrompt({ text, variant = 'choice', speaker, mobile = true, heldRef, sel = 'yes', onChoose, onAdvance }, ref) {
   const s = mobile ? SIZES.mobile : SIZES.desktop
+  const held = () => variant !== 'choice' && (heldRef?.current ?? false)
   const [typed, setTyped] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -145,11 +146,11 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
       n += 1
       setTyped(n)
       if (n < text.length) {
-        const d = nextDelay(text[n - 1] ?? '', text[n] ?? '', heldRef?.current ?? false)
+        const d = nextDelay(text[n - 1] ?? '', text[n] ?? '', held())
         timerRef.current = setTimeout(step, d)
       }
     }
-    timerRef.current = setTimeout(step, nextDelay('', text[0] ?? '', heldRef?.current ?? false))
+    timerRef.current = setTimeout(step, nextDelay('', text[0] ?? '', held()))
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
