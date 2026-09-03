@@ -9,6 +9,7 @@ import { KEY_TO_BTN } from "@/lib/controls";
 import StartScreen from "@/components/StartScreen";
 import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt";
 import { useCart } from "@/lib/cart";
+import { GAME_PACK, SHOP_PACK, useSFX } from "@/lib/sfx";
 import { gameSession } from "@/lib/gameSession";
 import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
 import { useShellLayout } from "@/lib/useShellLayout";
@@ -139,6 +140,7 @@ export default function Home() {
   const mobile = layout === null ? null : layout !== "desktop";
   const router = useRouter();
   const { openCart, isOpen: cartIsOpen } = useCart();
+  const sfx = useSFX();
   const [started, setStarted] = useState(false);
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
@@ -152,6 +154,10 @@ export default function Home() {
   // The open dialogue box's typewriter — a press first snaps mid-typed text to
   // full, then the NEXT press actually advances (classic GBA text-box feel).
   const dialogRef = useRef<DialogPromptHandle>(null);
+  // True while the confirm button (A / Z) is held during a speech prompt — read
+  // live by DialogPrompt's typewriter to fast-forward. A ref, not state, so
+  // every keydown/up doesn't re-render the game.
+  const confirmHeldRef = useRef(false);
   // Latest interaction handler (the game subscribes once, but this closure
   // needs current router/cart/state each render).
   const interactionRef = useRef<(hit: { id: string; type: string }) => void>(() => {});
@@ -164,6 +170,7 @@ export default function Home() {
       setPage(0);
       if (!revealed) {
         gameRef.current?.events.emit("reveal", "basement-entrance");
+        sfx.play("achievement");
         setPrompt(
           materialize({
             variant: "message",
@@ -174,6 +181,7 @@ export default function Home() {
           }),
         );
       } else {
+        sfx.play("expand");
         setPrompt(materialize({ variant: "message", pages: ["The record's still spinning."] }));
       }
       gameRef.current?.events.emit("dialog", true);
@@ -181,6 +189,7 @@ export default function Home() {
     }
     const p = PROMPTS[hit.id] ?? PROMPTS[hit.type];
     if (!p) return;
+    sfx.play("expand");
     setSel("yes");
     setPage(0);
     setPrompt(materialize(p));
@@ -190,6 +199,7 @@ export default function Home() {
   // Heath's greeting — fired once by the scene when he reaches the player.
   const welcomeRef = useRef<() => void>(() => {});
   welcomeRef.current = () => {
+    sfx.play("expand");
     setPage(0);
     setPrompt(materialize({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" }));
     gameRef.current?.events.emit("dialog", true);
@@ -200,11 +210,14 @@ export default function Home() {
     pressRef.current = (code: string, down: boolean) => game.events.emit("vbutton", code, down);
     game.events.on("interaction", (hit: { id: string; type: string }) => interactionRef.current(hit));
     game.events.on("welcome", () => welcomeRef.current());
+    game.events.on("bump", () => sfx.play("blocked"));
+    game.events.on("roomTransition", () => sfx.play("forward"));
     // Handshake: a fresh game (e.g. remounted after the inventory detour) must
     // never inherit a stale "dialog open" flag from a prompt the old game saw.
     game.events.emit("dialog", false);
     game.events.emit("overlay", false);
     game.events.emit("cart", false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleSel = useCallback(() => {
@@ -212,9 +225,12 @@ export default function Home() {
   }, []);
 
   const closePrompt = useCallback(() => {
+    sfx.play("collapse");
+    confirmHeldRef.current = false;
     setPrompt(null);
     setPage(0);
     gameRef.current?.events.emit("dialog", false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Advance an open paged prompt. A plain message closes after its last page;
@@ -251,6 +267,7 @@ export default function Home() {
       if (prompt) {
         if (inMessagePhase) {
           // Speech: A / B advance pages. Arrows do nothing.
+          if (b === "A") confirmHeldRef.current = true;
           if (b === "A" || b === "B") advanceMessage();
         } else if (b === "up" || b === "down" || b === "left" || b === "right") {
           toggleSel();
@@ -276,6 +293,7 @@ export default function Home() {
   // a prompt is open the scene's held set is already cleared.
   const handleRelease = useCallback(
     (b: Btn) => {
+      if (b === "A") confirmHeldRef.current = false;
       const code = CODE[b];
       if (code && started) pressRef.current(code, false);
     },
@@ -287,6 +305,15 @@ export default function Home() {
   // load shows the start screen.
   useEffect(() => {
     if (gameSession.playing) setStarted(true);
+  }, []);
+
+  // This whole route (game + start screen) is the "game world" register —
+  // switch to its sound pack on mount, restore the shop's pack on unmount
+  // (client-side nav into inventory/basement/checkout).
+  useEffect(() => {
+    sfx.setPack(GAME_PACK);
+    return () => sfx.setPack(SHOP_PACK);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Lock body scroll only while this game screen is mounted — inventory,
@@ -325,6 +352,7 @@ export default function Home() {
         // Speech: A / B advance pages; Escape too (mirrors B). Arrows ignored.
         if (b === "A" || b === "B" || e.key === "Escape") {
           e.preventDefault();
+          if (b === "A") confirmHeldRef.current = true;
           advanceMessage();
         }
         return;
@@ -340,8 +368,16 @@ export default function Home() {
         choose("no");
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (keyToBtn(e) === "A") confirmHeldRef.current = false;
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      confirmHeldRef.current = false;
+    };
   }, [prompt, inMessagePhase, sel, choose, advanceMessage, toggleSel]);
 
   // Cart drawer state → game. Heath (WorldScene.playHeathCheckout) waits at the
@@ -370,6 +406,8 @@ export default function Home() {
             ref={dialogRef}
             variant="choice"
             text={btnify(prompt.question)}
+            mobile={mobile}
+            heldRef={confirmHeldRef}
             speaker={prompt.speaker}
             sel={sel}
             onChoose={choose}
@@ -379,6 +417,8 @@ export default function Home() {
             ref={dialogRef}
             variant="message"
             text={btnify(prompt.pages[page])}
+            mobile={mobile}
+            heldRef={confirmHeldRef}
             speaker={prompt.speaker}
             onAdvance={advanceMessage}
           />
@@ -398,7 +438,10 @@ export default function Home() {
         onInventory={() => router.push("/inventory")}
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
-        onOverlayChange={(open) => gameRef.current?.events.emit("overlay", open)}
+        onOverlayChange={(open) => {
+          sfx.play(open ? "open" : "close");
+          gameRef.current?.events.emit("overlay", open);
+        }}
       />
     </main>
   );
