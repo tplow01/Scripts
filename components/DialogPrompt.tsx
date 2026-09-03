@@ -1,142 +1,113 @@
 'use client'
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
-import { pixelOperator } from '@/app/fonts'
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
 import { nextDelay } from '@/lib/dialogTiming'
 
-// SCR!PTS brand tokens (BRAND.md). The window keeps the Pokémon shape — bottom
-// bar, faceted pixel corners, name chip, typewriter — but is skinned in these,
-// not the FireRed navy/pale-blue it used to lift.
 const INK = '#0D0D0D'
-const PINK = '#FF8AC7'
-const PINK_DEEP = '#FF4FA3'
 const PAPER = '#F7F7F5'
-const GREY = '#6F6F73'
+const PINK_DEEP = '#FF4FA3'
+const PANEL = '#151515'
 
-/** Pixel-cut corner clip-path: `cut` px chopped off each of the 4 corners. */
-const stepCorners = (cut: number): React.CSSProperties['clipPath'] =>
-  `polygon(0 ${cut}px, ${cut}px ${cut}px, ${cut}px 0, calc(100% - ${cut}px) 0, ` +
-  `calc(100% - ${cut}px) ${cut}px, 100% ${cut}px, 100% calc(100% - ${cut}px), ` +
-  `calc(100% - ${cut}px) calc(100% - ${cut}px), calc(100% - ${cut}px) 100%, ` +
-  `${cut}px 100%, ${cut}px calc(100% - ${cut}px), 0 calc(100% - ${cut}px))`
-
-/** Three nested layers fake a chunky pixel-art window border: ink → pink rule → paper. */
-function PixelFrame({
-  cut = 6,
-  style,
-  contentStyle,
-  children,
-}: {
-  cut?: number
-  style?: React.CSSProperties
-  contentStyle?: React.CSSProperties
-  children: React.ReactNode
-}) {
-  return (
-    <div style={{ background: INK, clipPath: stepCorners(cut), boxShadow: '2px 2px 0 rgba(0,0,0,0.35)', ...style }}>
-      <div style={{ background: PINK, clipPath: stepCorners(Math.max(cut - 2, 0)), margin: 3 }}>
-        <div style={{ background: PAPER, clipPath: stepCorners(Math.max(cut - 3, 0)), margin: 2, ...contentStyle }}>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-/** A chip riding the top edge of the window — used for the name tab and the YES/NO box. */
-function Chip({
-  offset,
-  contentStyle,
-  children,
-}: {
-  offset: React.CSSProperties
-  contentStyle?: React.CSSProperties
-  children: React.ReactNode
-}) {
-  return (
-    <div style={{ position: 'absolute', bottom: '100%', zIndex: 3, ...offset }}>
-      <PixelFrame cut={3} contentStyle={contentStyle}>{children}</PixelFrame>
-    </div>
-  )
-}
-
-/** Blocky (non-anti-aliased) down-chevron — the classic GBA "more text" cue. */
-function PixelArrowDown({ size = 8, color = INK }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden>
-      <rect x="0" y="0" width="7" height="1" fill={color} />
-      <rect x="1" y="1" width="5" height="1" fill={color} />
-      <rect x="2" y="2" width="3" height="1" fill={color} />
-      <rect x="3" y="3" width="1" height="1" fill={color} />
-    </svg>
-  )
-}
-
-/** Blocky right-pointing selector triangle for the YES/NO menu. */
-function PixelArrowRight({ size = 8, color = INK }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden>
-      <rect x="0" y="0" width="1" height="7" fill={color} />
-      <rect x="1" y="1" width="1" height="5" fill={color} />
-      <rect x="2" y="2" width="1" height="3" fill={color} />
-      <rect x="3" y="3" width="1" height="1" fill={color} />
-    </svg>
-  )
-}
-
-/**
- * Two size presets. Pixel Operator is a compact pixel *text* face (far denser
- * than Press Start 2P), so the window can run larger type and still fit: the
- * phone LCD reads at ~15px, the desktop LCD at ~19px.
- */
+/** Fixed-bubble metrics, one set per platform. All values are px unless noted. */
 const SIZES = {
   mobile: {
-    margin: '0 8px 8px', boxPad: '11px 14px', boxMinH: 50,
-    bodyFont: 15, bodyLine: 1.4,
-    chipFont: 11, chipPad: '2px 9px', chipOverlap: 8,
-    menuRight: 8, menuPad: '6px 14px 6px 8px', menuGap: 4, menuFont: 15,
-    arrow: 9, blinkRight: 12, blinkBottom: 8,
+    wFrac: 0.9, maxW: 460, top: 12, radius: 16, padX: 14, padY: 12, minH: 56,
+    bodyFont: 15, nameFont: 12, tick: 13,
+    tailBase: 26, tailGap: 8,
+    panelBottom: 16, panelW: 172, panelFont: 14, panelPadY: 10,
   },
   desktop: {
-    margin: '0 14px 14px', boxPad: '15px 20px', boxMinH: 64,
-    bodyFont: 19, bodyLine: 1.4,
-    chipFont: 14, chipPad: '3px 12px', chipOverlap: 9,
-    menuRight: 10, menuPad: '7px 18px 7px 10px', menuGap: 6, menuFont: 18,
-    arrow: 11, blinkRight: 14, blinkBottom: 9,
+    wFrac: 0.82, maxW: 720, top: 18, radius: 22, padX: 20, padY: 14, minH: 62,
+    bodyFont: 17, nameFont: 13, tick: 14,
+    tailBase: 34, tailGap: 10,
+    panelBottom: 22, panelW: 190, panelFont: 15, panelPadY: 11,
   },
 } as const
 
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+const arc = (r: number, x: number, y: number) => `A ${r} ${r} 0 0 1 ${x} ${y}`
+
+/**
+ * Build one SVG path for the rounded bubble body plus, when a speaker point is
+ * given and sits below the body, a triangular tail notched into the bottom edge
+ * (constant base width, apex just above the speaker). Body + tail are one
+ * outline, so the join is seamless.
+ */
+function bubblePath(
+  bx: number, by: number, bw: number, bh: number, r: number,
+  tail: { apexX: number; apexY: number; base: number } | null,
+): string {
+  const right = bx + bw
+  const bottom = by + bh
+  let d = `M ${bx + r} ${by}`
+  d += ` L ${right - r} ${by} ${arc(r, right, by + r)}`
+  d += ` L ${right} ${bottom - r} ${arc(r, right - r, bottom)}`
+  if (tail && tail.apexY > bottom + 3) {
+    const c = clamp(tail.apexX, bx + r + tail.base / 2 + 2, right - r - tail.base / 2 - 2)
+    d += ` L ${c + tail.base / 2} ${bottom} L ${tail.apexX} ${tail.apexY} L ${c - tail.base / 2} ${bottom}`
+  }
+  d += ` L ${bx + r} ${bottom} ${arc(r, bx, bottom - r)}`
+  d += ` L ${bx} ${by + r} ${arc(r, bx + r, by)} Z`
+  return d
+}
+
 export interface DialogPromptHandle {
-  /** If mid-typewriter, snap to full text and report true (caller should stop
-   * there — one press reveals, the next advances). False if nothing to skip. */
+  /** If mid-typewriter, snap to full text and report true. False if nothing to skip. */
   skipTyping: () => boolean
 }
 
 /**
- * In-world dialogue overlay, SCR!PTS-skinned. Two variants:
- *  - `choice`  → text box + YES/NO chip on the top-right edge
- *  - `message` → text box only + blinking ▼ advance arrow
- * Text reveals letter-by-letter; while `heldRef.current` is true it skims. The
- * page owns selection / advancing; clicking (or `skipTyping` via keyboard) drives it.
+ * In-world speech bubble. A fixed rounded bubble near the top of the LCD; its
+ * tail (one seamless shape with the body) leans toward `speakerPos`. `message`
+ * variant blinks a pink ▼ and advances on click; `choice` variant shows a
+ * detached dark Yes/No panel. Text reveals letter-by-letter (see nextDelay);
+ * while `heldRef.current` is true a non-choice line skims.
  */
 const DialogPrompt = forwardRef<DialogPromptHandle, {
   text: string
   variant?: 'choice' | 'message'
-  /** Name chip above the box (e.g. "HEATH"); omitted for anonymous/system prompts. */
   speaker?: string
-  /** Phone LCD keeps the compact sizing; desktop LCD scales the window up. */
   mobile?: boolean
-  /** Live "confirm button held" flag — fast-forwards the typewriter. */
   heldRef?: React.RefObject<boolean>
+  speakerPos?: { xFrac: number; yFrac: number } | null
   sel?: 'yes' | 'no'
   onChoose?: (choice: 'yes' | 'no') => void
   onAdvance?: () => void
-}>(function DialogPrompt({ text, variant = 'choice', speaker, mobile = true, heldRef, sel = 'yes', onChoose, onAdvance }, ref) {
-  const s = mobile ? SIZES.mobile : SIZES.desktop
+}>(function DialogPrompt(
+  { text, variant = 'choice', speaker, mobile = true, heldRef, speakerPos = null, sel = 'yes', onChoose, onAdvance },
+  ref,
+) {
+  const S = mobile ? SIZES.mobile : SIZES.desktop
   const held = () => variant !== 'choice' && (heldRef?.current ?? false)
+
   const [typed, setTyped] = useState(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const rootRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLDivElement>(null)
+  const [box, setBox] = useState({ w: 0, h: 0 })
+  const [textH, setTextH] = useState(0)
+
+  // Measure the overlay and the rendered text block.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = rootRef.current
+      if (el) setBox({ w: el.clientWidth, h: el.clientHeight })
+      if (textRef.current) setTextH(textRef.current.scrollHeight)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    if (rootRef.current) ro.observe(rootRef.current)
+    if (textRef.current) ro.observe(textRef.current)
+    window.addEventListener('resize', measure)
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+  }, [])
+  // Re-measure the text height whenever the revealed text changes.
+  useLayoutEffect(() => {
+    if (textRef.current) setTextH(textRef.current.scrollHeight)
+  }, [text, typed, speaker, mobile])
+
+  // Typewriter — self-rescheduling so each gap can differ (nextDelay).
   useEffect(() => {
     setTyped(0)
     if (timerRef.current) clearTimeout(timerRef.current)
@@ -146,14 +117,11 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
       n += 1
       setTyped(n)
       if (n < text.length) {
-        const d = nextDelay(text[n - 1] ?? '', text[n] ?? '', held())
-        timerRef.current = setTimeout(step, d)
+        timerRef.current = setTimeout(step, nextDelay(text[n - 1] ?? '', text[n] ?? '', held()))
       }
     }
     timerRef.current = setTimeout(step, nextDelay('', text[0] ?? '', held()))
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   }, [text, heldRef])
 
   useImperativeHandle(ref, () => ({
@@ -168,7 +136,6 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
   }), [typed, text.length])
 
   const done = typed >= text.length
-
   const advanceOrSkip = () => {
     if (!done) {
       setTyped(text.length)
@@ -178,71 +145,102 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
     onAdvance?.()
   }
 
+  // Geometry (px in the overlay's own box).
+  const bw = Math.min(S.maxW, box.w * S.wFrac)
+  const bx = (box.w - bw) / 2
+  const by = S.top
+  const bh = Math.max(S.minH, textH + 2 * S.padY)
+  const tail = speakerPos
+    ? { apexX: speakerPos.xFrac * box.w, apexY: speakerPos.yFrac * box.h - S.tailGap, base: S.tailBase }
+    : null
+  const ready = box.w > 0
+
   return (
-    <div style={{
-      position: 'absolute', inset: 0, zIndex: 20,
-      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-      pointerEvents: 'none',
-    }}>
+    <div ref={rootRef} aria-live="polite" style={{ position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none' }}>
       <style>{`@keyframes scr-blink{0%,49%{opacity:1}50%,100%{opacity:0}}`}</style>
 
-      {/* Dialogue text box (name + YES/NO chips ride its top edge) */}
+      {ready && (
+        <svg
+          width={box.w} height={box.h} aria-hidden
+          style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none',
+                   filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.30))' }}
+        >
+          <path d={bubblePath(bx, by, bw, bh, S.radius, tail)} fill={PAPER} />
+        </svg>
+      )}
+
+      {/* Transparent hit area over the bubble body — click advances a message. */}
+      {ready && variant === 'message' && (
+        <div
+          onClick={advanceOrSkip}
+          style={{ position: 'absolute', left: bx, top: by, width: bw, height: bh,
+                   pointerEvents: 'auto', cursor: 'pointer' }}
+        />
+      )}
+
+      {/* Text layer — inherits font-body; measured for the bubble height. */}
       <div
-        onClick={variant === 'message' ? advanceOrSkip : undefined}
+        ref={textRef}
         style={{
-          margin: s.margin, position: 'relative',
-          pointerEvents: variant === 'message' ? 'auto' : 'none',
-          cursor: variant === 'message' ? 'pointer' : 'default',
+          position: 'absolute',
+          left: (ready ? bx : 0) + S.padX,
+          top: by + S.padY,
+          width: (ready ? bw : box.w || 320) - 2 * S.padX,
+          color: INK, fontWeight: 700, fontSize: S.bodyFont, lineHeight: 1.4,
+          whiteSpace: 'pre-wrap', pointerEvents: 'none',
         }}
       >
         {speaker && (
-          <Chip offset={{ left: 10, marginBottom: -s.chipOverlap }} contentStyle={{ padding: s.chipPad }}>
-            <span className={pixelOperator.className} style={{ fontWeight: 700, fontSize: s.chipFont, color: INK, letterSpacing: '0.05em' }}>
-              {speaker.toUpperCase()}
-            </span>
-          </Chip>
-        )}
-
-        <PixelFrame contentStyle={{ padding: s.boxPad, minHeight: s.boxMinH }}>
-          <span className={pixelOperator.className} style={{ fontWeight: 700, fontSize: s.bodyFont, lineHeight: s.bodyLine, color: INK, whiteSpace: 'pre-wrap' }}>
-            {text.slice(0, typed)}
+          <span style={{ display: 'block', fontFamily: 'var(--font-bebas), sans-serif',
+                         color: PINK_DEEP, fontSize: S.nameFont, letterSpacing: '0.16em',
+                         lineHeight: 1, marginBottom: 5 }}>
+            {speaker.toUpperCase()}
           </span>
-          {variant === 'message' && done && (
-            <span aria-hidden style={{
-              position: 'absolute', right: s.blinkRight, bottom: s.blinkBottom,
-              animation: 'scr-blink 0.8s steps(1) infinite',
-            }}>
-              <PixelArrowDown size={s.arrow} color={PINK_DEEP} />
-            </span>
-          )}
-        </PixelFrame>
-
-        {/* YES / NO — its own chip on the top-right edge, same recipe as the name chip */}
-        {variant === 'choice' && (
-          <Chip offset={{ right: s.menuRight, marginBottom: -s.chipOverlap }} contentStyle={{ padding: s.menuPad }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: s.menuGap }}>
-              {(['yes', 'no'] as const).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => onChoose?.(opt)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    pointerEvents: 'auto',
-                  }}
-                >
-                  <span style={{ width: s.arrow, display: 'flex', visibility: sel === opt ? 'visible' : 'hidden' }}>
-                    <PixelArrowRight size={s.arrow} color={PINK_DEEP} />
-                  </span>
-                  <span className={pixelOperator.className} style={{ fontWeight: 700, fontSize: s.menuFont, color: sel === opt ? INK : GREY }}>
-                    {opt.toUpperCase()}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Chip>
+        )}
+        {text.slice(0, typed)}
+        {!done && (
+          <span style={{ display: 'inline-block', width: S.nameFont, height: S.bodyFont,
+                         background: PINK_DEEP, transform: 'translateY(2px)', marginLeft: 1 }} />
         )}
       </div>
+
+      {/* Advance tick (message, fully typed). */}
+      {ready && variant === 'message' && done && (
+        <span
+          aria-hidden
+          style={{ position: 'absolute', left: bx + bw - S.padX - S.tick, top: by + bh - S.padY - S.tick - 2,
+                   color: PINK_DEEP, fontSize: S.tick, lineHeight: 1,
+                   animation: 'scr-blink 0.8s steps(1) infinite' }}
+        >
+          ▼
+        </span>
+      )}
+
+      {/* Yes / No — detached dark panel, lower-centre. */}
+      {variant === 'choice' && (
+        <div style={{
+          position: 'absolute', left: '50%', bottom: S.panelBottom, transform: 'translateX(-50%)',
+          width: S.panelW, background: PANEL, borderRadius: 13, overflow: 'hidden',
+          boxShadow: '0 8px 20px rgba(0,0,0,0.34)', pointerEvents: 'auto',
+        }}>
+          {(['yes', 'no'] as const).map((opt, i) => (
+            <button
+              key={opt}
+              onClick={() => onChoose?.(opt)}
+              style={{
+                display: 'block', width: '100%', border: 0, cursor: 'pointer',
+                fontWeight: 700, fontSize: S.panelFont, padding: `${S.panelPadY}px 18px`,
+                textAlign: 'center',
+                background: sel === opt ? PINK_DEEP : 'transparent',
+                color: sel === opt ? INK : PAPER,
+                borderTop: i === 1 ? '1px solid rgba(255,255,255,0.08)' : undefined,
+              }}
+            >
+              {opt.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 })
