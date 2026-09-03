@@ -32,7 +32,7 @@ The `···` marker is replaced by the tail and is removed.
 
 ### A. `components/DialogPrompt.tsx` — full rewrite
 
-Same overlay contract: an `absolute inset-0` layer over the LCD, `pointer-events` mostly off, the page owns state. Props: `text`, `variant` (`'message' | 'choice'`), `speaker?`, `mobile?`, `heldRef?`, `sel?`, `onChoose?`, `onAdvance?` — **plus** `speaker Pos?: { xFrac: number; yFrac: number } | null` (viewport-fraction position of the speaker's head; see §B). `DialogPromptHandle` (`skipTyping`) unchanged.
+Same overlay contract: an `absolute inset-0` layer over the LCD, `pointer-events` mostly off, the page owns state. Props: `text`, `variant` (`'message' | 'choice'`), `speaker?`, `mobile?`, `heldRef?`, `sel?`, `onChoose?`, `onAdvance?` — **plus** `speakerPos?: { xFrac: number; yFrac: number } | null` (viewport-fraction position of the speaker's head; see §B). `DialogPromptHandle` (`skipTyping`) unchanged.
 
 **The bubble + tail as one SVG shape.** A single `<svg>` sized to the LCD overlay, containing one `<path>` that is the rounded-rect body **and** the tail as a continuous outline, filled `#F7F7F5`, no stroke, with `filter: drop-shadow(0 8px 18px rgba(0,0,0,0.30))` on the `<svg>` (or a `<feDropShadow>`). Because body and tail are one path, the join is seamless.
 
