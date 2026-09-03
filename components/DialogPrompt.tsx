@@ -12,15 +12,15 @@ const PANEL = '#151515'
 const SIZES = {
   mobile: {
     wFrac: 0.9, maxW: 460, top: 12, radius: 16, padX: 14, padY: 12, minH: 56,
-    bodyFont: 15, nameFont: 12, tick: 13,
+    bodyFont: 15, nameFont: 12, tick: 13, caretW: 9,
     tailBase: 26, tailGap: 8,
-    panelBottom: 16, panelW: 172, panelFont: 14, panelPadY: 10,
+    panelBottom: 16, panelW: 172, panelFont: 14, panelPadY: 10, panelRadius: 12,
   },
   desktop: {
     wFrac: 0.82, maxW: 720, top: 18, radius: 22, padX: 20, padY: 14, minH: 62,
-    bodyFont: 17, nameFont: 13, tick: 14,
+    bodyFont: 17, nameFont: 13, tick: 14, caretW: 9,
     tailBase: 34, tailGap: 10,
-    panelBottom: 22, panelW: 190, panelFont: 15, panelPadY: 11,
+    panelBottom: 22, panelW: 190, panelFont: 15, panelPadY: 11, panelRadius: 13,
   },
 } as const
 
@@ -146,7 +146,7 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
   }
 
   // Geometry (px in the overlay's own box).
-  const bw = Math.min(S.maxW, box.w * S.wFrac)
+  const bw = Math.max(Math.min(S.maxW, box.w * S.wFrac), 2 * S.radius + S.tailBase + 8)
   const bx = (box.w - bw) / 2
   const by = S.top
   const bh = Math.max(S.minH, textH + 2 * S.padY)
@@ -156,8 +156,15 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
   const ready = box.w > 0
 
   return (
-    <div ref={rootRef} aria-live="polite" style={{ position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none' }}>
+    <div ref={rootRef} style={{ position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none' }}>
       <style>{`@keyframes scr-blink{0%,49%{opacity:1}50%,100%{opacity:0}}`}</style>
+      <div
+        aria-live="polite" aria-atomic="true"
+        style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden',
+                 clipPath: 'inset(50%)', whiteSpace: 'nowrap' }}
+      >
+        {done ? `${speaker ? speaker + '. ' : ''}${text}` : ''}
+      </div>
 
       {ready && (
         <svg
@@ -188,6 +195,7 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
           width: (ready ? bw : box.w || 320) - 2 * S.padX,
           color: INK, fontWeight: 700, fontSize: S.bodyFont, lineHeight: 1.4,
           whiteSpace: 'pre-wrap', pointerEvents: 'none',
+          paddingRight: variant === 'message' ? S.tick + 8 : undefined,
         }}
       >
         {speaker && (
@@ -199,7 +207,7 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
         )}
         {text.slice(0, typed)}
         {!done && (
-          <span style={{ display: 'inline-block', width: S.nameFont, height: S.bodyFont,
+          <span style={{ display: 'inline-block', width: S.caretW, height: S.bodyFont,
                          background: PINK_DEEP, transform: 'translateY(2px)', marginLeft: 1 }} />
         )}
       </div>
@@ -220,7 +228,7 @@ const DialogPrompt = forwardRef<DialogPromptHandle, {
       {variant === 'choice' && (
         <div style={{
           position: 'absolute', left: '50%', bottom: S.panelBottom, transform: 'translateX(-50%)',
-          width: S.panelW, background: PANEL, borderRadius: 13, overflow: 'hidden',
+          width: S.panelW, background: PANEL, borderRadius: S.panelRadius, overflow: 'hidden',
           boxShadow: '0 8px 20px rgba(0,0,0,0.34)', pointerEvents: 'auto',
         }}>
           {(['yes', 'no'] as const).map((opt, i) => (

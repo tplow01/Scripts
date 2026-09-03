@@ -78,6 +78,8 @@ export class WorldScene extends Phaser.Scene {
   private npcs: NpcActor[] = [];
   /** The NPC currently mid-conversation, so its patrol can resume on close. */
   private talkingTo: NpcActor | null = null;
+  /** World coords of the current speaker, so the tail can re-aim on resize. */
+  private lastSpeakerWorld: { x: number; y: number } | null = null;
 
   /**
    * Direction codes currently held (keyboard keys or on-screen D-pad), most
@@ -111,6 +113,11 @@ export class WorldScene extends Phaser.Scene {
     this.cameras.main.roundPixels = true;
     this.cameras.main.startFollow(this.scribbs, true, 0.18, 0.18);
     this.scale.on("resize", this.updateZoom, this);
+    this.scale.on("resize", () => {
+      if (this.dialogOpen && this.lastSpeakerWorld) {
+        this.game.events.emit("speaker", this.speakerFrac(this.lastSpeakerWorld.x, this.lastSpeakerWorld.y));
+      }
+    });
 
     const kb = this.input.keyboard!;
     kb.addCapture(["UP", "DOWN", "LEFT", "RIGHT", "W", "A", "S", "D", "Z", "SPACE", "ENTER"]);
@@ -136,6 +143,7 @@ export class WorldScene extends Phaser.Scene {
         // A patrolling NPC we were talking to picks its route back up.
         this.talkingTo?.resume(this.time.now);
         this.talkingTo = null;
+        this.lastSpeakerWorld = null;
         // Static NPCs return to their authored facing after the chat.
         this.restoreStaticNpcFacing();
         if (this.pendingDialogClose) {
@@ -1012,7 +1020,12 @@ export class WorldScene extends Phaser.Scene {
       this.fireInteraction(hit);
       if (hit.type === "npc") {
         const e = this.staticNpcImgs.get(hit.id);
-        if (e) this.game.events.emit("speaker", this.speakerFrac(e.img.x, e.img.getBounds().top));
+        if (e?.img.active) {
+          const sx = e.img.x;
+          const sy = e.img.getBounds().top;
+          this.lastSpeakerWorld = { x: sx, y: sy };
+          this.game.events.emit("speaker", this.speakerFrac(sx, sy));
+        }
       }
     }
   }
@@ -1030,9 +1043,12 @@ export class WorldScene extends Phaser.Scene {
     npc.faceTile(this.tileX, this.tileY);
     this.talkingTo = npc;
     const entry = this.room.interactions.find((i) => i.id === npc.id);
-    if (entry) this.fireInteraction(entry);
-    const a = npc.headAnchor;
-    this.game.events.emit("speaker", this.speakerFrac(a.x, a.y));
+    if (entry) {
+      this.fireInteraction(entry);
+      const a = npc.headAnchor;
+      this.lastSpeakerWorld = { x: a.x, y: a.y };
+      this.game.events.emit("speaker", this.speakerFrac(a.x, a.y));
+    }
   }
 
   /** Turn a static character prop to face Scribbs. */
