@@ -10,7 +10,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "vite-node --config vitest.config.ts scripts/seed.ts"
+    "seed": "vite-node --config vitest.config.ts scripts/seed.ts",
+    "db:check": "bash scripts/db-check.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.115.0",
