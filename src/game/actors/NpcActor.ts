@@ -92,6 +92,12 @@ export class NpcActor {
     return [this.shadow, this.image];
   }
 
+  /** Scene coords at the top-centre of this NPC's head — for a talk bubble. */
+  get headAnchor(): { x: number; y: number } {
+    const b = this.image.getBounds();
+    return { x: this.image.x, y: b.top };
+  }
+
   /** Freeze the patrol while the player is talking to this NPC. */
   suspend(): void {
     this.suspended = true;
