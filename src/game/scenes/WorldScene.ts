@@ -55,6 +55,8 @@ export class WorldScene extends Phaser.Scene {
   private pendingCartClose: (() => void) | null = null;
   /** The static cashier prop — hidden while Heath is out walking a scripted sequence. */
   private cashierImg?: Phaser.GameObjects.Image;
+  /** The static cashier's contact shadow — hidden alongside `cashierImg`. */
+  private cashierShadow?: Phaser.GameObjects.Image;
   /** Static (non-patrol) character props — face the player on talk. */
   private staticNpcImgs = new Map<string, { img: Phaser.GameObjects.Image; artKey: string; tileX: number; tileY: number }>();
   /** After a stairs transition, step one tile into the room once the fade finishes. */
@@ -343,6 +345,7 @@ export class WorldScene extends Phaser.Scene {
     // are standing fixtures with a shadow. Flag-gated ones (hidden stairs) are
     // skipped until revealed.
     this.cashierImg = undefined;
+    this.cashierShadow = undefined;
     this.staticNpcImgs.clear();
     this.npcs = [];
     this.talkingTo = null;
@@ -362,9 +365,17 @@ export class WorldScene extends Phaser.Scene {
       if (!it.artKey) continue;
       if (it.type === "stairs") this.placeProp(it, 0.5, false);
       else if (it.type === "poster") this.placeProp(it, 1, false);
+      else if (it.id === "cashier") {
+        // The cashier's contact shadow is tracked so scripted Heath sequences
+        // can hide it while he's out walking (otherwise it strands at the till).
+        this.cashierImg = this.placeProp(it, 2, false);
+        this.cashierShadow = this.addContactShadow(it);
+        if (it.artKey) {
+          this.staticNpcImgs.set(it.id, { img: this.cashierImg, artKey: it.artKey, tileX: it.tileX, tileY: it.tileY });
+        }
+      }
       else {
         const img = this.placeProp(it, 2, true);
-        if (it.id === "cashier") this.cashierImg = img;
         if (it.type === "npc" && it.artKey) {
           this.staticNpcImgs.set(it.id, {
             img,
@@ -473,6 +484,20 @@ export class WorldScene extends Phaser.Scene {
     this.roomObjects.push(...npc.objects);
   }
 
+  /** The contact-shadow ellipse for a prop's footprint, tracked for room teardown. */
+  private addContactShadow(p: Interaction | Decoration): Phaser.GameObjects.Image {
+    const ts = this.room.tileSize;
+    const w = p.wTiles ?? 1;
+    const h = p.hTiles ?? 1;
+    const cx = p.tileX * ts + (w * ts) / 2;
+    const sh = this.add
+      .image(cx, p.tileY * ts + h * ts - ts * 0.16, SHADOW_KEY)
+      .setDisplaySize(w * ts * 0.82, ts * 0.32)
+      .setDepth(1.5);
+    this.roomObjects.push(sh);
+    return sh;
+  }
+
   /** Place a prop honouring its footprint; solid props get a contact shadow. */
   private placeProp(p: Interaction | Decoration, depth: number, withShadow: boolean): Phaser.GameObjects.Image {
     const ts = this.room.tileSize;
@@ -480,13 +505,7 @@ export class WorldScene extends Phaser.Scene {
     const h = p.hTiles ?? 1;
     const cx = p.tileX * ts + (w * ts) / 2;
     const cy = p.tileY * ts + (h * ts) / 2;
-    if (withShadow) {
-      const sh = this.add
-        .image(cx, p.tileY * ts + h * ts - ts * 0.16, SHADOW_KEY)
-        .setDisplaySize(w * ts * 0.82, ts * 0.32)
-        .setDepth(1.5);
-      this.roomObjects.push(sh);
-    }
+    if (withShadow) this.addContactShadow(p);
     if (!p.artKey) throw new Error("placeProp called on a prop with no artKey.");
     const isCharacter = isCharacterFrame(p.artKey);
     const img = this.add.image(
@@ -607,6 +626,7 @@ export class WorldScene extends Phaser.Scene {
     from: { x: number; y: number },
     restFacing: Facing,
     stepMs = SCRIPTED_STEP_MS,
+    shadow?: Phaser.GameObjects.Image,
   ): Promise<void> {
     const ts = this.room.tileSize;
     const cycle = new WalkCycle();
@@ -640,6 +660,15 @@ export class WorldScene extends Phaser.Scene {
           ease: "Linear",
           onComplete: step,
         });
+        if (shadow?.active) {
+          this.tweens.add({
+            targets: shadow,
+            x: t.x * ts + ts / 2,
+            y: (t.y + 1) * ts - ts * 0.16,
+            duration: stepMs,
+            ease: "Linear",
+          });
+        }
       };
       step();
     });
@@ -664,16 +693,21 @@ export class WorldScene extends Phaser.Scene {
       .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
       .setDepth(10)
       .setAlpha(0);
-    this.roomObjects.push(heath);
+    const heathShadow = this.add
+      .image(start.x * ts + ts / 2, (start.y + 1) * ts - ts * 0.16, SHADOW_KEY)
+      .setDisplaySize(ts * 0.82, ts * 0.32)
+      .setDepth(1.5)
+      .setAlpha(0);
+    this.roomObjects.push(heath, heathShadow);
 
     // Emerge from behind the counter…
     await new Promise<void>((r) =>
-      this.tweens.add({ targets: heath, alpha: 1, duration: 220, onComplete: () => r() }),
+      this.tweens.add({ targets: [heath, heathShadow], alpha: 1, duration: 220, onComplete: () => r() }),
     );
     // Scribbs steps up from the door (o8→n8) while Heath walks over and stops
     // one tile above him (m8), turning down for a face-to-face welcome.
     await Promise.all([
-      this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down"),
+      this.walkActor(heath, HEATH_INTRO_PATH.slice(1), "heath", start, "down", SCRIPTED_STEP_MS, heathShadow),
       this.walkScribbsIntroStep(),
     ]);
 
@@ -686,17 +720,19 @@ export class WorldScene extends Phaser.Scene {
 
     // Walk back and slip behind the counter, ending facing the customer side.
     const back = [...HEATH_INTRO_PATH].reverse();
-    await this.walkActor(heath, back.slice(1), "heath", back[0], "right");
+    await this.walkActor(heath, back.slice(1), "heath", back[0], "right", SCRIPTED_STEP_MS, heathShadow);
     await new Promise<void>((r) =>
-      this.tweens.add({ targets: heath, alpha: 0, duration: 220, onComplete: () => r() }),
+      this.tweens.add({ targets: [heath, heathShadow], alpha: 0, duration: 220, onComplete: () => r() }),
     );
     heath.destroy();
+    heathShadow.destroy();
 
     // Only now draw the static cashier prop (loadRoom skipped it).
     this.introPending = false;
     const cashier = this.room.interactions.find((i) => i.id === "cashier");
     if (cashier?.artKey) {
-      this.cashierImg = this.placeProp(cashier, 2, true);
+      this.cashierImg = this.placeProp(cashier, 2, false);
+      this.cashierShadow = this.addContactShadow(cashier);
       this.staticNpcImgs.set(cashier.id, {
         img: this.cashierImg,
         artKey: cashier.artKey,
@@ -763,7 +799,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.transitioning) return;
     this.transitioning = true;
     this.held = [];
+    // Hide the static cashier AND its contact shadow — the walking Heath below
+    // brings his own shadow, so the till never has an orphaned one.
     this.cashierImg?.setVisible(false);
+    this.cashierShadow?.setVisible(false);
 
     const ts = this.room.tileSize;
     const heath = this.add
@@ -772,13 +811,17 @@ export class WorldScene extends Phaser.Scene {
       .setOrigin(0.5, 1)
       .setDisplaySize(ts, ts * CHARACTER_HEIGHT_TILES)
       .setDepth(10);
-    this.roomObjects.push(heath);
+    const heathShadow = this.add
+      .image(HEATH_HOME.x * ts + ts / 2, (HEATH_HOME.y + 1) * ts - ts * 0.16, SHADOW_KEY)
+      .setDisplaySize(ts * 0.82, ts * 0.32)
+      .setDepth(1.5);
+    this.roomObjects.push(heath, heathShadow);
 
     // No locked facing: he walks facing the way he travels (down or up the
     // counter), and `restFacing` turns him back to the customer on arrival.
     // Locking him to "right" made him shuffle sideways along the counter.
     const path = heathPathAlongCounter(fy);
-    await this.walkActor(heath, path, "heath", HEATH_HOME, "right");
+    await this.walkActor(heath, path, "heath", HEATH_HOME, "right", SCRIPTED_STEP_MS, heathShadow);
 
     this.game.events.emit("interaction", { id: "checkout", type: "checkout" });
     await this.waitForDialogClose();
@@ -793,9 +836,11 @@ export class WorldScene extends Phaser.Scene {
     const inbound = [...path.slice(0, -1)].reverse();
     inbound.push(HEATH_HOME);
     const outAt = path[path.length - 1] ?? HEATH_HOME;
-    await this.walkActor(heath, inbound, "heath", outAt, "right");
+    await this.walkActor(heath, inbound, "heath", outAt, "right", SCRIPTED_STEP_MS, heathShadow);
     heath.destroy();
+    heathShadow.destroy();
     this.cashierImg?.setVisible(true);
+    this.cashierShadow?.setVisible(true);
 
     this.transitioning = false;
     this.saveSession();
