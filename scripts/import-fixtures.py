@@ -16,7 +16,7 @@ Source art lives in ~/Documents/Sprites as square Illustrator exports:
     box.png                     -> props/box-open.png
     vinyl_collection.png        -> props/vinyl-crate.png
     vinyldeck-01..02.png        -> deck/vinyl-deck-1..2.png
-    speaker.png                 -> props/speaker.png
+    speaker2.png                -> props/speaker.png
     stairs_Shop.png             -> props/stairs-shop.png
     stairs_Basement.png         -> props/stairs-basement.png
 
@@ -92,7 +92,7 @@ PROPS = {
     "basement_box.png": "props/box.png",
     "box.png": "props/box-open.png",
     "vinyl_collection.png": "props/vinyl-crate.png",
-    "speaker.png": "props/speaker.png",
+    "speaker2.png": "props/speaker.png",
     "stairs_Shop.png": "props/stairs-shop.png",
     "stairs_Basement.png": "props/stairs-basement.png",
 }
