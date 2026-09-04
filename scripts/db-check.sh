@@ -82,6 +82,24 @@ if ! [[ "$DENIED" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
+# The two functions the Stripe webhook depends on must exist and behave.
+FN=$({ docker exec "$CONTAINER" psql -U postgres -tAc "
+  insert into product_variants (id, product_id, option_values, stock, track_inventory)
+    values ('chk-v', 'chk-open', '{M}', 5, true);
+  select next_order_number();
+  select decrement_variant_stock('chk-v', 2);
+  select stock from product_variants where id = 'chk-v';" 2>&1 || true; } | tail -3 | tr '\n' ' ')
+read -r ORDER_NO DECREMENTED FINAL_STOCK <<< "$FN"
+if [[ ! "$ORDER_NO" =~ ^SCR-[0-9]+$ ]]; then
+  echo "FAIL: next_order_number() returned '$ORDER_NO', expected SCR-<n>." >&2
+  exit 1
+fi
+if [ "$DECREMENTED" != "3" ] || [ "$FINAL_STOCK" != "3" ]; then
+  echo "FAIL: decrement_variant_stock did not take 2 from 5 (got $DECREMENTED / $FINAL_STOCK)." >&2
+  exit 1
+fi
+echo "Order numbering and stock decrement: $ORDER_NO, 5 - 2 = $FINAL_STOCK"
+
 echo
 echo "OK — migrations apply cleanly, RLS is on everywhere, service_role can read,"
-echo "     and the Basement stays hidden from the public role."
+echo "     the Basement stays hidden, and the order/stock functions work."

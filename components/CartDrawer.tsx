@@ -2,15 +2,15 @@
 
 import Image from 'next/image'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
+import { useStripeCheckout } from '@/lib/checkout'
 import { variantTitle } from '@/lib/admin/variants'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
+  const { start: startCheckout, busy: payBusy, error: payError } = useStripeCheckout()
   const reduced = useReducedMotion()
-  const router = useRouter()
 
   useEffect(() => {
     if (isOpen) {
@@ -159,11 +159,18 @@ export default function CartDrawer() {
                 <motion.button
                   whileTap={reduced ? {} : { scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  onClick={() => { closeCart(); router.push('/checkout') }}
-                  className="w-full py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200"
+                  onClick={() => startCheckout(items)}
+                  disabled={payBusy}
+                  className="w-full py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200 disabled:opacity-60"
                 >
-                  Checkout
+                  {payBusy ? 'Taking you to checkout…' : 'Checkout'}
                 </motion.button>
+
+                {payError && (
+                  <p role="alert" className="mt-[12px] text-[12px] font-bold tracking-[0.04em] text-[#c0392b] text-center">
+                    {payError}
+                  </p>
+                )}
               </div>
             )}
           </motion.div>

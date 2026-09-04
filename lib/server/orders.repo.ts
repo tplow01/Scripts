@@ -108,3 +108,103 @@ export async function setOrderStatus(
   if (readErr) throw new Error(`setOrderStatus(${id}) reading back: ${readErr.message}`)
   return data ? rowToOrder(data as unknown as OrderRow) : null
 }
+
+// ── Writing orders (Stripe webhook only) ────────────────────────────────────
+
+export interface NewOrderLine {
+  variantId: string | null
+  productName: string
+  size: string
+  qty: number
+  unitPrice: number
+}
+
+export interface NewOrder {
+  stripeSessionId: string
+  stripePaymentIntent: string | null
+  customer: { name: string; email: string; phone: string; address: string[] }
+  lines: NewOrderLine[]
+  subtotal: number
+  shipping: number
+  total: number
+}
+
+/** An order already written for this Stripe session, if any. */
+export async function findOrderBySession(sessionId: string): Promise<AdminOrder | null> {
+  const { data, error } = await serverClient()
+    .from('orders')
+    .select(SELECT)
+    .eq('stripe_session_id', sessionId)
+    .maybeSingle()
+  if (error) throw new Error(`findOrderBySession: ${error.message}`)
+  return data ? rowToOrder(data as unknown as OrderRow) : null
+}
+
+/**
+ * Record a paid order and take the stock.
+ *
+ * Idempotent by `stripe_session_id`, which is UNIQUE in the schema: Stripe
+ * retries webhooks, and a retry must not create a second order or decrement
+ * stock twice. Retries return the order that already exists.
+ */
+export async function createPaidOrder(input: NewOrder): Promise<AdminOrder> {
+  const existing = await findOrderBySession(input.stripeSessionId)
+  if (existing) return existing
+
+  const db = serverClient()
+
+  const { data: numberData, error: numberErr } = await db.rpc('next_order_number')
+  if (numberErr) throw new Error(`next_order_number: ${numberErr.message}`)
+  const id = String(numberData)
+
+  const { error: orderErr } = await db.from('orders').insert({
+    id,
+    customer_name: input.customer.name,
+    customer_email: input.customer.email,
+    customer_phone: input.customer.phone,
+    address: input.customer.address,
+    subtotal: input.subtotal,
+    shipping: input.shipping,
+    total: input.total,
+    status: 'pending',
+    payment_status: 'paid',
+    stripe_session_id: input.stripeSessionId,
+    stripe_payment_intent: input.stripePaymentIntent,
+  })
+  if (orderErr) {
+    // A concurrent delivery of the same event won the race on the unique index.
+    const raced = await findOrderBySession(input.stripeSessionId)
+    if (raced) return raced
+    throw new Error(`createPaidOrder(${id}): ${orderErr.message}`)
+  }
+
+  if (input.lines.length) {
+    const { error: itemsErr } = await db.from('order_items').insert(
+      input.lines.map((l) => ({
+        order_id: id,
+        product_name: l.productName,
+        size: l.size,
+        qty: l.qty,
+        unit_price: l.unitPrice,
+      })),
+    )
+    if (itemsErr) throw new Error(`createPaidOrder(${id}) items: ${itemsErr.message}`)
+  }
+
+  // Stock comes off after the order is safely recorded. Decrementing first
+  // would lose the count if the insert then failed.
+  for (const line of input.lines) {
+    if (!line.variantId) continue
+    const { error } = await db.rpc('decrement_variant_stock', {
+      p_variant_id: line.variantId,
+      p_qty: line.qty,
+    })
+    // A stock failure must not fail the webhook — the customer has paid and the
+    // order exists. Surface it in the logs for someone to reconcile.
+    if (error) console.error(`[order ${id}] stock not decremented for ${line.variantId}: ${error.message}`)
+  }
+
+  const written = await findOrderBySession(input.stripeSessionId)
+  if (!written) throw new Error(`createPaidOrder(${id}): order vanished after insert`)
+  return written
+}
