@@ -2,6 +2,8 @@ import 'server-only'
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
+import { supabaseServiceKey, supabaseUrl } from './env'
+
 /**
  * The privileged database client.
  *
@@ -10,8 +12,6 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * the service-role key — which bypasses every RLS policy — to the browser.
  */
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 /**
  * False until a Supabase project exists. Read paths fall back to the seed
@@ -19,16 +19,18 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
  * than pretending to have saved something.
  */
 export function isDatabaseConfigured(): boolean {
-  return Boolean(url && serviceKey)
+  return Boolean(supabaseUrl() && supabaseServiceKey())
 }
 
 let cached: SupabaseClient | null = null
 
 export function serverClient(): SupabaseClient {
+  const url = supabaseUrl()
+  const serviceKey = supabaseServiceKey()
   if (!url || !serviceKey) {
     throw new Error(
-      'Supabase is not configured. Copy .env.example to .env.local and fill in ' +
-      'NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+      'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY ' +
+      '(in .env.local locally, or the host\'s environment settings when deployed).',
     )
   }
   if (!cached) {

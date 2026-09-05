@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import type { NextResponse } from 'next/server'
 
 import { isDatabaseConfigured } from './supabase'
+import { supabaseAnonKey, supabaseUrl } from './env'
 import { fail } from './http'
 import { ADMIN_COOKIE } from './authConstants'
 
@@ -20,8 +21,8 @@ export { ADMIN_COOKIE }
 
 /** Verify an access token and confirm it belongs to the configured admin. */
 export async function verifyToken(token: string): Promise<boolean> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const url = supabaseUrl()
+  const anon = supabaseAnonKey()
   if (!url || !anon) return false
 
   const { data, error } = await createClient(url, anon).auth.getUser(token)

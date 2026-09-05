@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 import { ADMIN_COOKIE } from '@/lib/server/auth'
+import { supabaseAnonKey, supabaseUrl } from '@/lib/server/env'
 import { fail, ok } from '@/lib/server/http'
 import { isDatabaseConfigured } from '@/lib/server/supabase'
 
@@ -31,10 +32,7 @@ export async function POST(req: Request) {
   const password = typeof body.password === 'string' ? body.password : ''
   if (!email || !password) return fail(422, 'Enter your email and password.')
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
+  const supabase = createClient(supabaseUrl()!, supabaseAnonKey()!)
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   // Deliberately vague: never reveal whether the address exists.
