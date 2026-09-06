@@ -88,11 +88,21 @@ export async function listOrders(): Promise<AdminOrder[]> {
  * Set fulfilment status, stamping the matching timeline column. Mirrors
  * `setOrderStatus` in lib/admin/store.tsx so the admin behaves identically.
  */
+export interface StatusChange {
+  order: AdminOrder | null
+  /**
+   * False when the order was already in this status. The back office can PATCH
+   * the same value repeatedly, and each one must not fire another email.
+   */
+  changed: boolean
+}
+
 export async function setOrderStatus(
   id: string,
   status: OrderStatus,
   now = new Date().toISOString(),
-): Promise<AdminOrder | null> {
+): Promise<StatusChange> {
+  const before = await findOrder(id)
   const patch: Record<string, unknown> = { status }
   if (status === 'shipped') patch.shipped_at = now
   if (status === 'delivered') patch.delivered_at = now
@@ -100,12 +110,18 @@ export async function setOrderStatus(
   const { error } = await serverClient().from('orders').update(patch).eq('id', id)
   if (error) throw new Error(`setOrderStatus(${id}): ${error.message}`)
 
-  const { data, error: readErr } = await serverClient()
+  const after = await findOrder(id)
+  return { order: after, changed: Boolean(after) && before?.status !== status }
+}
+
+/** One order by its id. */
+export async function findOrder(id: string): Promise<AdminOrder | null> {
+  const { data, error } = await serverClient()
     .from('orders')
     .select(SELECT)
     .eq('id', id)
     .maybeSingle()
-  if (readErr) throw new Error(`setOrderStatus(${id}) reading back: ${readErr.message}`)
+  if (error) throw new Error(`findOrder(${id}): ${error.message}`)
   return data ? rowToOrder(data as unknown as OrderRow) : null
 }
 
@@ -140,16 +156,26 @@ export async function findOrderBySession(sessionId: string): Promise<AdminOrder 
   return data ? rowToOrder(data as unknown as OrderRow) : null
 }
 
+export interface CreatedOrder {
+  order: AdminOrder
+  /** False when this delivery was a replay of one already recorded. */
+  created: boolean
+}
+
 /**
  * Record a paid order and take the stock.
  *
  * Idempotent by `stripe_session_id`, which is UNIQUE in the schema: Stripe
  * retries webhooks, and a retry must not create a second order or decrement
  * stock twice. Retries return the order that already exists.
+ *
+ * `created` matters as much as the order itself — without it the caller cannot
+ * tell a fresh payment from a retry, and would email the customer again on
+ * every redelivery.
  */
-export async function createPaidOrder(input: NewOrder): Promise<AdminOrder> {
+export async function createPaidOrder(input: NewOrder): Promise<CreatedOrder> {
   const existing = await findOrderBySession(input.stripeSessionId)
-  if (existing) return existing
+  if (existing) return { order: existing, created: false }
 
   const db = serverClient()
 
@@ -174,7 +200,7 @@ export async function createPaidOrder(input: NewOrder): Promise<AdminOrder> {
   if (orderErr) {
     // A concurrent delivery of the same event won the race on the unique index.
     const raced = await findOrderBySession(input.stripeSessionId)
-    if (raced) return raced
+    if (raced) return { order: raced, created: false }
     throw new Error(`createPaidOrder(${id}): ${orderErr.message}`)
   }
 
@@ -206,5 +232,5 @@ export async function createPaidOrder(input: NewOrder): Promise<AdminOrder> {
 
   const written = await findOrderBySession(input.stripeSessionId)
   if (!written) throw new Error(`createPaidOrder(${id}): order vanished after insert`)
-  return written
+  return { order: written, created: true }
 }

@@ -3,6 +3,8 @@ import type Stripe from 'stripe'
 import { fail, ok } from '@/lib/server/http'
 import { createPaidOrder, type NewOrderLine } from '@/lib/server/orders.repo'
 import { fromMinorUnits, isStripeConfigured, stripe } from '@/lib/server/stripe'
+import { sendEmail } from '@/lib/server/email'
+import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 
 // Node runtime, not edge: signature verification needs the raw request body.
 export const runtime = 'nodejs'
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
         .join(', '),
     ].filter(Boolean)
 
-    const order = await createPaidOrder({
+    const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
       stripePaymentIntent:
         typeof session.payment_intent === 'string'
@@ -99,7 +101,18 @@ export async function POST(req: Request) {
       total: fromMinorUnits(session.amount_total ?? 0),
     })
 
-    return ok({ received: true, order: order.id })
+    // Only a genuinely new order earns an email. Stripe redelivers, and a
+    // retry must not tell the customer twice. Awaited rather than fired and
+    // forgotten: a serverless function can be frozen the moment it responds.
+    // sendEmail never throws — a mail failure must not cost a paid order.
+    if (created) {
+      const result = await sendEmail(orderConfirmationEmail(order))
+      if (!result.sent) {
+        console.error(`[order ${order.id}] confirmation not sent: ${result.reason}`)
+      }
+    }
+
+    return ok({ received: true, order: order.id, created })
   } catch (err) {
     // Returning 500 makes Stripe retry, which is what we want for a transient
     // database problem — the payment already succeeded and must not be lost.
