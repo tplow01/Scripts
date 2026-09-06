@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
-import { anyClaims, type TileClaim } from "@/game/world/occupancy";
+import { anyClaims, claims, type TileClaim } from "@/game/world/occupancy";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { isMuralTile } from "@/game/art/walls";
 import { isRugTile } from "@/game/art/floors";
@@ -272,9 +272,17 @@ export class WorldScene extends Phaser.Scene {
     return !anyClaims(this.actors, x, y, self);
   }
 
-  /** The patrolling NPC standing on a tile right now, if any. */
+  /**
+   * The patrolling NPC on a tile for interaction purposes — standing on it, or
+   * mid-stride onto or off it.
+   *
+   * Matching only the logical tile made talking feel unreliable: an NPC walking
+   * toward you is visually in front of you for most of a step while still
+   * reporting the tile behind, so pressing A did nothing for up to ~380ms. The
+   * player is aiming at what they can see, so match what they can see.
+   */
   private npcAt(x: number, y: number): NpcActor | undefined {
-    return this.npcs.find((n) => n.tileX === x && n.tileY === y);
+    return this.npcs.find((n) => claims(n, x, y));
   }
 
   private clearHeld() {
