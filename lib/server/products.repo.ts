@@ -42,65 +42,87 @@ const SELECT = `
 
 // ── Reads ───────────────────────────────────────────────────────────────────
 
+/**
+ * Reads degrade, writes don't. A configured-but-unreachable database — a bad
+ * or future-dated service key, clock skew, a paused project — must not take the
+ * whole site down at build or serve time. Every read falls back to the seed
+ * catalog on failure, exactly as it does when no database is configured at all;
+ * the cause is logged so it stays visible. Writes still throw (see below): we
+ * never want to pretend a save happened.
+ */
+async function readOrSeed<T>(label: string, run: () => Promise<T>, seed: () => T): Promise<T> {
+  try {
+    return await run()
+  } catch (err) {
+    console.warn(`${label}: database read failed, falling back to seed catalog — ${(err as Error).message}`)
+    return seed()
+  }
+}
+
 /** Storefront listing: published, non-Basement. */
 export async function listStorefrontProducts(): Promise<Product[]> {
   if (!isDatabaseConfigured()) return CYBER_LOVE_PRODUCTS
-
-  const { data, error } = await serverClient()
-    .from('products')
-    .select(SELECT)
-    .eq('is_basement', false)
-    .eq('published_status', 'active')
-    .order('id')
-  if (error) throw new Error(`listStorefrontProducts: ${error.message}`)
-  return (data as unknown as ProductRow[]).map(rowToProduct)
+  return readOrSeed('listStorefrontProducts', async () => {
+    const { data, error } = await serverClient()
+      .from('products')
+      .select(SELECT)
+      .eq('is_basement', false)
+      .eq('published_status', 'active')
+      .order('id')
+    if (error) throw new Error(error.message)
+    return (data as unknown as ProductRow[]).map(rowToProduct)
+  }, () => CYBER_LOVE_PRODUCTS)
 }
 
 /** The hidden pieces. Only ever called from server code. */
 export async function listBasementProducts(): Promise<Product[]> {
   if (!isDatabaseConfigured()) return BASEMENT_PRODUCTS
-
-  const { data, error } = await serverClient()
-    .from('products')
-    .select(SELECT)
-    .eq('is_basement', true)
-    .eq('published_status', 'active')
-    .order('id')
-  if (error) throw new Error(`listBasementProducts: ${error.message}`)
-  return (data as unknown as ProductRow[]).map(rowToProduct)
+  return readOrSeed('listBasementProducts', async () => {
+    const { data, error } = await serverClient()
+      .from('products')
+      .select(SELECT)
+      .eq('is_basement', true)
+      .eq('published_status', 'active')
+      .order('id')
+    if (error) throw new Error(error.message)
+    return (data as unknown as ProductRow[]).map(rowToProduct)
+  }, () => BASEMENT_PRODUCTS)
 }
 
 /** Every product regardless of status or Basement flag — back office only. */
 export async function listAllProducts(): Promise<Product[]> {
   if (!isDatabaseConfigured()) return ALL_PRODUCTS
-
-  const { data, error } = await serverClient().from('products').select(SELECT).order('id')
-  if (error) throw new Error(`listAllProducts: ${error.message}`)
-  return (data as unknown as ProductRow[]).map(rowToProduct)
+  return readOrSeed('listAllProducts', async () => {
+    const { data, error } = await serverClient().from('products').select(SELECT).order('id')
+    if (error) throw new Error(error.message)
+    return (data as unknown as ProductRow[]).map(rowToProduct)
+  }, () => ALL_PRODUCTS)
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   if (!isDatabaseConfigured()) return findSeedProductBySlug(slug) ?? null
-
-  const { data, error } = await serverClient()
-    .from('products')
-    .select(SELECT)
-    .eq('slug', slug)
-    .maybeSingle()
-  if (error) throw new Error(`getProductBySlug(${slug}): ${error.message}`)
-  return data ? rowToProduct(data as unknown as ProductRow) : null
+  return readOrSeed(`getProductBySlug(${slug})`, async () => {
+    const { data, error } = await serverClient()
+      .from('products')
+      .select(SELECT)
+      .eq('slug', slug)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? rowToProduct(data as unknown as ProductRow) : null
+  }, () => findSeedProductBySlug(slug) ?? null)
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
   if (!isDatabaseConfigured()) return ALL_PRODUCTS.find((p) => p.id === id) ?? null
-
-  const { data, error } = await serverClient()
-    .from('products')
-    .select(SELECT)
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw new Error(`getProductById(${id}): ${error.message}`)
-  return data ? rowToProduct(data as unknown as ProductRow) : null
+  return readOrSeed(`getProductById(${id})`, async () => {
+    const { data, error } = await serverClient()
+      .from('products')
+      .select(SELECT)
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? rowToProduct(data as unknown as ProductRow) : null
+  }, () => ALL_PRODUCTS.find((p) => p.id === id) ?? null)
 }
 
 /**
