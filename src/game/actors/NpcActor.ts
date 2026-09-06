@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { WalkCycle, TILE_STEP_MS, STRIDE_HOLD } from "@/game/art/walkCycle";
 import { characterFrame, type CharacterId, type Facing } from "@/game/art/characters";
 import type { Patrol } from "@/game/world/types";
+import type { TileClaim } from "@/game/world/occupancy";
 
 /** ms per tile for NPCs — deliberately lazier than the player's walk. */
 const NPC_STEP_MS = TILE_STEP_MS + 130;
@@ -32,12 +33,17 @@ export interface NpcActorOptions {
  * holds position and retries when the next tile is taken (by the player or
  * another NPC) rather than clipping through.
  */
-export class NpcActor {
+export class NpcActor implements TileClaim {
   readonly id: string;
   readonly character: CharacterId;
   tileX: number;
   tileY: number;
   facing: Facing;
+  /**
+   * The tile this actor is stepping onto, held for the whole tween so no
+   * one else can target it. Null while standing still. See world/occupancy.
+   */
+  pending: { x: number; y: number } | null = null;
 
   private readonly waypoints: Array<{ x: number; y: number }>;
   private readonly stepMs: number;
@@ -133,6 +139,7 @@ export class NpcActor {
     const dy = next.y - this.tileY;
     this.facing = dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up";
     this.moving = true;
+    this.pending = { x: next.x, y: next.y };
     // One tile, one full step: stride, then settle onto neutral partway through.
     // The image check matters because a room change destroys the actor's sprite
     // while this timer is still pending.
@@ -160,6 +167,7 @@ export class NpcActor {
       onComplete: () => {
         this.tileX = next.x;
         this.tileY = next.y;
+        this.pending = null;
         this.moving = false;
         // Time the endpoint pause from when the step LANDS, not when it began.
         this.advanceTarget(this.scene.time.now);
