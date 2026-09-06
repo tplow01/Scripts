@@ -38,6 +38,10 @@ export class WorldScene extends Phaser.Scene {
   private scribbsShadow!: Phaser.GameObjects.Image;
   private tileX = 0;
   private tileY = 0;
+  /** The tile the player is mid-step into (equals tileX/tileY when idle). NPCs
+   *  read this so they never step onto a tile the player has already claimed. */
+  private destX = 0;
+  private destY = 0;
   private moving = false;
   /** True for the duration of one held-into-a-wall attempt, so "bump" fires once per press, not once per frame. */
   private bumping = false;
@@ -206,6 +210,8 @@ export class WorldScene extends Phaser.Scene {
     if (resume) {
       this.tileX = resume.tileX;
       this.tileY = resume.tileY;
+      this.destX = resume.tileX;
+      this.destY = resume.tileY;
       this.facing = resume.facing;
       this.setFrame("both");
       this.syncScribbs();
@@ -266,16 +272,18 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** A tile an NPC may step onto: walkable, and nobody standing there. */
+  /** A tile an NPC may step onto: walkable, and nobody standing there or
+   *  stepping into it — the player and every other NPC included. */
   private npcCanEnter(self: NpcActor, x: number, y: number): boolean {
     if (!canStep(this.room, self.tileX, self.tileY, x, y)) return false;
     if (x === this.tileX && y === this.tileY) return false;
-    return !this.npcs.some((n) => n !== self && n.tileX === x && n.tileY === y);
+    if (this.moving && x === this.destX && y === this.destY) return false;
+    return !this.npcs.some((n) => n !== self && n.occupies(x, y));
   }
 
-  /** The patrolling NPC standing on a tile right now, if any. */
+  /** The patrolling NPC on a tile right now, or mid-step into it, if any. */
   private npcAt(x: number, y: number): NpcActor | undefined {
-    return this.npcs.find((n) => n.tileX === x && n.tileY === y);
+    return this.npcs.find((n) => n.occupies(x, y));
   }
 
   private clearHeld() {
@@ -407,6 +415,8 @@ export class WorldScene extends Phaser.Scene {
     const spawn = spawnOverride ?? this.room.spawn;
     this.tileX = spawn.tileX;
     this.tileY = spawn.tileY;
+    this.destX = spawn.tileX;
+    this.destY = spawn.tileY;
     this.syncScribbs();
 
     // Landing on stairs must not immediately bounce us back through the link.
@@ -715,6 +725,11 @@ export class WorldScene extends Phaser.Scene {
     // close — with a fallback so a lost event can never strand the intro.
     // While the dialogue is genuinely open the player is just reading, so the
     // fallback re-arms instead of yanking Heath away mid-sentence.
+    // Aim the bubble tail at Heath's head so the intro bubble matches every
+    // other NPC line (which emits "speaker" the same way).
+    const heathHead = { x: heath.x, y: heath.getBounds().top };
+    this.lastSpeakerWorld = heathHead;
+    this.game.events.emit("speaker", this.speakerFrac(heathHead.x, heathHead.y));
     this.game.events.emit("welcome");
     await this.waitForDialogClose();
 
@@ -938,6 +953,8 @@ export class WorldScene extends Phaser.Scene {
     this.bumping = false;
     this.moving = true;
     this.walking = true;
+    this.destX = nx;
+    this.destY = ny;
     // One tile, one full step: lead on the stride, settle onto neutral partway
     // through, alternating feet tile to tile.
     this.setFrame(this.cycle.step());
@@ -963,10 +980,17 @@ export class WorldScene extends Phaser.Scene {
         this.tileX = nx;
         this.tileY = ny;
         this.moving = false;
-        // Deliberately NOT resting here: if a direction is still held, update()
-        // chains straight into the next stride and the walk stays continuous.
         this.saveSession();
         this.checkInteraction();
+        // Chain straight into the next tile here, in the same frame the tween
+        // ends — don't wait for update() to notice next frame. That one idle
+        // frame per tile is what made a held-direction walk feel like it
+        // catches every step. checkInteraction() may start a room transition;
+        // the guards below bail in that case.
+        if (!this.moving && !this.transitioning && !this.dialogOpen && !this.overlayOpen) {
+          const held = this.held[this.held.length - 1];
+          if (held) this.stepToward(held);
+        }
       },
     });
   }

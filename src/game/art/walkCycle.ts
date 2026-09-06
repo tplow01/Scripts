@@ -17,7 +17,7 @@ export const TURN_MS = 130;
  * like a glide. Front and back survive it, but every direction uses the same
  * beat — one rule, not a per-direction special case.
  */
-export const STRIDE_HOLD = 0.6;
+export const STRIDE_HOLD = 0.78;
 
 /**
  * The walk-cycle rule, in one place, shared by the player, every NPC, and the

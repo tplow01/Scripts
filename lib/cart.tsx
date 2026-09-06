@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 import type { Product, ProductVariant } from '@/types/product'
 import { ALL_PRODUCTS } from '@/lib/products'
 import { buildLegacyIndex, buildVariantIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
+import { useSFX } from '@/lib/sfx'
 
 const STORAGE_KEY = 'scripts-cart'
 
@@ -44,6 +45,7 @@ const CartContext = createContext<CartCtx | null>(null)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const sfx = useSFX()
 
   // Hydrate from localStorage after mount (keeps SSR/first render = empty,
   // avoiding hydration mismatch), then persist on every change.
@@ -58,10 +60,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const minimal: StoredItem[] = items.map((i) => ({ variantId: i.variant.id, quantity: i.quantity }))
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(minimal))
   }, [items])
-  const openCart  = useCallback(() => setIsOpen(true), [])
-  const closeCart = useCallback(() => setIsOpen(false), [])
+  const openCart  = useCallback(() => { sfx.play('open'); setIsOpen(true) }, [sfx])
+  const closeCart = useCallback(() => { sfx.play('close'); setIsOpen(false) }, [sfx])
 
   const add = useCallback((product: Product, variant: ProductVariant) => {
+    sfx.play('add-to-cart')
     setItems((prev) => {
       const existing = prev.find((i) => i.variant.id === variant.id)
       if (existing) {
@@ -73,11 +76,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { product, variant, quantity: 1 }]
     })
-  }, [])
+  }, [sfx])
 
   const remove = useCallback((variantId: string) => {
+    sfx.play('remove-from-cart')
     setItems((prev) => prev.filter((i) => i.variant.id !== variantId))
-  }, [])
+  }, [sfx])
 
   const increment = useCallback((variantId: string) => {
     setItems((prev) =>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DMG_PILL_FACE, DMG_PILL_SHADOW, STRIP_BLACK, pressedStyle } from './theme'
+import { BRAND_WHITE, DMG_PILL_FACE, DMG_PILL_SHADOW, pressedStyle } from './theme'
 
 /**
  * DMG-style utility unit: a small BLANK molded pill with its label printed on
@@ -36,7 +36,7 @@ export function DmgBtn({
       }} />
       <span style={{
         fontFamily: 'sans-serif', fontWeight: 800, letterSpacing: 1.5,
-        fontSize: Math.max(8, Math.round(pillWidth * 0.2)), color: STRIP_BLACK,
+        fontSize: Math.max(8, Math.round(pillWidth * 0.2)), color: BRAND_WHITE,
       }}>
         {label}
       </span>
@@ -69,7 +69,7 @@ export function FlatIconBtn({
 }
 
 /** Speaker glyph; muted swaps the sound arc for a strike-through slash. */
-export function SpeakerIcon({ size = 18, muted = false, color = STRIP_BLACK }: {
+export function SpeakerIcon({ size = 18, muted = false, color = BRAND_WHITE }: {
   size?: number; muted?: boolean; color?: string
 }) {
   return (
@@ -83,7 +83,7 @@ export function SpeakerIcon({ size = 18, muted = false, color = STRIP_BLACK }: {
 }
 
 /** Flat printed "?" mark. */
-export function QuestionGlyph({ size = 17, color = STRIP_BLACK }: { size?: number; color?: string }) {
+export function QuestionGlyph({ size = 17, color = BRAND_WHITE }: { size?: number; color?: string }) {
   return (
     <span style={{
       fontFamily: 'monospace', fontWeight: 800, fontSize: size, color, lineHeight: 1,

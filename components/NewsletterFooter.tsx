@@ -2,14 +2,17 @@
 
 import { useState } from 'react'
 import FooterLinks from '@/components/FooterLinks'
+import { useSFX } from '@/lib/sfx'
 
 export default function NewsletterFooter() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const sfx = useSFX()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email) return
+    sfx.play('success')
     setSubmitted(true)
     setEmail('')
   }

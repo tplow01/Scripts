@@ -2,17 +2,20 @@
 
 import Link from 'next/link'
 import { useCart } from '@/lib/cart'
+import { SFX_LIVE, useSFX } from '@/lib/sfx'
+import SoundToggle from '@/components/SoundToggle'
 
 const ICON_CLS = 'flex items-center justify-center w-[36px] h-[36px] hover:opacity-60 transition-opacity'
 
 export default function BasementNavBar({ backHref = '/basement' }: { backHref?: string }) {
   const { count, isOpen, openCart } = useCart()
+  const sfx = useSFX()
 
   return (
     <header className="sticky top-0 z-50 bg-[#0d0d0d] flex items-center px-4 md:px-16 lg:px-[200px] pt-6 md:pt-10 lg:pt-[64px] pb-4 md:pb-8 lg:pb-[48px]">
 
       {/* Left — back arrow */}
-      <Link href={backHref} aria-label="Back" className={ICON_CLS}>
+      <Link href={backHref} aria-label="Back" onClick={() => sfx.play('back')} className={ICON_CLS}>
         <svg width="26" height="26" viewBox="0 0 56 56" fill="none">
           <path d="M23.8406 12.4604C23.8402 11.4627 22.669 10.9255 21.9128 11.5766L4.89429 26.2319C3.81325 27.1628 3.81325 28.8372 4.89429 29.7681L21.9128 44.4233C22.669 45.0744 23.8402 44.5372 23.8406 43.5395V35.5835H47.1746C48.4631 35.5833 49.5076 34.5381 49.5076 33.2495V22.7495C49.5073 21.4612 48.4629 20.4167 47.1746 20.4165H23.8406V12.4604Z" fill="#f7f7f5"/>
         </svg>
@@ -28,8 +31,9 @@ export default function BasementNavBar({ backHref = '/basement' }: { backHref?: 
         </span>
       </div>
 
-      {/* Right — bag */}
+      {/* Right — sound + bag */}
       <div className="flex items-center gap-[16px] ml-auto">
+        {SFX_LIVE && <SoundToggle dark />}
         <button onClick={openCart} aria-label="Bag" className={`${ICON_CLS} relative`}>
           <span className="flex items-center justify-center w-[26px] h-[26px]">
             {count > 0 ? (

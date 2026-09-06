@@ -7,7 +7,9 @@
  * a path (see `scripts/import-fixtures.py`).
  *
  *   box       — the Basement's stacked, taped-up carton (drawn on its grey floor)
- *   box-open  — the shop's open carton at the clothing-rail corner (i14)
+ *   box-open  — the clothing-rail box, one either end of the shop rail (i7, i14)
+ *   glass-table — the full-height glass display cabinet, one 1×3 image on the
+ *               lower-right floor
  *   vinyl-crate — the record crate; one either side of the vinyl desk, so the
  *               music alcove reads as a matched pair
  *   speaker   — the alcove's monitors, flanking the deck
@@ -23,6 +25,7 @@ export const PROP_IDS = [
   "speaker",
   "stairs-shop",
   "stairs-basement",
+  "glass-table",
 ] as const;
 
 export type PropId = (typeof PROP_IDS)[number];

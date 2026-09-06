@@ -196,7 +196,8 @@ export default function Home() {
   // Heath's greeting — fired once by the scene when he reaches the player.
   const welcomeRef = useRef<() => void>(() => {});
   welcomeRef.current = () => {
-    setSpeakerPos(null);
+    // Leave speakerPos alone — the scene emits "speaker" for Heath's head just
+    // before "welcome", so the intro bubble gets the same tail as every NPC.
     setPage(0);
     setPrompt(materialize({ variant: "message", pages: HEATH_INTRO_PAGES, speaker: "Heath" }));
     gameRef.current?.events.emit("dialog", true);

@@ -3,21 +3,16 @@ import type { Decoration } from "@/game/world/types";
 /**
  * The sofa — the ONLY place that knows how its hand-drawn slices lay out.
  *
- * Five authored 64px tiles (see `scripts/import-fixtures.py`), laid in the
- * order they were drawn: slice 1 top-left (the upright back), then 2–5 left to
- * right along the seat row beneath it. Slice 2 carries the left arm and leg,
- * slice 5 the right arm and leg; 3 and 4 are the middle cushions.
+ * Four authored 64px tiles laid left to right in a single row: slice 1 the
+ * left arm, 2 and 3 the middle cushions, 4 the right arm.
  *
- *     1 . . .
- *     2 3 4 5
+ *     1 2 3 4
  *
- * Sequential segments, not variants — 3 only reads between 2 and 4.
- *
- * Every slice is solid except the back (slice 1, the topmost tile) — the
- * player can walk onto that one square, as if perched on the sofa back.
+ * Sequential segments, not variants — 3 only reads between 2 and 4. Every
+ * slice is solid; walk around the sofa, not onto it.
  */
 
-export const SOFA_SLICES = 5;
+export const SOFA_SLICES = 4;
 
 /** Texture key for one slice — also the world-data `artKey`. 1-indexed. */
 export const sofaTileKey = (index: number): string => `sofa-${index}`;
@@ -29,13 +24,12 @@ export const sofaTilePath = (index: number): string => `/assets/sofa/${sofaTileK
 export const allSofaTiles = (): number[] =>
   Array.from({ length: SOFA_SLICES }, (_, i) => i + 1);
 
-/** Offset of each slice from the sofa's top-left tile, in slice order. */
+/** Offset of each slice from the sofa's left tile, in slice order. */
 const SLICE_OFFSETS: Array<{ dx: number; dy: number }> = [
   { dx: 0, dy: 0 },
-  { dx: 0, dy: 1 },
-  { dx: 1, dy: 1 },
-  { dx: 2, dy: 1 },
-  { dx: 3, dy: 1 },
+  { dx: 1, dy: 0 },
+  { dx: 2, dy: 0 },
+  { dx: 3, dy: 0 },
 ];
 
 const TILE_KEYS = new Set(allSofaTiles().map(sofaTileKey));
@@ -43,23 +37,23 @@ const TILE_KEYS = new Set(allSofaTiles().map(sofaTileKey));
 /** True when a texture key names a sofa slice. */
 export const isSofaTile = (key: string): boolean => TILE_KEYS.has(key);
 
-/** The sofa's four cushion tiles, given its anchor — the seat zone in the room. */
+/** The sofa's tiles, given its anchor — the seat zone in the room. */
 export function sofaCushions(at: { tileX: number; tileY: number }): Array<{ x: number; y: number }> {
-  return SLICE_OFFSETS.slice(1).map((off) => ({
+  return SLICE_OFFSETS.map((off) => ({
     x: at.tileX + off.dx,
     y: at.tileY + off.dy,
   }));
 }
 
 /**
- * Expand the sofa into its per-tile decorations, anchored at the back's tile.
- * Every slice blocks movement except the back (slice 1), which is walkable.
+ * Expand the sofa into its per-tile decorations, anchored at the left tile.
+ * Every slice blocks movement.
  */
 export function sofa(at: { tileX: number; tileY: number }): Decoration[] {
   return SLICE_OFFSETS.map((off, i) => ({
     tileX: at.tileX + off.dx,
     tileY: at.tileY + off.dy,
     artKey: sofaTileKey(i + 1),
-    solid: i !== 0,
+    solid: true,
   }));
 }

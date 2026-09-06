@@ -16,13 +16,13 @@ import type { Decoration } from "@/game/world/types";
 
 export type MuralId =
   | "vinyl-wall"
-  | "clothing-wall"
+  | "shop-wall"
   | "basement-back-wall"
   | "basement-ledge-wall";
 
 export const MURAL_IDS = [
   "vinyl-wall",
-  "clothing-wall",
+  "shop-wall",
   "basement-back-wall",
   "basement-ledge-wall",
 ] as const;
@@ -30,16 +30,16 @@ export const MURAL_IDS = [
 /**
  * How many slices each mural ships as.
  *
- * The vinyl and clothing walls were both authored 8 tiles wide but hang on
- * 7-tile rows, so the importer drops one middle slice from each and shuffles
- * the rest left. Both ends survive — only plain wall is lost. See
- * `scripts/import-walls.py`.
+ * `vinyl-wall` is the four hand-drawn record-wall panels that hang between the
+ * plain shop-wall end caps on the music side. `shop-wall` is the generic shop
+ * back wall as three tiles — 1 left cap, 2 repeatable middle, 3 right cap —
+ * repeated behind the vinyl panels and the clothing rail.
  *
  * Every other mural is drawn at exactly the length of the row it hangs on.
  */
 export const MURAL_SLICES: Record<MuralId, number> = {
-  "vinyl-wall": 7,
-  "clothing-wall": 7,
+  "vinyl-wall": 4,
+  "shop-wall": 3,
   "basement-back-wall": 5,
   "basement-ledge-wall": 6,
 };

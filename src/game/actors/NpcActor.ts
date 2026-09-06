@@ -53,6 +53,9 @@ export class NpcActor {
   private target = 1;
   private stride = 1;
   private moving = false;
+  /** The tile this actor is mid-step into (equals tileX/tileY when idle). */
+  private destX: number;
+  private destY: number;
   /** Wall-clock ms before which the actor stays put (endpoint pause). */
   private holdUntil = 0;
   /** True while dialogue with this NPC is open. */
@@ -71,6 +74,8 @@ export class NpcActor {
     const start = this.waypoints[0];
     this.tileX = start.x;
     this.tileY = start.y;
+    this.destX = start.x;
+    this.destY = start.y;
     this.facing = this.restFacing ?? "down";
 
     const ts = this.tileSize;
@@ -96,6 +101,12 @@ export class NpcActor {
   get headAnchor(): { x: number; y: number } {
     const b = this.image.getBounds();
     return { x: this.image.x, y: b.top };
+  }
+
+  /** True if this actor stands on (x,y) now, or is mid-step into it. */
+  occupies(x: number, y: number): boolean {
+    if (x === this.tileX && y === this.tileY) return true;
+    return this.moving && x === this.destX && y === this.destY;
   }
 
   /** Freeze the patrol while the player is talking to this NPC. */
@@ -139,6 +150,8 @@ export class NpcActor {
     const dy = next.y - this.tileY;
     this.facing = dx > 0 ? "right" : dx < 0 ? "left" : dy > 0 ? "down" : "up";
     this.moving = true;
+    this.destX = next.x;
+    this.destY = next.y;
     // One tile, one full step: stride, then settle onto neutral partway through.
     // The image check matters because a room change destroys the actor's sprite
     // while this timer is still pending.

@@ -51,8 +51,8 @@ const DECK_AT = { tileX: C(3), tileY: R("d") };
 /** Left end of the horizontal clothing rail; it runs right from here. */
 const RAIL_H_AT = { tileX: C(8), tileY: R("i") };
 
-/** Top-left tile of the sofa — its back; the cushion row runs beneath it. */
-const SOFA_AT = { tileX: C(1), tileY: R("f") };
+/** Left tile of the sofa — a single 4-tile row, all solid. */
+const SOFA_AT = { tileX: C(1), tileY: R("g") };
 
 export const mainRoom: Room = {
   id: "main",
@@ -134,14 +134,16 @@ export const mainRoom: Room = {
     // are hand-drawn trapezoids: full width at the base, chamfered at the top
     // ends where they stop.
     //
-    // Vinyl wall (row c, cols 1-6) — skip authored slice 6 and park slice 7 in
-    // its place so the chamfered right end sits on col 6 against the cut wall.
-    ...mural("vinyl-wall", { tileX: C(1), tileY: R("c"), slices: [1, 2, 3, 4, 5, 7] }),
+    // Vinyl wall (row c, cols 1-6) — plain shop-wall end caps (1 left, 3 right)
+    // with the four hand-drawn record panels hung between them.
+    ...mural("shop-wall", { tileX: C(1), tileY: R("c"), slices: [1] }),
+    ...mural("vinyl-wall", { tileX: C(2), tileY: R("c"), tiles: 4 }),
+    ...mural("shop-wall", { tileX: C(6), tileY: R("c"), slices: [3] }),
 
-    // Clothing wall (row h, cols 8-14) — above the rail. Col 7 (above the left
-    // carton) duplicates clothing-wall-1 so the cut corner is dressed.
-    { tileX: C(7), tileY: R("h"), artKey: "clothing-wall-1" },
-    ...mural("clothing-wall", { tileX: C(8), tileY: R("h"), tiles: 7 }),
+    // Clothing wall (row h, cols 7-14) — plain shop wall behind the rail: the
+    // repeatable middle tile across cols 7-13, then the right cap on col 14.
+    ...mural("shop-wall", { tileX: C(7), tileY: R("h"), slices: [2, 2, 2, 2, 2, 2, 2] }),
+    ...mural("shop-wall", { tileX: C(14), tileY: R("h"), slices: [3] }),
 
     // Speakers flanking the vinyl deck (d2, d5).
     // Record crate (d1) mirroring the one at d6 about the vinyl desk, so the
@@ -159,9 +161,13 @@ export const mainRoom: Room = {
     { tileX: C(6), tileY: R("d"), artKey: "vinyl-crate", solid: true, concealing: "basement-entrance",
       slideTo: { tileX: C(6), tileY: R("e") }, vanishAfterSlide: true },
 
-    // Sofa — five hand-drawn slices: the back at f1, then the cushion row
-    // g1–g4 left to right. Fully solid — walk around it, not onto it.
+    // Sofa — four hand-drawn slices in a single row (g1–g4), left to right.
+    // Fully solid — walk around it, not onto it.
     ...sofa(SOFA_AT),
+
+    // Glass table — lower-right floor, one 1×3 cabinet spanning l13–n13. Its
+    // bottom stays fixed at row n; the image extends up two tiles from there.
+    { tileX: C(13), tileY: R("l"), artKey: "glass-table", wTiles: 1, hTiles: 3, solid: true },
 
     // SCR!PTS floor logo — 3×3 canonical brand lockup, centred over the door
     // (cols 7–9, rows k–m). One row lower than the prototype so the full comet

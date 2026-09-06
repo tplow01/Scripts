@@ -3,6 +3,7 @@ import type { Viewport } from "next";
 import { Bebas_Neue } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
 import { ToastProvider } from "@/lib/toast";
+import { SFXProvider } from "@/lib/sfx";
 import CartDrawer from "@/components/CartDrawer";
 import "./globals.css";
 
@@ -34,12 +35,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={bebasNeue.variable}>
       <body className="bg-ink text-paper font-body antialiased">
-        <CartProvider>
-          <ToastProvider>
-            {children}
-            <CartDrawer />
-          </ToastProvider>
-        </CartProvider>
+        <SFXProvider>
+          <CartProvider>
+            <ToastProvider>
+              {children}
+              <CartDrawer />
+            </ToastProvider>
+          </CartProvider>
+        </SFXProvider>
       </body>
     </html>
   );

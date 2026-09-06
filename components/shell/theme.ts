@@ -7,15 +7,19 @@ export const SHELL_BODY = '#6F6F73'
 export const STRIP_BLACK = '#0D0D0D'
 export const WORDMARK_PINK = '#FF8AC7'
 
+/** Brand white — SOCIALS / INVENTORY pills and other bright printed surfaces. */
+export const BRAND_WHITE = '#F7F7F5'
+
 /** Matte rubber — A/B buttons and D-pad. Light only from above. */
 export const RUBBER_FACE = 'radial-gradient(circle at 36% 28%, #2e2e31 0%, #1b1b1e 55%, #101012 100%)'
 export const RUBBER_SHADOW =
   '0 4px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1), inset 0 3px 4px rgba(255,255,255,0.12), inset 0 -5px 8px rgba(0,0,0,0.6)'
 
-/** DMG utility pill — small blank molded pill, label printed on the shell beside/below it. */
-export const DMG_PILL_FACE = 'radial-gradient(ellipse at 38% 25%, #3a3a3e 0%, #141416 100%)'
+/** DMG utility pill — small blank molded pill in brand white, label printed on
+ *  the shell beside/below it. */
+export const DMG_PILL_FACE = 'radial-gradient(ellipse at 38% 25%, #FFFFFF 0%, #F7F7F5 58%, #E2E2DE 100%)'
 export const DMG_PILL_SHADOW =
-  '0 2px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08), inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -2px 3px rgba(0,0,0,0.6)'
+  '0 2px 3px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.5), inset 0 1px 2px rgba(255,255,255,0.9), inset 0 -2px 3px rgba(0,0,0,0.18)'
 
 /** Glass sheen swept across the LCD — kept subtle so it never reads as a white edge. */
 export const SCREEN_GLASS =

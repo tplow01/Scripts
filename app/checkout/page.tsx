@@ -2,11 +2,13 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
+import { useSFX } from '@/lib/sfx'
+import type { PlayingSFX } from 'uisfx'
 import type { CartItem } from '@/lib/cart'
 import { variantTitle } from '@/lib/admin/variants'
 
@@ -88,12 +90,18 @@ export default function CheckoutPage() {
   const reduced = useReducedMotion()
   const { items, total, count, openCart, clearCart } = useCart()
   const { notify } = useToast()
+  const sfx = useSFX()
 
   const [form, setForm] = useState<FormState>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [placing, setPlacing] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
   const [order, setOrder] = useState<PlacedOrder | null>(null)
+
+  // Retained handle for the in-flight "processing" loop, so it can be
+  // stopped from every exit path (success, decline, or unmount).
+  const processingRef = useRef<PlayingSFX | null>(null)
+  useEffect(() => () => { processingRef.current?.stop(); processingRef.current = null }, [])
 
   const grandTotal = total + SHIPPING
 
@@ -124,11 +132,13 @@ export default function CheckoutPage() {
     if (!isValid) {
       // Reveal all errors and stop.
       setTouched(Object.keys(VALIDATORS).reduce((a, k) => ({ ...a, [k]: true }), {}))
+      sfx.play('blocked')
       notify('Check the highlighted fields', 'error')
       return
     }
     setPayError(null)
     setPlacing(true)
+    processingRef.current = sfx.playLoop('processing')
 
     // Stripe Checkout is wired here later — this simulates the PaymentIntent
     // round-trip. Cards starting 4000 are declined (Stripe test convention) so
@@ -136,7 +146,11 @@ export default function CheckoutPage() {
     const declined = (form.card ?? '').replace(/\D/g, '').startsWith('4000')
     setTimeout(() => {
       setPlacing(false)
+      processingRef.current?.stop()
+      processingRef.current = null
+
       if (declined) {
+        sfx.playOutcome('error')
         setPayError('Your card was declined. Try a different payment method.')
         notify('Payment declined', 'error')
         return
@@ -144,6 +158,7 @@ export default function CheckoutPage() {
       const number = 'SCR-' + Date.now().toString(36).toUpperCase().slice(-6)
       setOrder({ number, items, total })
       clearCart()
+      sfx.playOutcome('purchase')
       notify('Order confirmed', 'success')
     }, 1400)
   }

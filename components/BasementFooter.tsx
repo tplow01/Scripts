@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useSFX } from '@/lib/sfx'
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/scripts.studio/' },
@@ -20,10 +21,12 @@ const LEGAL = [
 export default function BasementFooter() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const sfx = useSFX()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email) return
+    sfx.play('success')
     setSubmitted(true)
     setEmail('')
   }

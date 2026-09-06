@@ -142,8 +142,8 @@ describe('music alcove symmetry', () => {
 })
 
 describe('sofa collision', () => {
-  it('blocks every cushion tile but leaves the back walkable', () => {
-    // Back f1 is walkable; cushions g1–g4 stay solid.
+  it('blocks every sofa tile but leaves the row above it walkable', () => {
+    // The sofa is a single solid row g1–g4; the tile above (f1) is open floor.
     const walkableTiles = [{ x: 1, y: 6 }]
     const solidTiles = [
       { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 }, { x: 4, y: 7 },

@@ -5,10 +5,12 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
+import { useSFX } from '@/lib/sfx'
 import { variantTitle } from '@/lib/admin/variants'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
+  const sfx = useSFX()
   const reduced = useReducedMotion()
   const router = useRouter()
 
@@ -159,7 +161,7 @@ export default function CartDrawer() {
                 <motion.button
                   whileTap={reduced ? {} : { scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  onClick={() => { closeCart(); router.push('/checkout') }}
+                  onClick={() => { sfx.play('checkout'); closeCart(); router.push('/checkout') }}
                   className="w-full py-[16px] bg-[#0d0d0d] text-white text-[13px] font-extrabold tracking-[0.1em] uppercase rounded border border-[#0d0d0d] hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200"
                 >
                   Checkout

@@ -1,6 +1,5 @@
 'use client'
 
-import { Press_Start_2P } from 'next/font/google'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Btn, UtilityAction } from '@/lib/controls'
 import { UTILITY_LABELS } from '@/lib/controls'
@@ -9,11 +8,28 @@ import DPad from './shell/DPad'
 import RoundBtn from './shell/RoundBtn'
 import SystemOverlay from './shell/SystemOverlay'
 import { DmgBtn, FlatIconBtn, QuestionGlyph, SpeakerIcon } from './shell/UtilityBtn'
-import { SCREEN_GLASS, SHELL_BODY, STRIP_BLACK, WORDMARK_PINK } from './shell/theme'
+import { SCREEN_GLASS, SHELL_BODY, STRIP_BLACK } from './shell/theme'
 
 export type { Btn }
 
-const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
+/**
+ * The SCR!PTS wordmark on the console's bottom bezel band — the authored
+ * pixel logo, sized to the strip height (was flat Press Start 2P text).
+ */
+function BezelWordmark({ stripHeight }: { stripHeight: number }) {
+  return (
+    <img
+      src="/assets/wordmark.png"
+      alt="SCR!PTS"
+      style={{
+        height: Math.round(stripHeight * 0.7),
+        width: 'auto',
+        imageRendering: 'pixelated',
+        filter: 'drop-shadow(0 0 6px rgba(255,138,199,0.35))',
+      }}
+    />
+  )
+}
 
 /**
  * LCD with the flat SCR!PTS strip as its bottom band. `framePad` is the black
@@ -39,12 +55,7 @@ function ScreenModule({ children, overlay, stripHeight = 26, framePad = '0', lcd
         {overlay}
       </div>
       <div style={{ height: stripHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <span className={pressStart.className} style={{
-          fontSize: Math.round(stripHeight * 0.34), color: WORDMARK_PINK, letterSpacing: 5,
-          textShadow: '0 0 6px rgba(255,138,199,0.35)',
-        }}>
-          SCR!PTS
-        </span>
+        <BezelWordmark stripHeight={stripHeight} />
       </div>
     </div>
   )
@@ -164,12 +175,7 @@ export default function GameBoyShell({
             {overlay}
           </div>
           <div style={{ height: stripH, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className={pressStart.className} style={{
-              fontSize: Math.round(stripH * 0.34), color: WORDMARK_PINK, letterSpacing: 5,
-              textShadow: '0 0 6px rgba(255,138,199,0.35)',
-            }}>
-              SCR!PTS
-            </span>
+            <BezelWordmark stripHeight={stripH} />
           </div>
         </div>
         <div style={{

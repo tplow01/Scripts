@@ -12,6 +12,7 @@ import type { Product, ProductVariant } from '@/types/product'
 import { fadeIn, stagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
+import { useSFX } from '@/lib/sfx'
 import { deriveAvailability } from '@/lib/admin/variants'
 import { LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
 import { colorwayLabel } from '@/lib/products'
@@ -30,6 +31,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
   const reduced = useReducedMotion()
   const { add, openCart } = useCart()
   const { notify } = useToast()
+  const sfx = useSFX()
   const availability = deriveAvailability(product)
   const isSoldOut = availability === 'sold-out'
 
@@ -65,6 +67,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
         openCart()
       }, 800)
     } catch {
+      sfx.play('error')
       notify('Could not add to bag — try again', 'error')
     }
   }
@@ -155,7 +158,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               {images.length > 1 && (
                 <>
                   <button
-                    onClick={() => setActiveImage((i) => (i - 1 + images.length) % images.length)}
+                    onClick={() => { sfx.play('back'); setActiveImage((i) => (i - 1 + images.length) % images.length) }}
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
                     aria-label="Previous image"
                   >
@@ -164,7 +167,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                     </svg>
                   </button>
                   <button
-                    onClick={() => setActiveImage((i) => (i + 1) % images.length)}
+                    onClick={() => { sfx.play('forward'); setActiveImage((i) => (i + 1) % images.length) }}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center hover:opacity-60 transition-opacity"
                     aria-label="Next image"
                   >
@@ -235,7 +238,11 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                     type="button"
                     disabled={!ok}
                     aria-disabled={!ok}
-                    onClick={() => setSize(s === size ? null : s)}
+                    onClick={() => {
+                      const deselecting = s === size
+                      sfx.play(deselecting ? 'deselect' : 'select')
+                      setSize(deselecting ? null : s)
+                    }}
                     whileHover={reduced || !ok ? {} : { scale: 1.05 }}
                     whileTap={reduced || !ok ? {} : { scale: 0.97 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}

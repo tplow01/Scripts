@@ -8,9 +8,11 @@ const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 
 
 /**
  * The boot/title content rendered inside the Game Boy LCD before the game
- * starts: CRT overlays, the SCR!PTS lockup, tagline, and a blinking PRESS START.
- * Clicking/tapping anywhere on it starts the game (keyboard + the A/START
- * buttons are wired by the shell).
+ * starts: CRT overlays, the SCR!PTS lockup, tagline, and a blinking start
+ * prompt. Clicking/tapping anywhere on it starts the game (keyboard + the
+ * A/START buttons are wired by the shell). The prompt names the gesture that
+ * actually fits the device — "TAP TO START" on phones, "CLICK TO START" on
+ * desktop — instead of an arcade "PRESS START" that matches neither.
  */
 export default function StartScreen({
   mobile = false,
@@ -33,8 +35,8 @@ export default function StartScreen({
     >
       <PixelCityIntro />
 
-      {/* Text layer. The lockup and PRESS START are anchored independently as a
-          share of the LCD height: logo just above the walkers, PRESS START down
+      {/* Text layer. The lockup and start prompt are anchored independently as a
+          share of the LCD height: logo just above the walkers, prompt down
           on the road. Both are placed by % so they track the same spots on any
           aspect ratio and never depend on the background image being stretched. */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 6, padding: mobile ? '0 16px' : '0 24px' }}>
@@ -67,7 +69,7 @@ export default function StartScreen({
           }}
         >
           <span style={{ color: '#F7F7F5' }}>›</span>
-          PRESS START
+          {mobile ? 'TAP TO START' : 'CLICK TO START'}
         </div>
       </div>
     </div>
