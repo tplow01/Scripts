@@ -60,6 +60,9 @@ const PROMPTS: Record<string, PromptDef> = {
     question: "Checkout?",
     kind: "cart",
   },
+  // Clicking the counter with the mouse — straight to the Yes/No, no walk-over
+  // and no cashier small talk (see WorldScene.onPointerDown).
+  cart: { variant: "choice", question: "Open cart?", kind: "cart" },
   // Lobby cashier NPC (by id) — the cashier IS Heath. Speech, no navigation.
   cashier: {
     variant: "message",
@@ -109,8 +112,8 @@ const PROMPTS: Record<string, PromptDef> = {
 // deliver it. {A} becomes the platform's interact button (A on mobile, Z on web).
 const HEATH_INTRO_PAGES = [
   "… Yooo. My name is Heath. I'm the founder of SCR!PTS. Welcome to our world!",
-  "Walk up to anything and press {A} to check it out — {B} to go back.",
-  "When you're ready, come back up — I'll check you out!",
+  "Walk up to anything and press {A} to check it out, or just click it with your mouse.",
+  "When you're ready, click the counter to open your cart and check out.",
 ];
 
 // Routes reachable from the game — prefetched on start so navigation is instant.

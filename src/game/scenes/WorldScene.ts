@@ -140,6 +140,14 @@ export class WorldScene extends Phaser.Scene {
     };
     this.game.events.on("vbutton", onVButton);
 
+    // Mouse / touch: clicking a clothing rail is a shortcut to the inventory —
+    // the same handoff pressing Z while facing it gives. The counter opens the
+    // cart. Hovering a clickable fixture shows the hand cursor.
+    this.input.on("pointerdown", (p: Phaser.Input.Pointer) => this.onPointerDown(p));
+    this.input.on("pointermove", (p: Phaser.Input.Pointer) => this.updateHoverCursor(p));
+    this.input.on("pointerout", () => this.setCursor("default"));
+    this.events.once("shutdown", () => this.setCursor("default"));
+
     // React-side dialogue freezes movement while it's open. Clearing held keys
     // on open stops a hold from resuming the instant the dialogue closes.
     const onDialog = (open: boolean) => {
@@ -1031,6 +1039,48 @@ export class WorldScene extends Phaser.Scene {
       return;
     }
     this.fireInteraction(hit);
+  }
+
+  /**
+   * A click/tap on a fixture is a shortcut: a clothing rail opens the
+   * inventory (like pressing Z on it), the checkout counter opens the cart —
+   * the counter click skips Heath's walk-over and small talk, going straight
+   * to a plain "Open cart?" choice.
+   */
+  private onPointerDown(pointer: Phaser.Input.Pointer) {
+    if (this.transitioning || this.dialogOpen || this.overlayOpen) return;
+    const hit = this.clickableAt(pointer);
+    if (!hit) return;
+    if (hit.type === "checkout") {
+      this.game.events.emit("interaction", { id: "cart", type: "cart" });
+    } else {
+      this.fireInteraction(hit);
+    }
+  }
+
+  /** The clickable fixture (clothing rail or counter) under a pointer, if any. */
+  private clickableAt(pointer: Phaser.Input.Pointer): Interaction | undefined {
+    const ts = this.room.tileSize;
+    const tx = Math.floor(pointer.worldX / ts);
+    const ty = Math.floor(pointer.worldY / ts);
+    return this.room.interactions.find(
+      (i) =>
+        (i.type === "rack" || i.type === "checkout") &&
+        propActive(i, gameSession.revealed) &&
+        footprint(i).some((t) => t.x === tx && t.y === ty),
+    );
+  }
+
+  /** Hand cursor over a clickable fixture, arrow everywhere else. */
+  private updateHoverCursor(pointer: Phaser.Input.Pointer) {
+    const clickable =
+      !this.transitioning && !this.dialogOpen && !this.overlayOpen && !!this.clickableAt(pointer);
+    this.setCursor(clickable ? "pointer" : "default");
+  }
+
+  private setCursor(value: "pointer" | "default") {
+    const canvas = this.game.canvas;
+    if (canvas) canvas.style.cursor = value;
   }
 
   /** Z/Space/Enter: interact with the solid fixture Scribbs is facing. */
