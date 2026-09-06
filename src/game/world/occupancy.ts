@@ -1,20 +1,24 @@
 /**
- * Who claims which tile.
+ * Who blocks whom on the grid.
  *
  * Movement is tweened over a few hundred milliseconds, but an actor's logical
- * tile only updates when the tween lands. So for the whole of a step an actor
- * still reports the tile it is *leaving*, and nothing at all reports the tile it
- * is *entering*.
+ * tile only updates when the tween lands. So mid-step an actor still reports
+ * the tile it is leaving, and without help nothing reports the tile it is
+ * entering — which let two actors pick the same destination and land on top of
+ * each other, appearing to phase through.
  *
- * That gap is what let characters walk through each other: two actors could
- * each check a destination, both find it unclaimed, and both walk onto it. They
- * end up on the same tile and appear to phase through one another. It only
- * showed up when something else was moving at the same time, because the window
- * is exactly one step long.
+ * The rule has to close that hole without making movement sticky. Blocking a
+ * tile someone is *leaving* is the tempting shortcut and the wrong one: they
+ * are on their way out, so refusing it just stalls everyone for a third of a
+ * second every time an NPC walks past. Only three things actually block:
  *
- * The fix is to claim the destination for the duration of the step. An actor
- * mid-stride holds two tiles — the one it is leaving and the one it is entering
- * — and releases the first when it lands.
+ *   1. Someone is standing there.
+ *   2. Someone is walking onto it — the case that caused the phasing.
+ *   3. A head-on swap: they are walking onto the tile you are leaving, out of
+ *      the tile you want. Allowing that would slide two actors straight
+ *      through one another.
+ *
+ * Anything else is a pass-by, which is how it should feel.
  */
 
 export interface TileClaim {
@@ -24,21 +28,46 @@ export interface TileClaim {
   pending: { x: number; y: number } | null;
 }
 
-/** True when this actor holds (x, y) — standing on it, or walking onto it. */
-export function claims(actor: TileClaim, x: number, y: number): boolean {
-  if (actor.tileX === x && actor.tileY === y) return true;
-  return actor.pending !== null && actor.pending.x === x && actor.pending.y === y;
+/**
+ * Does `other` block a step from (fromX, fromY) to (toX, toY)?
+ */
+export function blocks(
+  other: TileClaim,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
+): boolean {
+  const standingThere = other.tileX === toX && other.tileY === toY;
+
+  // 1. Standing still, right where we want to go.
+  if (!other.pending) return standingThere;
+
+  // 2. Walking onto the same tile we are — the collision that caused phasing.
+  if (other.pending.x === toX && other.pending.y === toY) return true;
+
+  // 3. Head-on swap: they are leaving the tile we want, heading into the tile
+  //    we are leaving. Two actors trading places pass through each other.
+  if (standingThere && other.pending.x === fromX && other.pending.y === fromY) return true;
+
+  // Otherwise they are on their way out of the tile — walk in behind them.
+  return false;
 }
 
-/**
- * True when anyone in `actors` holds (x, y). `except` skips the actor doing the
- * asking, which always holds its own tile.
- */
-export function anyClaims(
+/** Does anyone block this step? `except` skips the actor doing the asking. */
+export function blockedBy(
   actors: readonly TileClaim[],
-  x: number,
-  y: number,
+  fromX: number,
+  fromY: number,
+  toX: number,
+  toY: number,
   except?: TileClaim,
 ): boolean {
-  return actors.some((a) => a !== except && claims(a, x, y));
+  return actors.some((a) => a !== except && blocks(a, fromX, fromY, toX, toY));
+}
+
+/** Is this actor standing on, or stepping onto or off, (x, y)? Used for interaction. */
+export function occupies(actor: TileClaim, x: number, y: number): boolean {
+  if (actor.tileX === x && actor.tileY === y) return true;
+  return actor.pending !== null && actor.pending.x === x && actor.pending.y === y;
 }
