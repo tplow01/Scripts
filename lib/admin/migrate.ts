@@ -34,8 +34,15 @@ export function isMigrated(value: unknown): boolean {
 /** First 3 alphanumeric characters, uppercased — the sku segment for one field. */
 const alpha3 = (s: string) => s.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3).toUpperCase()
 
+/**
+ * The one place the legacy 'Basement' collection string is interpreted.
+ * Used only when seeding/migrating; afterwards `isBasement` is the truth.
+ */
+export const isBasementCollection = (collection: string) =>
+  collection.toLowerCase().startsWith('basement')
+
 const collectionCode = (collection: string) =>
-  collection.toLowerCase().startsWith('basement') ? 'BSM' : 'SCR'
+  isBasementCollection(collection) ? 'BSM' : 'SCR'
 
 /** Deterministic seed stock so tests and reloads agree. */
 const seedStock = (index: number) => Math.max(0, 12 - (index % 5) * 3)
@@ -97,6 +104,7 @@ export function migrateProducts(legacy: LegacyProduct[]): Product[] {
       emotion: head.emotion,
       description: head.description,
       collection: head.collection,
+      isBasement: isBasementCollection(head.collection),
       productType: 'Tee',
       vendor: 'SCR!PTS',
       tags: [],

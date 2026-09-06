@@ -143,7 +143,7 @@ describe('reconcileVariants', () => {
 
 const base = (over: Partial<Product> = {}): Product => ({
   id: 'p1', name: 'ANXIETY', slug: 'anxiety', emotion: 'ANXIETY',
-  description: '', collection: '1-800-Cyber-Love', productType: 'Tee',
+  description: '', collection: '1-800-Cyber-Love', isBasement: false, productType: 'Tee',
   vendor: 'SCR!PTS', tags: [], publishedStatus: 'active', skuRoot: 'SCR-ANX',
   shipDate: 'July 2026', requiresShipping: true, seo: { title: '', description: '' },
   options: [{ name: 'Size', values: ['S', 'M'], position: 1 }],

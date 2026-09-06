@@ -3,12 +3,15 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type { Product, ProductVariant } from '@/types/product'
 import { ALL_PRODUCTS } from '@/lib/products'
-import { buildLegacyIndex, buildVariantIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
-import { useSFX } from '@/lib/sfx'
+import { buildLegacyIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
 
 const STORAGE_KEY = 'scripts-cart'
 
-const VARIANTS = buildVariantIndex(ALL_PRODUCTS)
+/**
+ * Maps the pre-split `{ id, size }` storage shape onto variant ids. It reads
+ * the seed catalog on purpose — its only job is interpreting an old localStorage
+ * format. What exists and what it costs comes from the server.
+ */
 const LEGACY = buildLegacyIndex(ALL_PRODUCTS)
 
 export interface CartItem {
@@ -17,13 +20,26 @@ export interface CartItem {
   quantity: number
 }
 
-function loadStored(): CartItem[] {
+function readStored(): StoredItem[] {
   if (typeof window === 'undefined') return []
-  return parseStoredCart(window.localStorage.getItem(STORAGE_KEY), VARIANTS, LEGACY)
-    .map(({ variantId, quantity }) => {
-      const ref = VARIANTS.get(variantId)!
-      return { product: ref.product, variant: ref.variant, quantity }
-    })
+  return parseStoredCart(window.localStorage.getItem(STORAGE_KEY), null, LEGACY)
+}
+
+/**
+ * Trade stored ids for authoritative products and prices. The browser sends
+ * ids and quantities only; it never tells the server what anything costs.
+ * Variants that no longer exist come back dropped.
+ */
+async function resolveStored(stored: StoredItem[]): Promise<CartItem[]> {
+  if (!stored.length) return []
+  const res = await fetch('/api/cart/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items: stored }),
+  })
+  if (!res.ok) throw new Error(`Could not resolve the cart (${res.status})`)
+  const data = (await res.json()) as { items?: CartItem[] }
+  return data.items ?? []
 }
 
 interface CartCtx {
@@ -45,26 +61,36 @@ const CartContext = createContext<CartCtx | null>(null)
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
   const [isOpen, setIsOpen] = useState(false)
-  const sfx = useSFX()
 
   // Hydrate from localStorage after mount (keeps SSR/first render = empty,
   // avoiding hydration mismatch), then persist on every change.
   const hydrated = useRef(false)
   useEffect(() => {
-    const stored = loadStored()
-    if (stored.length) setItems(stored)
-    hydrated.current = true
+    let cancelled = false
+    resolveStored(readStored())
+      .then((resolved) => {
+        if (!cancelled && resolved.length) setItems(resolved)
+      })
+      .catch(() => {
+        // Offline, or the server is unhappy. Start empty rather than showing a
+        // stale price — nothing is persisted, so the stored cart survives.
+      })
+      .finally(() => {
+        hydrated.current = true
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
   useEffect(() => {
     if (!hydrated.current || typeof window === 'undefined') return
     const minimal: StoredItem[] = items.map((i) => ({ variantId: i.variant.id, quantity: i.quantity }))
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(minimal))
   }, [items])
-  const openCart  = useCallback(() => { sfx.play('open'); setIsOpen(true) }, [sfx])
-  const closeCart = useCallback(() => { sfx.play('close'); setIsOpen(false) }, [sfx])
+  const openCart  = useCallback(() => setIsOpen(true), [])
+  const closeCart = useCallback(() => setIsOpen(false), [])
 
   const add = useCallback((product: Product, variant: ProductVariant) => {
-    sfx.play('add-to-cart')
     setItems((prev) => {
       const existing = prev.find((i) => i.variant.id === variant.id)
       if (existing) {
@@ -76,12 +102,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { product, variant, quantity: 1 }]
     })
-  }, [sfx])
+  }, [])
 
   const remove = useCallback((variantId: string) => {
-    sfx.play('remove-from-cart')
     setItems((prev) => prev.filter((i) => i.variant.id !== variantId))
-  }, [sfx])
+  }, [])
 
   const increment = useCallback((variantId: string) => {
     setItems((prev) =>

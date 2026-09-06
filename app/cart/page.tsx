@@ -2,18 +2,18 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import NavBar from '@/components/NavBar'
 import FooterLinks from '@/components/FooterLinks'
 import { useCart } from '@/lib/cart'
+import { useStripeCheckout } from '@/lib/checkout'
 import { fadeUp, stagger } from '@/lib/motion'
 import { variantTitle } from '@/lib/admin/variants'
 
 export default function CartPage() {
   const { items, remove, increment, decrement, total } = useCart()
+  const { start: startCheckout, busy: payBusy, error: payError } = useStripeCheckout()
   const reduced = useReducedMotion()
-  const router = useRouter()
 
   const listVariants = reduced ? {} : stagger(0.06)
   const itemVariants = reduced ? {} : fadeUp
@@ -161,11 +161,18 @@ export default function CartPage() {
 
               <motion.button
                 whileTap={reduced ? {} : { scale: 0.98 }}
-                onClick={() => router.push('/checkout')}
-                className="w-full py-[14px] bg-[#0d0d0d] text-white text-[13px] font-bold tracking-[0.06em] uppercase border border-[#0d0d0d] rounded hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200 mb-[12px]"
+                onClick={() => startCheckout(items)}
+                disabled={payBusy}
+                className="w-full py-[14px] bg-[#0d0d0d] text-white text-[13px] font-bold tracking-[0.06em] uppercase border border-[#0d0d0d] rounded hover:bg-white hover:text-[#0d0d0d] transition-colors duration-200 mb-[12px] disabled:opacity-60"
               >
-                Checkout
+                {payBusy ? 'Taking you to checkout…' : 'Checkout'}
               </motion.button>
+
+              {payError && (
+                <p role="alert" className="mb-[12px] text-[12px] font-bold tracking-[0.04em] text-[#c0392b] text-center">
+                  {payError}
+                </p>
+              )}
 
               <Link
                 href="/inventory"
