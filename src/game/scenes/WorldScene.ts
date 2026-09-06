@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
+import { anyClaims, claims, type TileClaim } from "@/game/world/occupancy";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { isMuralTile } from "@/game/art/walls";
 import { isRugTile } from "@/game/art/floors";
@@ -38,6 +39,8 @@ export class WorldScene extends Phaser.Scene {
   private scribbsShadow!: Phaser.GameObjects.Image;
   private tileX = 0;
   private tileY = 0;
+  /** Scribbs' in-flight destination, claimed for the length of the step. */
+  private pending: { x: number; y: number } | null = null;
   private moving = false;
   private transitioning = false;
   private dialogOpen = false;
@@ -194,6 +197,7 @@ export class WorldScene extends Phaser.Scene {
     if (resume) {
       this.tileX = resume.tileX;
       this.tileY = resume.tileY;
+      this.pending = null;
       this.facing = resume.facing;
       this.setFrame("both");
       this.syncScribbs();
@@ -249,16 +253,36 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
-  /** A tile an NPC may step onto: walkable, and nobody standing there. */
-  private npcCanEnter(self: NpcActor, x: number, y: number): boolean {
-    if (!canStep(this.room, self.tileX, self.tileY, x, y)) return false;
-    if (x === this.tileX && y === this.tileY) return false;
-    return !this.npcs.some((n) => n !== self && n.tileX === x && n.tileY === y);
+  /** Scribbs as a tile claim — where he is, and where he is walking to. */
+  private get playerClaim(): TileClaim {
+    return { tileX: this.tileX, tileY: this.tileY, pending: this.pending };
   }
 
-  /** The patrolling NPC standing on a tile right now, if any. */
+  /** Everyone who can hold a tile: Scribbs and every patrolling NPC. */
+  private get actors(): TileClaim[] {
+    return [this.playerClaim, ...this.npcs];
+  }
+
+  /**
+   * A tile an NPC may step onto: walkable, and unclaimed by anyone else.
+   * "Claimed" includes a tile someone is mid-step *onto* — see world/occupancy.
+   */
+  private npcCanEnter(self: NpcActor, x: number, y: number): boolean {
+    if (!canStep(this.room, self.tileX, self.tileY, x, y)) return false;
+    return !anyClaims(this.actors, x, y, self);
+  }
+
+  /**
+   * The patrolling NPC on a tile for interaction purposes — standing on it, or
+   * mid-stride onto or off it.
+   *
+   * Matching only the logical tile made talking feel unreliable: an NPC walking
+   * toward you is visually in front of you for most of a step while still
+   * reporting the tile behind, so pressing A did nothing for up to ~380ms. The
+   * player is aiming at what they can see, so match what they can see.
+   */
   private npcAt(x: number, y: number): NpcActor | undefined {
-    return this.npcs.find((n) => n.tileX === x && n.tileY === y);
+    return this.npcs.find((n) => claims(n, x, y));
   }
 
   private clearHeld() {
@@ -381,6 +405,7 @@ export class WorldScene extends Phaser.Scene {
     const spawn = spawnOverride ?? this.room.spawn;
     this.tileX = spawn.tileX;
     this.tileY = spawn.tileY;
+    this.pending = null;
     this.syncScribbs();
 
     // Landing on stairs must not immediately bounce us back through the link.
@@ -720,6 +745,9 @@ export class WorldScene extends Phaser.Scene {
   private walkScribbsTo(nx: number, ny: number, facing: Facing): Promise<void> {
     const ts = this.room.tileSize;
     const cycle = new WalkCycle();
+    // NPCs patrol through the intro, so a scripted step claims its destination
+    // exactly as a player-driven one does.
+    this.pending = { x: nx, y: ny };
     this.facing = facing;
     this.scribbs.setTexture(characterFrame("scribbs", facing, cycle.step()));
     this.time.delayedCall(SCRIPTED_STEP_MS * STRIDE_HOLD, () => {
@@ -744,6 +772,7 @@ export class WorldScene extends Phaser.Scene {
         onComplete: () => {
           this.tileX = nx;
           this.tileY = ny;
+          this.pending = null;
           this.facing = facing;
           this.setFrame(cycle.rest());
           this.syncScribbs();
@@ -882,13 +911,17 @@ export class WorldScene extends Phaser.Scene {
     const ny = this.tileY + dy;
 
     // Blocked by a wall, fixture, wrong-side seat — or someone standing there.
-    if (!canStep(this.room, this.tileX, this.tileY, nx, ny) || this.npcAt(nx, ny)) {
+    if (
+      !canStep(this.room, this.tileX, this.tileY, nx, ny) ||
+      anyClaims(this.npcs, nx, ny)
+    ) {
       this.walking = false;
       this.setFrame(this.cycle.rest());
       return;
     }
 
     this.moving = true;
+    this.pending = { x: nx, y: ny };
     this.walking = true;
     // One tile, one full step: lead on the stride, settle onto neutral partway
     // through, alternating feet tile to tile.
@@ -914,6 +947,7 @@ export class WorldScene extends Phaser.Scene {
       onComplete: () => {
         this.tileX = nx;
         this.tileY = ny;
+        this.pending = null;
         this.moving = false;
         // Deliberately NOT resting here: if a direction is still held, update()
         // chains straight into the next stride and the walk stays continuous.
