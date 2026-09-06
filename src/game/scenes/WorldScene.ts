@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { getRoom, startRoomId, canStep, invalidateBlocked } from "@/game/world/rooms";
-import { anyClaims, claims, type TileClaim } from "@/game/world/occupancy";
+import { blockedBy, occupies, type TileClaim } from "@/game/world/occupancy";
 import { resolveTextureKey, SHADOW_KEY } from "@/game/art/registry";
 import { isMuralTile } from "@/game/art/walls";
 import { isRugTile } from "@/game/art/floors";
@@ -269,7 +269,7 @@ export class WorldScene extends Phaser.Scene {
    */
   private npcCanEnter(self: NpcActor, x: number, y: number): boolean {
     if (!canStep(this.room, self.tileX, self.tileY, x, y)) return false;
-    return !anyClaims(this.actors, x, y, self);
+    return !blockedBy(this.actors, self.tileX, self.tileY, x, y, self);
   }
 
   /**
@@ -282,7 +282,7 @@ export class WorldScene extends Phaser.Scene {
    * player is aiming at what they can see, so match what they can see.
    */
   private npcAt(x: number, y: number): NpcActor | undefined {
-    return this.npcs.find((n) => claims(n, x, y));
+    return this.npcs.find((n) => occupies(n, x, y));
   }
 
   private clearHeld() {
@@ -913,7 +913,7 @@ export class WorldScene extends Phaser.Scene {
     // Blocked by a wall, fixture, wrong-side seat — or someone standing there.
     if (
       !canStep(this.room, this.tileX, this.tileY, nx, ny) ||
-      anyClaims(this.npcs, nx, ny)
+      blockedBy(this.npcs, this.tileX, this.tileY, nx, ny)
     ) {
       this.walking = false;
       this.setFrame(this.cycle.rest());
