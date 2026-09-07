@@ -8,11 +8,13 @@ import { adminPath, LOW_STOCK_THRESHOLD } from '@/lib/admin/config'
 import { useAdmin } from '@/lib/admin/store'
 import { totalStock, variantCount } from '@/lib/admin/variants'
 import type { Product, PublishedStatus } from '@/types/product'
+import SampleDataNotice from '@/components/admin/SampleDataNotice'
 
 function Thumb({ product }: { product: Product }) {
   const url = product.media[0]?.url
   return (
     <span className="w-11 h-11 rounded-lg bg-[#101010] border border-grey/20 flex items-center justify-center overflow-hidden shrink-0">
+      <SampleDataNotice />
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element -- object URLs need a plain img
         <img src={url} alt="" className="w-full h-full object-contain" />

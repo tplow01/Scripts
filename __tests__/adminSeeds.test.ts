@@ -27,7 +27,7 @@ describe('rich mock orders', () => {
       expect(['paid', 'refunded']).toContain(o.paymentStatus)
       // timeline consistent with status
       expect(o.timeline.placedAt.startsWith(o.date)).toBe(true)
-      if (o.status === 'pending') { expect(o.timeline.shippedAt).toBeNull(); expect(o.timeline.deliveredAt).toBeNull() }
+      if (o.status === 'paid') { expect(o.timeline.makingAt).toBeNull(); expect(o.timeline.shippedAt).toBeNull(); expect(o.timeline.deliveredAt).toBeNull() }
       if (o.status === 'shipped') { expect(o.timeline.shippedAt).not.toBeNull(); expect(o.timeline.deliveredAt).toBeNull() }
       if (o.status === 'delivered') { expect(o.timeline.shippedAt).not.toBeNull(); expect(o.timeline.deliveredAt).not.toBeNull() }
     }

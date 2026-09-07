@@ -5,6 +5,7 @@ import OrderDrawer from '@/components/admin/OrderDrawer'
 import OrdersList from '@/components/admin/OrdersList'
 import { useAdmin } from '@/lib/admin/store'
 import type { AdminOrder } from '@/lib/admin/types'
+import SampleDataNotice from '@/components/admin/SampleDataNotice'
 
 export default function OrdersPage() {
   const { state, setOrder } = useAdmin()
@@ -12,6 +13,7 @@ export default function OrdersPage() {
 
   return (
     <div>
+      <SampleDataNotice />
       <h1 className="text-[32px] sm:text-[40px] leading-none uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
         Orders
       </h1>

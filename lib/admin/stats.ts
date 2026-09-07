@@ -1,4 +1,4 @@
-import type { AdminOrder, OrderStatus } from './types'
+import { ORDER_STATUSES, type AdminOrder, type OrderStatus } from './types'
 
 // ── Stats (pure; consumed by the Overview and the metric drill-down pages).
 
@@ -28,7 +28,7 @@ export function topProducts(orders: AdminOrder[], limit = 3): { productName: str
 }
 
 export function statusCounts(orders: AdminOrder[]): Record<OrderStatus, number> {
-  const c: Record<OrderStatus, number> = { pending: 0, shipped: 0, delivered: 0 }
+  const c = Object.fromEntries(ORDER_STATUSES.map((k) => [k, 0])) as Record<OrderStatus, number>
   for (const o of orders) c[o.status]++
   return c
 }

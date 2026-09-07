@@ -12,7 +12,8 @@ import { adminPath } from '@/lib/admin/config'
 import { TRAFFIC_30D } from '@/lib/admin/mockTraffic'
 import { useAdmin } from '@/lib/admin/store'
 import { customerStats, delta, revenueByDay, statusCounts, topProducts, trafficInRange, trafficPrevWindow } from '@/lib/admin/stats'
-import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
+import { ORDER_STATUSES, type AdminOrder, type OrderStatus } from '@/lib/admin/types'
+import SampleDataNotice from '@/components/admin/SampleDataNotice'
 
 export default function OverviewPage() {
   const { state } = useAdmin()
@@ -43,10 +44,11 @@ export default function OverviewPage() {
 
   const thumbFor = (name: string): string | null =>
     state.products.find((p) => p.name === name)?.media[0]?.url ?? null
-  const statusOrder: OrderStatus[] = ['pending', 'shipped', 'delivered']
+  const statusOrder: readonly OrderStatus[] = ORDER_STATUSES
 
   return (
     <div>
+      <SampleDataNotice />
       <h1 className="text-[32px] sm:text-[40px] leading-none uppercase tracking-[0.04em]" style={{ fontFamily: 'var(--font-bebas)' }}>
         Overview
       </h1>

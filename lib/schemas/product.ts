@@ -77,7 +77,7 @@ export const publishToggleSchema = z.object({
 
 /** PATCH /api/admin/orders/[id] */
 export const orderStatusSchema = z.object({
-  status: z.enum(['pending', 'shipped', 'delivered']),
+  status: z.enum(['paid', 'making', 'shipped', 'delivered']),
 })
 
 /** POST /api/cart/resolve */
