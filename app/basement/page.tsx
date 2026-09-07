@@ -29,7 +29,9 @@ export default async function BasementPage() {
       <main className="relative z-10 px-4 md:px-16 lg:px-[200px] pb-[64px] pt-8 md:pt-[80px] flex-1">
         <ProductGrid products={products} theme="dark" columns={2} />
       </main>
-      <div className="relative z-10">
+      {/* Phone (< lg): opaque band so the fixed full-bleed PageEdgeArt stops
+          and the footer reads as its own section. Desktop unchanged. */}
+      <div className="relative z-10 bg-[#0d0d0d] lg:bg-transparent">
         <BasementFooter />
       </div>
     </div>

@@ -286,7 +286,10 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
         </div>
       </main>
 
-      <footer className="relative z-10">
+      {/* Phone (< lg): opaque, theme-matched band so the fixed full-bleed
+          PageEdgeArt stops and the footer reads as its own section. Desktop
+          keeps the transparent footer — its edge art sits in reserved margins. */}
+      <footer className={`relative z-10 lg:bg-transparent ${dark ? 'bg-[#0d0d0d]' : 'bg-white'}`}>
         {dark ? <BasementFooter /> : <FooterLinks />}
       </footer>
 

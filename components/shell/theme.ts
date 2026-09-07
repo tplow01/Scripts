@@ -6,9 +6,16 @@ export const SHELL_BODY = '#6F6F73'
 /** Wordmark strip and flat printed labels/icons. */
 export const STRIP_BLACK = '#0D0D0D'
 export const WORDMARK_PINK = '#FF8AC7'
+/** Deeper accent pink — dialogue nameplate, selected rows, overlay accents.
+ *  Shared with components/DialogPrompt.tsx so the in-LCD UI never drifts. */
+export const PINK_DEEP = '#FF4FA3'
 
 /** Brand white — SOCIALS / INVENTORY pills and other bright printed surfaces. */
 export const BRAND_WHITE = '#F7F7F5'
+
+/** In-LCD menu panel (Yes/No prompt, SystemOverlay) — near-black card on the
+ *  dimmed screen. Also shared with DialogPrompt. */
+export const PANEL_DARK = '#151515'
 
 /** Matte rubber — A/B buttons and D-pad. Light only from above. */
 export const RUBBER_FACE = 'radial-gradient(circle at 36% 28%, #2e2e31 0%, #1b1b1e 55%, #101012 100%)'

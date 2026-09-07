@@ -6,6 +6,16 @@ import { PARALLAX_BANDS, PARALLAX_TILES, MIRROR_PERIOD, type ParallaxBand } from
 /** In-game walk cycle: standing, left-leg-forward, standing, right-leg-forward. */
 const WALK_FRAMES = ["both", "left", "both", "right"] as const;
 
+/** The parallax band art, back to front. Preloaded before the walkers appear so
+ *  a slow phone never shows characters jogging on a blank pink screen. */
+const LAYER_SRCS = [
+  "/assets/loading/layer-sky.png",
+  "/assets/loading/layer-stars.png",
+  "/assets/loading/layer-clouds.png",
+  "/assets/loading/layer-buildings.png",
+  "/assets/loading/layer-road.png",
+];
+
 /**
  * A character jogging on the spot in the centre of the frame. The legs cycle
  * through the walk sprites while the parallax world slides past behind them, so
@@ -91,6 +101,30 @@ function ParallaxLayer({ band, z }: { band: ParallaxBand; z: number }) {
 
 /** Sunset skyline tableau for the SCR!PTS title screen — a drifting pixel-art city over a highway. */
 export default function PixelCityIntro() {
+  // Hold the walkers back until every band image is decoded. On a fast
+  // connection this is a frame or two; on a slow phone it's the difference
+  // between "characters walking through a city" and "characters walking on pink".
+  const [worldReady, setWorldReady] = useState(false);
+  useEffect(() => {
+    let live = true;
+    let left = LAYER_SRCS.length;
+    const done = () => {
+      if (live && --left <= 0) setWorldReady(true);
+    };
+    for (const src of LAYER_SRCS) {
+      const img = new Image();
+      img.onload = done;
+      img.onerror = done; // a missing layer must not strand the intro forever
+      img.src = src;
+    }
+    // Safety net: never leave the walkers hidden more than a beat.
+    const t = setTimeout(() => live && setWorldReady(true), 2500);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, []);
+
   return (
     <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#f38bb9" }}>
       <style>{`
@@ -135,23 +169,26 @@ export default function PixelCityIntro() {
       <ParallaxLayer band={PARALLAX_BANDS.buildings} z={5} />
       <ParallaxLayer band={PARALLAX_BANDS.road} z={6} />
 
-      {/* Characters walking on the spot, dead centre. */}
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "59%",
-          transform: "translateX(-50%)",
-          height: "22%",
-          zIndex: 7,
-          display: "flex",
-          alignItems: "flex-end",
-          gap: "6%",
-        }}
-      >
-        <Walker character="scribbs" phase={0} />
-        <Walker character="heath" phase={2} />
-      </div>
+      {/* Characters walking on the spot, dead centre — held until the world is
+          painted so they never appear against a blank background. */}
+      {worldReady && (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "59%",
+            transform: "translateX(-50%)",
+            height: "22%",
+            zIndex: 7,
+            display: "flex",
+            alignItems: "flex-end",
+            gap: "6%",
+          }}
+        >
+          <Walker character="scribbs" phase={0} />
+          <Walker character="heath" phase={2} />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,11 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react'
 import { nextDelay } from '@/lib/dialogTiming'
-
-const INK = '#0D0D0D'
-const PAPER = '#F7F7F5'
-const PINK_DEEP = '#FF4FA3'
-const PANEL = '#151515'
+import { STRIP_BLACK as INK, BRAND_WHITE as PAPER, PINK_DEEP, PANEL_DARK as PANEL } from '@/components/shell/theme'
 
 /** Fixed-bubble metrics, one set per platform. All values are px unless noted. */
 const SIZES = {

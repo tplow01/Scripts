@@ -30,7 +30,9 @@ export default async function InventoryPage() {
       <main className="relative z-10 px-4 md:px-16 lg:px-[200px] pb-[64px] pt-8 md:pt-[80px] flex-1">
         <ProductGrid products={products} theme="light" columns={3} />
       </main>
-      <div className="relative z-10">
+      {/* Phone (< lg): opaque white band so the fixed full-bleed PageEdgeArt
+          stops and the footer reads as its own section. Desktop unchanged. */}
+      <div className="relative z-10 bg-white lg:bg-transparent">
         <NewsletterFooter />
       </div>
     </div>
