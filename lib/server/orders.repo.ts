@@ -1,6 +1,6 @@
 import 'server-only'
 
-import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
+import { ORDER_STATUSES, type AdminOrder, type OrderStatus } from '@/lib/admin/types'
 import { MOCK_ORDERS } from '@/lib/admin/mockOrders'
 
 import { isDatabaseConfigured, serverClient } from './supabase'
@@ -23,6 +23,7 @@ interface OrderRow {
   status: OrderStatus
   payment_status: 'paid' | 'refunded'
   placed_at: string
+  making_at: string | null
   shipped_at: string | null
   delivered_at: string | null
   order_items?: {
@@ -61,6 +62,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
     paymentStatus: row.payment_status,
     timeline: {
       placedAt: row.placed_at,
+      makingAt: row.making_at,
       shippedAt: row.shipped_at,
       deliveredAt: row.delivered_at,
     },
@@ -69,7 +71,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
 
 const SELECT = `
   id, customer_name, customer_email, customer_phone, address, subtotal,
-  shipping, total, status, payment_status, placed_at, shipped_at, delivered_at,
+  shipping, total, status, payment_status, placed_at, making_at, shipped_at, delivered_at,
   order_items ( product_name, size, qty, unit_price )
 `
 
@@ -103,9 +105,18 @@ export async function setOrderStatus(
   now = new Date().toISOString(),
 ): Promise<StatusChange> {
   const before = await findOrder(id)
-  const patch: Record<string, unknown> = { status }
-  if (status === 'shipped') patch.shipped_at = now
-  if (status === 'delivered') patch.delivered_at = now
+  // Stamp every step reached, clear the ones no longer applicable, so the
+  // timeline always agrees with the status even when moved backwards.
+  const reached = ORDER_STATUSES.indexOf(status)
+  const stamp = (step: OrderStatus, current: string | null | undefined) =>
+    reached >= ORDER_STATUSES.indexOf(step) ? current ?? now : null
+
+  const patch: Record<string, unknown> = {
+    status,
+    making_at: stamp('making', before?.timeline.makingAt),
+    shipped_at: stamp('shipped', before?.timeline.shippedAt),
+    delivered_at: stamp('delivered', before?.timeline.deliveredAt),
+  }
 
   const { error } = await serverClient().from('orders').update(patch).eq('id', id)
   if (error) throw new Error(`setOrderStatus(${id}): ${error.message}`)
@@ -192,7 +203,7 @@ export async function createPaidOrder(input: NewOrder): Promise<CreatedOrder> {
     subtotal: input.subtotal,
     shipping: input.shipping,
     total: input.total,
-    status: 'pending',
+    status: 'paid',
     payment_status: 'paid',
     stripe_session_id: input.stripeSessionId,
     stripe_payment_intent: input.stripePaymentIntent,

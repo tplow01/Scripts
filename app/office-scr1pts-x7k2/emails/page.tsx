@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import type { AdminOrder } from '@/lib/admin/types'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 import { orderShippedEmail } from '@/lib/server/emails/orderShipped'
+import { orderDeliveredEmail } from '@/lib/server/emails/orderDelivered'
 
 export const metadata: Metadata = {
   title: 'Email preview — SCR!PTS',
@@ -33,15 +34,16 @@ const SAMPLE: AdminOrder = {
   shipping: 0,
   total: 132,
   date: '2026-09-06',
-  status: 'pending',
+  status: 'paid',
   paymentStatus: 'paid',
-  timeline: { placedAt: '2026-09-06T10:00:00Z', shippedAt: null, deliveredAt: null },
+  timeline: { makingAt: null, placedAt: '2026-09-06T10:00:00Z', shippedAt: null, deliveredAt: null },
 }
 
 export default function EmailPreviewPage() {
   const emails = [
     { label: 'Order confirmation', file: 'lib/server/emails/orderConfirmation.ts', mail: orderConfirmationEmail(SAMPLE) },
     { label: 'Shipping notice', file: 'lib/server/emails/orderShipped.ts', mail: orderShippedEmail(SAMPLE) },
+    { label: 'Thank you (delivered)', file: 'lib/server/emails/orderDelivered.ts', mail: orderDeliveredEmail(SAMPLE) },
   ]
 
   return (

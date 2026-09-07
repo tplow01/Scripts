@@ -2,7 +2,8 @@ import type { OrderStatus } from '@/lib/admin/types'
 
 /** Muted, on-brand status pill: tone at 15% background, full tone text. */
 const TONES: Record<OrderStatus, { bg: string; text: string; label: string }> = {
-  pending: { bg: 'rgba(217,164,65,0.15)', text: '#D9A441', label: 'Pending' },
+  paid: { bg: 'rgba(217,164,65,0.15)', text: '#D9A441', label: 'Paid' },
+  making: { bg: 'rgba(255,138,199,0.15)', text: '#FF8AC7', label: 'Making' },
   shipped: { bg: 'rgba(91,141,201,0.15)', text: '#5B8DC9', label: 'Shipped' },
   delivered: { bg: 'rgba(95,163,107,0.15)', text: '#5FA36B', label: 'Delivered' },
 }

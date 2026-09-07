@@ -1,4 +1,14 @@
-export type OrderStatus = 'pending' | 'shipped' | 'delivered'
+/**
+ * Where an order is in its life.
+ *
+ * SCR!PTS fulfils through a maker, so an order spends most of its time in
+ * `making` — paid for, handed over, not yet dispatched. Only `shipped` emails
+ * the customer about movement; `delivered` sends the thank-you.
+ */
+export type OrderStatus = 'paid' | 'making' | 'shipped' | 'delivered'
+
+/** In lifecycle order — drives the dropdown and the timeline. */
+export const ORDER_STATUSES: readonly OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
 export interface OrderCustomer {
   name: string
@@ -18,6 +28,8 @@ export interface OrderLineItem {
 
 export interface OrderTimeline {
   placedAt: string // ISO datetime
+  /** Handed to the maker. */
+  makingAt: string | null
   shippedAt: string | null
   deliveredAt: string | null
 }

@@ -7,7 +7,7 @@ import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 import Card from './Card'
 import StatusBadge from './StatusBadge'
 
-const STATUSES: OrderStatus[] = ['pending', 'shipped', 'delivered']
+const STATUSES: OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
 const PAYMENT_STYLE = {
   paid: { bg: 'rgba(255,138,199,0.15)', color: '#FF8AC7', label: 'Paid' },

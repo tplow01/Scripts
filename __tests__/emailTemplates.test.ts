@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import type { AdminOrder } from '@/lib/admin/types'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 import { orderShippedEmail } from '@/lib/server/emails/orderShipped'
+import { orderDeliveredEmail } from '@/lib/server/emails/orderDelivered'
 import { escapeHtml, money } from '@/lib/server/emails/layout'
 
 const order = (over: Partial<AdminOrder> = {}): AdminOrder => ({
@@ -21,9 +22,9 @@ const order = (over: Partial<AdminOrder> = {}): AdminOrder => ({
   shipping: 0,
   total: 132,
   date: '2026-09-06',
-  status: 'pending',
+  status: 'paid',
   paymentStatus: 'paid',
-  timeline: { placedAt: '2026-09-06T10:00:00Z', shippedAt: null, deliveredAt: null },
+  timeline: { makingAt: null, placedAt: '2026-09-06T10:00:00Z', shippedAt: null, deliveredAt: null },
   ...over,
 })
 
@@ -107,5 +108,43 @@ describe('helpers', () => {
 
   it('escapes every html-significant character', () => {
     expect(escapeHtml(`<>&"'`)).toBe('&lt;&gt;&amp;&quot;&#39;')
+  })
+})
+
+describe('thank-you email (delivered)', () => {
+  const sample: AdminOrder = {
+    id: 'SCR-1042',
+    customer: { name: 'Maya Okafor', email: 'maya@example.com', phone: '', address: [] },
+    lineItems: [{ productName: '"ANXIETY" — White', size: 'M', qty: 1, unitPrice: 44 }],
+    subtotal: 44, shipping: 0, total: 44,
+    date: '2026-09-06', status: 'delivered', paymentStatus: 'paid',
+    timeline: { placedAt: '2026-09-01T10:00:00Z', makingAt: '2026-09-02T10:00:00Z', shippedAt: '2026-09-04T10:00:00Z', deliveredAt: '2026-09-06T10:00:00Z' },
+  }
+
+  it('greets by name and carries the order number', () => {
+    const mail = orderDeliveredEmail(sample)
+    expect(mail.to).toBe('maya@example.com')
+    expect(mail.text).toContain('Maya')
+    expect(mail.text).toContain('SCR-1042')
+  })
+
+  it('invites them back with a working link', () => {
+    const mail = orderDeliveredEmail(sample)
+    expect(mail.html).toContain('https://scripts.studio')
+    expect(mail.text).toContain('https://scripts.studio')
+  })
+
+  it('does not discount the brand to win the second order', () => {
+    const mail = orderDeliveredEmail(sample)
+    const body = (mail.html + mail.text).toLowerCase()
+    for (const word of ['% off', 'discount', 'coupon', 'promo code']) {
+      expect(body).not.toContain(word)
+    }
+  })
+
+  it('has a plain-text alternative with no markup', () => {
+    const mail = orderDeliveredEmail(sample)
+    expect(mail.text.length).toBeGreaterThan(80)
+    expect(mail.text).not.toContain('<')
   })
 })

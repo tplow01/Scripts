@@ -10,7 +10,7 @@ import StatusBadge from '@/components/admin/StatusBadge'
 import { useAdmin } from '@/lib/admin/store'
 import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { avgItemsPerOrder, countByDay, ordersInRange, prevWindowDelta, statusCounts } from '@/lib/admin/stats'
-import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
+import { ORDER_STATUSES, type AdminOrder, type OrderStatus } from '@/lib/admin/types'
 
 export default function OrdersMetric() {
   const { state } = useAdmin()
@@ -21,7 +21,7 @@ export default function OrdersMetric() {
   const ranged = ordersInRange(state.orders, range)
   const byDay = countByDay(state.orders, range)
   const counts = statusCounts(ranged)
-  const statusOrder: OrderStatus[] = ['pending', 'shipped', 'delivered']
+  const statusOrder: readonly OrderStatus[] = ORDER_STATUSES
 
   return (
     <MetricShell

@@ -7,11 +7,20 @@ import { reconcileVariants, type VariantDefaults } from './variants'
 import { isMigrated, migrateProducts, type LegacyProduct } from './migrate'
 import { MOCK_ORDERS } from './mockOrders'
 import { useToast } from '@/lib/toast'
-import type { AdminOrder, OrderStatus } from './types'
+import { ORDER_STATUSES, type AdminOrder, type OrderStatus } from './types'
 
 export interface AdminState {
   products: Product[]
   orders: AdminOrder[]
+  /**
+   * True while the screen is still showing the built-in sample set rather than
+   * anything from the database — either the load hasn't finished, or it failed.
+   *
+   * It matters because the samples look completely real: named customers,
+   * plausible totals, working status dropdowns. Someone could mark a fictional
+   * order shipped and email an address that doesn't exist. So the UI says so.
+   */
+  isSample: boolean
 }
 
 /** Shared physical-product fields a brand-new product inherits. */
@@ -59,7 +68,7 @@ export function blankProduct(id: string): Product {
 // ── Pure state transitions (unit-tested; the provider is a thin shell over these).
 
 export function seedState(): AdminState {
-  return { products: [...ALL_PRODUCTS], orders: [...MOCK_ORDERS] }
+  return { products: [...ALL_PRODUCTS], orders: [...MOCK_ORDERS], isSample: true }
 }
 
 export function addProduct(s: AdminState, p: Product): AdminState {
@@ -98,10 +107,16 @@ export function setVariantStock(s: AdminState, productId: string, variantId: str
 
 /** Timeline stamping: forward transitions stamp now (keeping earlier stamps); backward transitions clear later stamps. */
 export function applyOrderStatus(order: AdminOrder, status: OrderStatus, nowIso: string): AdminOrder {
+  // Moving forward stamps anything not yet stamped; moving back clears the
+  // stamps that no longer apply, so the timeline always matches the status.
   const t = { ...order.timeline }
-  if (status === 'pending') { t.shippedAt = null; t.deliveredAt = null }
-  else if (status === 'shipped') { t.shippedAt = t.shippedAt ?? nowIso; t.deliveredAt = null }
-  else { t.shippedAt = t.shippedAt ?? nowIso; t.deliveredAt = t.deliveredAt ?? nowIso }
+  const reached = ORDER_STATUSES.indexOf(status)
+  const at = (i: number, current: string | null): string | null =>
+    reached >= i ? current ?? nowIso : null
+
+  t.makingAt = at(ORDER_STATUSES.indexOf('making'), t.makingAt)
+  t.shippedAt = at(ORDER_STATUSES.indexOf('shipped'), t.shippedAt)
+  t.deliveredAt = at(ORDER_STATUSES.indexOf('delivered'), t.deliveredAt)
   return { ...order, status, timeline: t }
 }
 
@@ -183,7 +198,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           productsRes.json() as Promise<{ products: Product[] }>,
           ordersRes.json() as Promise<{ orders: AdminOrder[] }>,
         ])
-        if (!cancelled) setState({ products, orders })
+        if (!cancelled) setState({ products, orders, isSample: false })
       } catch {
         if (!cancelled) notify('Could not load the back office. Showing seed data.', 'error')
       } finally {

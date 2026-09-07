@@ -16,7 +16,7 @@ const sample = (over: Partial<Product> = {}): Product => ({
 
 describe('product actions (unchanged behaviour)', () => {
   it('add/update/delete still work', () => {
-    let s: AdminState = { products: [sample()], orders: [] }
+    let s: AdminState = { products: [sample()], orders: [], isSample: false }
     s = addProduct(s, sample({ id: 'p2' }))
     s = updateProduct(s, sample({ id: 'p1', name: '"TEST" updated' }))
     expect(s.products.find((p) => p.id === 'p1')?.name).toBe('"TEST" updated')
@@ -27,7 +27,7 @@ describe('product actions (unchanged behaviour)', () => {
 
 describe('togglePublished', () => {
   it('flips active to draft and back', () => {
-    const s = { products: [sample({ publishedStatus: 'active' })], orders: [] }
+    const s = { products: [sample({ publishedStatus: 'active' })], orders: [], isSample: false }
     const drafted = togglePublished(s, 'p1')
     expect(drafted.products[0].publishedStatus).toBe('draft')
     expect(togglePublished(drafted, 'p1').products[0].publishedStatus).toBe('active')
@@ -37,7 +37,7 @@ describe('togglePublished', () => {
 describe('setVariantStock', () => {
   it('sets one variant and floors at zero', () => {
     const p = sample()
-    const s = { products: [p], orders: [] }
+    const s = { products: [p], orders: [], isSample: false }
     const vid = p.variants[0].id
     expect(setVariantStock(s, 'p1', vid, 9).products[0].variants[0].stock).toBe(9)
     expect(setVariantStock(s, 'p1', vid, -4).products[0].variants[0].stock).toBe(0)
@@ -45,14 +45,14 @@ describe('setVariantStock', () => {
 })
 
 describe('applyOrderStatus timeline stamping', () => {
-  const base = seedState().orders.find((o) => o.status === 'pending')!
+  const base = seedState().orders.find((o) => o.status === 'paid')!
 
-  it('pending → shipped stamps shippedAt', () => {
+  it('paid → shipped stamps shippedAt', () => {
     const next = applyOrderStatus(base, 'shipped', NOW)
     expect(next.timeline.shippedAt).toBe(NOW)
     expect(next.timeline.deliveredAt).toBeNull()
   })
-  it('pending → delivered stamps both', () => {
+  it('paid → delivered stamps both', () => {
     const next = applyOrderStatus(base, 'delivered', NOW)
     expect(next.timeline.shippedAt).toBe(NOW)
     expect(next.timeline.deliveredAt).toBe(NOW)
@@ -63,15 +63,15 @@ describe('applyOrderStatus timeline stamping', () => {
     expect(next.timeline.shippedAt).toBe(delivered.timeline.shippedAt)
     expect(next.timeline.deliveredAt).toBeNull()
   })
-  it('→ pending clears both', () => {
+  it('moving back to paid clears every later stamp', () => {
     const delivered = seedState().orders.find((o) => o.status === 'delivered')!
-    const next = applyOrderStatus(delivered, 'pending', NOW)
+    const next = applyOrderStatus(delivered, 'paid', NOW)
     expect(next.timeline.shippedAt).toBeNull()
     expect(next.timeline.deliveredAt).toBeNull()
   })
   it('setOrderStatus routes through applyOrderStatus and touches only the target', () => {
     const s = seedState()
-    const target = s.orders.find((o) => o.status === 'pending')!.id
+    const target = s.orders.find((o) => o.status === 'paid')!.id
     const next = setOrderStatus(s, target, 'shipped', NOW)
     expect(next.orders.find((o) => o.id === target)?.timeline.shippedAt).toBe(NOW)
     expect(next.orders.filter((o) => o.id !== target)).toEqual(s.orders.filter((o) => o.id !== target))
@@ -96,7 +96,7 @@ describe('stats helpers', () => {
   })
   it('statusCounts sums to order count', () => {
     const c = statusCounts(s.orders)
-    expect(c.pending + c.shipped + c.delivered).toBe(s.orders.length)
+    expect(c.paid + c.making + c.shipped + c.delivered).toBe(s.orders.length)
   })
   it('customerStats counts unique emails and new-this-week', () => {
     const c = customerStats(s.orders)
