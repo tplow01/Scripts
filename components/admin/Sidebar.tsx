@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, LayoutDashboard, Package, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, LayoutDashboard, Mail, Package, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { adminPath } from '@/lib/admin/config'
@@ -9,6 +9,7 @@ const NAV = [
   { href: adminPath(), label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: adminPath('products'), label: 'Products', icon: Package, exact: false },
   { href: adminPath('orders'), label: 'Orders', icon: ShoppingBag, exact: false },
+  { href: adminPath('emails'), label: 'Emails', icon: Mail, exact: false },
 ]
 
 /** Hidden on phone (BottomNav takes over), icon rail on tablet, labelled at lg+. */
