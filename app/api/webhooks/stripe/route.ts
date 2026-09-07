@@ -5,6 +5,7 @@ import { createPaidOrder, type NewOrderLine } from '@/lib/server/orders.repo'
 import { fromMinorUnits, isStripeConfigured, stripe } from '@/lib/server/stripe'
 import { sendEmail } from '@/lib/server/email'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
+import { getCopy } from '@/lib/server/emailCopy.repo'
 
 // Node runtime, not edge: signature verification needs the raw request body.
 export const runtime = 'nodejs'
@@ -106,7 +107,9 @@ export async function POST(req: Request) {
     // forgotten: a serverless function can be frozen the moment it responds.
     // sendEmail never throws — a mail failure must not cost a paid order.
     if (created) {
-      const result = await sendEmail(orderConfirmationEmail(order))
+      // Heath's wording from the back office; falls back to the defaults.
+      const copy = await getCopy('order_confirmation')
+      const result = await sendEmail(orderConfirmationEmail(order, copy))
       if (!result.sent) {
         console.error(`[order ${order.id}] confirmation not sent: ${result.reason}`)
       }

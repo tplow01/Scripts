@@ -148,3 +148,45 @@ describe('thank-you email (delivered)', () => {
     expect(mail.text).not.toContain('<')
   })
 })
+
+describe('editable copy', () => {
+  const sample: AdminOrder = {
+    id: 'SCR-1042',
+    customer: { name: 'Maya Okafor', email: 'maya@example.com', phone: '', address: [] },
+    lineItems: [{ productName: '"ANXIETY" — White', size: 'M', qty: 1, unitPrice: 44 }],
+    subtotal: 44, shipping: 0, total: 44,
+    date: '2026-09-06', status: 'paid', paymentStatus: 'paid',
+    timeline: { placedAt: '2026-09-06T10:00:00Z', makingAt: null, shippedAt: null, deliveredAt: null },
+  }
+
+  it('uses the defaults when nothing is stored', () => {
+    expect(orderDeliveredEmail(sample).headline ?? orderDeliveredEmail(sample).html).toContain('You made it')
+  })
+
+  it('uses Heath’s wording when it is stored', () => {
+    const mail = orderDeliveredEmail(sample, { headline: 'Welcome to the family', signoff: 'See you down there.' })
+    expect(mail.html).toContain('Welcome to the family')
+    expect(mail.html).toContain('See you down there.')
+    expect(mail.html).not.toContain('You made it')
+  })
+
+  it('still fills {name} and {order} in edited copy', () => {
+    const mail = orderConfirmationEmail(sample, {
+      subject: 'Your {order} is in',
+      greeting: 'Hey {name}, nice one.',
+    })
+    expect(mail.subject).toBe('Your SCR-1042 is in')
+    expect(mail.text).toContain('Hey Maya, nice one.')
+  })
+
+  it('falls back rather than sending a blank line when a field is cleared', () => {
+    const mail = orderDeliveredEmail(sample, { headline: '   ' })
+    expect(mail.html).toContain('You made it')
+  })
+
+  it('ignores keys the template does not have', () => {
+    const mail = orderShippedEmail(sample, { notAField: 'nonsense' } as Record<string, string>)
+    expect(mail.html).not.toContain('nonsense')
+    expect(mail.html).toContain('On its way')
+  })
+})

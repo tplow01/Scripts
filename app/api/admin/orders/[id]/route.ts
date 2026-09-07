@@ -4,6 +4,7 @@ import { setOrderStatus } from '@/lib/server/orders.repo'
 import { sendEmail } from '@/lib/server/email'
 import { orderShippedEmail } from '@/lib/server/emails/orderShipped'
 import { orderDeliveredEmail } from '@/lib/server/emails/orderDelivered'
+import { getCopy } from '@/lib/server/emailCopy.repo'
 import { isDatabaseConfigured } from '@/lib/server/supabase'
 import { orderStatusSchema } from '@/lib/schemas/product'
 
@@ -37,13 +38,15 @@ export async function PATCH(req: Request, { params }: Ctx) {
   // 'making' is bookkeeping — the customer hears nothing until it ships.
   const mail =
     changed && parsed.data.status === 'shipped'
-      ? { build: orderShippedEmail, label: 'shipping notice' }
+      ? { build: orderShippedEmail, template: 'order_shipped' as const, label: 'shipping notice' }
       : changed && parsed.data.status === 'delivered'
-        ? { build: orderDeliveredEmail, label: 'thank-you' }
+        ? { build: orderDeliveredEmail, template: 'order_delivered' as const, label: 'thank-you' }
         : null
 
   if (mail) {
-    const result = await sendEmail(mail.build(order))
+    // Heath's wording from the back office; falls back to the defaults.
+    const copy = await getCopy(mail.template)
+    const result = await sendEmail(mail.build(order, copy))
     if (!result.sent) {
       console.error(`[order ${order.id}] ${mail.label} not sent: ${result.reason}`)
     }
