@@ -160,7 +160,7 @@ describe('editable copy', () => {
   }
 
   it('uses the defaults when nothing is stored', () => {
-    expect(orderDeliveredEmail(sample).headline ?? orderDeliveredEmail(sample).html).toContain('You made it')
+    expect(orderDeliveredEmail(sample).html).toContain('You made it')
   })
 
   it('uses Heath’s wording when it is stored', () => {

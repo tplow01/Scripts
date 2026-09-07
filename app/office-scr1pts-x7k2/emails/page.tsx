@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 import type { AdminOrder } from '@/lib/admin/types'
-import EmailEditor from '@/components/admin/EmailEditor'
+import EmailTabs, { type EmailTab } from '@/components/admin/EmailTabs'
 import { getAllCopy } from '@/lib/server/emailCopy.repo'
 import { TEMPLATES, type EmailTemplateId } from '@/lib/server/emails/defaults'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
@@ -51,6 +51,16 @@ const BUILDERS = {
 export default async function EmailsPage() {
   const stored = await getAllCopy()
 
+  const tabs: EmailTab[] = TEMPLATES.map((spec) => {
+    const id = spec.id as EmailTemplateId
+    const mail = BUILDERS[id](SAMPLE, stored[id])
+    return {
+      spec,
+      initial: stored[id] ?? {},
+      preview: { subject: mail.subject, html: mail.html, text: mail.text },
+    }
+  })
+
   return (
     <div className="pb-16">
       <h1 className="text-[28px] uppercase tracking-[0.04em] mb-2" style={{ fontFamily: 'var(--font-bebas)' }}>
@@ -62,20 +72,7 @@ export default async function EmailsPage() {
         you leave it blank.
       </p>
 
-      <div className="flex flex-col gap-8">
-        {TEMPLATES.map((spec) => {
-          const id = spec.id as EmailTemplateId
-          const mail = BUILDERS[id](SAMPLE, stored[id])
-          return (
-            <EmailEditor
-              key={id}
-              spec={spec}
-              initial={stored[id] ?? {}}
-              preview={{ subject: mail.subject, html: mail.html, text: mail.text }}
-            />
-          )
-        })}
-      </div>
+      <EmailTabs tabs={tabs} />
     </div>
   )
 }
