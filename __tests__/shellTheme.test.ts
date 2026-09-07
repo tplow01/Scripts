@@ -21,6 +21,11 @@ describe('shell theme', () => {
       expect(t[dead], dead).toBeUndefined()
     }
   })
+  it('footing plinth is the strip black with a Primary Pink top edge', () => {
+    expect(T.FOOTING_FACE).toBe(T.STRIP_BLACK)
+    expect(T.FOOTING_EDGE).toContain('inset')
+    expect(T.FOOTING_EDGE).toContain(T.WORDMARK_PINK)
+  })
   it('pressedStyle sinks the control and shrinks its shadow', () => {
     const p = T.pressedStyle('0 4px 6px rgba(0,0,0,.5)')
     expect(p.transform).toContain('translateY')
