@@ -39,15 +39,3 @@ export function pressedStyle(baseShadow: string): { transform: string; boxShadow
     boxShadow: baseShadow.replace(/0 [234]px [3456]px/, '0 1px 2px'),
   }
 }
-
-/** Bottom footing plinth — the deck's black bezel band beneath the controls.
- *  It mirrors the wordmark strip under the LCD, so the handheld reads as black
- *  bezel · grey body · black footing, and gives the utility row a high-contrast
- *  base instead of white-on-grey. Its height absorbs `env(safe-area-inset-bottom)`
- *  so the iPhone home indicator lands on the plinth, never on a button. */
-export const FOOTING_FACE = STRIP_BLACK
-
-/** Primary Pink hairline along the footing's top edge plus a soft lift, so the
- *  plinth separates from the grey shell without a drawn border. */
-export const FOOTING_EDGE =
-  `inset 0 2px 0 ${WORDMARK_PINK}, 0 -8px 16px rgba(13,13,13,0.30)`

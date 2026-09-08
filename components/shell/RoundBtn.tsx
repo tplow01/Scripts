@@ -1,11 +1,8 @@
 'use client'
 
-import { Press_Start_2P } from 'next/font/google'
 import { useState } from 'react'
 import type { Btn } from '@/lib/controls'
 import { RUBBER_FACE, RUBBER_SHADOW, WORDMARK_PINK, pressedStyle } from './theme'
-
-const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
 
 /** Big matte-rubber round face button. Both A and B are black with pink letters. */
 export default function RoundBtn({
@@ -28,8 +25,10 @@ export default function RoundBtn({
         ...(pressed ? pressedStyle(RUBBER_SHADOW) : null),
       }}
     >
-      <span className={pressStart.className} style={{
-        fontSize: size * 0.33,
+      <span style={{
+        fontFamily: 'var(--font-bebas), sans-serif',
+        fontSize: size * 0.44,
+        lineHeight: 1,
         color: WORDMARK_PINK,
         textShadow: '0 2px 2px rgba(0,0,0,0.35), 0 -1px 1px rgba(255,255,255,0.05)',
         transform: 'translateY(1px)',
