@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type { Product, ProductVariant } from '@/types/product'
 import { ALL_PRODUCTS } from '@/lib/products'
-import { buildLegacyIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
+import { MAX_QTY, buildLegacyIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
 
 const STORAGE_KEY = 'scripts-cart'
 
@@ -22,7 +22,12 @@ export interface CartItem {
 
 function readStored(): StoredItem[] {
   if (typeof window === 'undefined') return []
+  // Clamp to what the server accepts, and drop lines that make no sense. One
+  // corrupt entry must not get the whole cart rejected.
   return parseStoredCart(window.localStorage.getItem(STORAGE_KEY), null, LEGACY)
+    .filter((i) => typeof i.variantId === 'string' && Number.isFinite(i.quantity))
+    .map((i) => ({ ...i, quantity: Math.min(MAX_QTY, Math.floor(i.quantity)) }))
+    .filter((i) => i.quantity >= 1)
 }
 
 /**
@@ -107,7 +112,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (existing) {
         return prev.map((i) =>
           i.variant.id === variant.id
-            ? { ...i, quantity: i.quantity + 1 }
+            ? { ...i, quantity: Math.min(MAX_QTY, i.quantity + 1) }
             : i
         )
       }
@@ -123,7 +128,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) =>
       prev.map((i) =>
         i.variant.id === variantId
-          ? { ...i, quantity: i.quantity + 1 }
+          ? { ...i, quantity: Math.min(MAX_QTY, i.quantity + 1) }
           : i
       )
     )

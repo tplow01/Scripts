@@ -5,7 +5,14 @@ import { useCart } from '@/lib/cart'
 
 const ICON_CLS = 'flex items-center justify-center w-[36px] h-[36px] hover:opacity-60 transition-opacity'
 
-export default function BasementNavBar({ backHref = '/basement' }: { backHref?: string }) {
+export default function BasementNavBar({
+  backHref = '/basement',
+  titleIsH1 = false,
+}: {
+  backHref?: string
+  /** Render the title as the page's <h1>. Off where the page has its own heading. */
+  titleIsH1?: boolean
+}) {
   const { count, isOpen, openCart } = useCart()
 
   return (
@@ -23,12 +30,17 @@ export default function BasementNavBar({ backHref = '/basement' }: { backHref?: 
 
       {/* Center — absolutely positioned so it's always page-center */}
       <div className="absolute left-0 right-0 flex justify-center pointer-events-none">
-        <span
-          className="text-[28px] md:text-[40px] lg:text-[52px] leading-none tracking-[0.06em] text-[#f7f7f5] uppercase whitespace-nowrap pointer-events-auto"
-          style={{ fontFamily: 'var(--font-bebas)' }}
-        >
-          THE BASEMENT
-        </span>
+        {(() => {
+          const label = (
+            <span
+              className="text-[28px] md:text-[40px] lg:text-[52px] leading-none tracking-[0.06em] text-[#f7f7f5] uppercase whitespace-nowrap pointer-events-auto"
+              style={{ fontFamily: 'var(--font-bebas)' }}
+            >
+              THE BASEMENT
+            </span>
+          )
+          return titleIsH1 ? <h1 className="contents">{label}</h1> : label
+        })()}
       </div>
 
       {/* Right — bag */}

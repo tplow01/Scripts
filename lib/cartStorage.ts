@@ -1,5 +1,8 @@
 import type { Product, ProductVariant } from '@/types/product'
 
+/** Matches the server's per-line limit (cartResolveSchema), so the two never disagree. */
+export const MAX_QTY = 99
+
 export interface StoredItem { variantId: string; quantity: number }
 export interface VariantRef { product: Product; variant: ProductVariant }
 export type LegacyIndex = Map<string, string>

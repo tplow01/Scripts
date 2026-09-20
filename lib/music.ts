@@ -46,6 +46,9 @@ function fade(a: HTMLAudioElement, to: number, then?: () => void) {
 
 function sync() {
   ;(Object.keys(SRC) as Track[]).forEach((t) => {
+    // Only build a track once it is wanted, so the grime file is never
+    // downloaded by players who never touch the vinyl deck.
+    if (!audio[t] && t !== current) return
     const a = get(t)
     if (!a) return
     const shouldPlay = active && !muted && t === current

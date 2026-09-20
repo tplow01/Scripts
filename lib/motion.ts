@@ -6,6 +6,19 @@ export const fadeIn: Variants = {
   show:   { opacity: 1, transition: { duration: 0.6, ease: 'easeOut' } },
 }
 
+// Fast entrance for page content the shopper just clicked through to: they are
+// waiting on it, so it should be there almost at once. The slower fadeIn above
+// stays for things that are decoration rather than the destination.
+export const quickFade: Variants = {
+  hidden: { opacity: 0 },
+  show:   { opacity: 1, transition: { duration: 0.2, ease: 'easeOut' } },
+}
+
+export const quickStagger = (delay = 0.03): Variants => ({
+  hidden: {},
+  show:   { transition: { staggerChildren: delay } },
+})
+
 // Stagger container
 export const stagger = (delay = 0.1): Variants => ({
   hidden: {},

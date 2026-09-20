@@ -165,6 +165,7 @@ const primaryBtn =
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col items-center justify-center px-4 md:px-16 py-16">
+      <h1 className="sr-only">Order confirmation</h1>
       <div className="w-full max-w-[460px] flex flex-col items-center text-center gap-0">{children}</div>
     </div>
   )

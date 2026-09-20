@@ -9,7 +9,7 @@ import FooterLinks from '@/components/FooterLinks'
 import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
 import type { Product, ProductVariant } from '@/types/product'
-import { fadeIn, stagger } from '@/lib/motion'
+import { quickFade, quickStagger } from '@/lib/motion'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
 import { deriveAvailability } from '@/lib/admin/variants'
@@ -69,9 +69,11 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
     }
   }
 
-  const panelStagger = reduced ? {} : stagger(0.09)
-  const item         = reduced ? {} : fadeIn
-  const imgVariant   = reduced ? {} : fadeIn
+  // Quick, tight entrance: this is the page the shopper just clicked to, so it
+  // should not spend a second fading in before they can read it.
+  const panelStagger = reduced ? {} : quickStagger(0.03)
+  const item         = reduced ? {} : quickFade
+  const imgVariant   = reduced ? {} : quickFade
 
   // Theme tokens
   const bg          = dark ? 'bg-[#0d0d0d]'   : 'bg-white'
@@ -139,12 +141,13 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                     initial={reduced ? {} : { opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={reduced ? {} : { opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
                   >
                     <Image
                       src={images[activeImage]}
                       alt={product.name}
                       fill
+                      sizes="(min-width: 768px) 55vw, 100vw"
                       className="object-contain"
                       priority
                     />
@@ -185,7 +188,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                     className={`relative w-[80px] h-[80px] border rounded transition-colors ${i === activeImage ? thumbActive : thumbInact}`}
                     aria-label={`View image ${i + 1} of ${images.length}`}
                   >
-                    <Image src={img} alt="" fill className="object-contain" />
+                    <Image src={img} alt="" fill sizes="80px" className="object-contain" />
                   </button>
                 ))}
               </div>

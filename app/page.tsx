@@ -143,7 +143,13 @@ export default function Home() {
   const mobile = layout === null ? null : layout !== "desktop";
   const router = useRouter();
   const { openCart, isOpen: cartIsOpen, count: cartCount } = useCart();
-  const [started, setStarted] = useState(false);
+  // Coming back from the shop (gameSession.playing) resumes straight into the
+  // game instead of flashing the start screen. Safe for SSR: nothing reads
+  // `started` before the layout is known (see the mobile === null guard).
+  const [started, setStarted] = useState(() => gameSession.playing);
+  // True once Phaser has painted its first world frame. Until then the start
+  // screen stays up (as "LOADING") so there is never a bare black wait.
+  const [worldReady, setWorldReady] = useState(false);
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
   const [speakerPos, setSpeakerPos] = useState<{ xFrac: number; yFrac: number } | null>(null);
@@ -237,6 +243,7 @@ export default function Home() {
     pressRef.current = (code: string, down: boolean) => game.events.emit("vbutton", code, down);
     game.events.on("interaction", (hit: { id: string; type: string }) => interactionRef.current(hit));
     game.events.on("welcome", () => welcomeRef.current());
+    game.events.once("world-ready", () => setWorldReady(true));
     game.events.on("speaker", (p: { xFrac: number; yFrac: number } | null) => setSpeakerPos(p));
     // Handshake: a fresh game (e.g. remounted after the inventory detour) must
     // never inherit a stale "dialog open" flag from a prompt the old game saw.
@@ -339,13 +346,37 @@ export default function Home() {
     return () => document.body.classList.remove("game-active");
   }, []);
 
-  // Once playing: remember it (so back-nav resumes) and prefetch the reachable
-  // routes so rack/checkout/NPC handoffs are instant.
+  // Warm everything the game needs while the player is still on the start
+  // screen: the reachable routes (so rack/checkout/NPC handoffs are instant),
+  // the Phaser bundle, and the world's images. Clicking start then only has
+  // to boot, not download.
+  useEffect(() => {
+    GAME_ROUTES.forEach((r) => router.prefetch(r));
+    void import("phaser");
+    void import("@/game/config");
+    let cancelled = false;
+    void import("@/game/bootImages").then(({ bootImages }) => {
+      if (cancelled) return;
+      for (const { url } of bootImages()) void fetch(url).catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  // Never trap the player behind the cover: if the first frame somehow never
+  // reports in, lift it anyway after a few seconds.
+  useEffect(() => {
+    if (!started || worldReady) return;
+    const id = setTimeout(() => setWorldReady(true), 8000);
+    return () => clearTimeout(id);
+  }, [started, worldReady]);
+
+  // Once playing: remember it so back-nav resumes.
   useEffect(() => {
     if (!started) return;
     gameSession.playing = true;
-    GAME_ROUTES.forEach((r) => router.prefetch(r));
-  }, [started, router]);
+  }, [started]);
 
   // Desktop start gate: Z begins play (Phaser owns keys after).
   useEffect(() => {
@@ -412,10 +443,14 @@ export default function Home() {
   const btnify = (s: string) =>
     s.replaceAll("{A}", mobile ? "A" : "Z").replaceAll("{B}", mobile ? "B" : "X");
 
-  const screen = started ? (
+  // One StartScreen instance for the whole boot: "CLICK TO START" before the
+  // click, then the same scene as "LOADING..." over the canvas while it boots,
+  // lifting only once the first world frame has painted. Keeping it mounted
+  // means the intro animation never restarts and there is no black gap.
+  const screen = (
     <>
-      <PhaserGame onGame={onGame} />
-      {prompt &&
+      {started && <PhaserGame onGame={onGame} />}
+      {started && prompt &&
         (prompt.variant === "choice" ||
         (prompt.variant === "messageChoice" && page >= prompt.pages.length) ? (
           <DialogPrompt
@@ -441,9 +476,10 @@ export default function Home() {
             onAdvance={advanceMessage}
           />
         ))}
+      {!(started && worldReady) && (
+        <StartScreen mobile={mobile} loading={started} onStart={() => setStarted(true)} />
+      )}
     </>
-  ) : (
-    <StartScreen mobile={mobile} onStart={() => setStarted(true)} />
   );
 
   return (

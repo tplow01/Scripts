@@ -58,6 +58,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
             src={image}
             alt={product.name}
             fill
+            sizes="(min-width: 768px) 50vw, 100vw"
             className={`object-contain transition-opacity duration-300 ${flipped && backImage ? 'opacity-0' : 'opacity-100'}`}
           />
         )}
@@ -66,6 +67,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
             src={backImage}
             alt={`${product.name} — back`}
             fill
+            sizes="(min-width: 768px) 50vw, 100vw"
             className={`absolute inset-0 object-contain transition-opacity duration-300 ${flipped ? 'opacity-100' : 'opacity-0'}`}
           />
         )}

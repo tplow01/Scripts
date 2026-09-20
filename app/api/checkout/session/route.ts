@@ -1,6 +1,6 @@
 import type Stripe from 'stripe'
 
-import { fail, ok } from '@/lib/server/http'
+import { devOr, fail, ok } from '@/lib/server/http'
 import { resolveVariants } from '@/lib/server/products.repo'
 import { CURRENCY, isStripeConfigured, stripe, toMinorUnits } from '@/lib/server/stripe'
 import { cartResolveSchema } from '@/lib/schemas/product'
@@ -27,7 +27,7 @@ const SHIP_TO: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.All
  */
 export async function POST(req: Request) {
   if (!isStripeConfigured()) {
-    return fail(503, 'Payments are not configured yet.')
+    return fail(503, devOr('Payments are not configured yet.', 'Checkout is unavailable right now. Please try again shortly.'))
   }
 
   let body: unknown

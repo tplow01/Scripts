@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
 import { useStripeCheckout } from '@/lib/checkout'
@@ -11,6 +11,19 @@ export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
   const { start: startCheckout, busy: payBusy, error: payError } = useStripeCheckout()
   const reduced = useReducedMotion()
+  const drawerRef = useRef<HTMLDivElement>(null)
+
+  // Escape closes; focus moves into the drawer when it opens so keyboard and
+  // screen-reader users land in it rather than behind it.
+  useEffect(() => {
+    if (!isOpen) return
+    drawerRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeCart()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isOpen, closeCart])
 
   useEffect(() => {
     if (isOpen) {
@@ -35,7 +48,12 @@ export default function CartDrawer() {
           {/* Drawer */}
           <motion.div
             key="drawer"
-            className="fixed top-0 right-0 h-full z-50 bg-white text-[#0d0d0d] border-l border-[#0d0d0d] flex flex-col w-full md:w-[min(520px,90vw)]"
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Your cart"
+            tabIndex={-1}
+            className="outline-none fixed top-0 right-0 h-full z-50 bg-white text-[#0d0d0d] border-l border-[#0d0d0d] flex flex-col w-full md:w-[min(520px,90vw)]"
             initial={reduced ? {} : { x: '100%' }}
             animate={{ x: 0 }}
             exit={reduced ? {} : { x: '100%' }}
@@ -92,7 +110,7 @@ export default function CartDrawer() {
                         {/* Thumbnail */}
                         <div className="relative w-[88px] h-[88px] shrink-0 bg-[#f5f5f5] rounded overflow-hidden">
                           {image && (
-                            <Image src={image} alt={item.product.name} fill className="object-contain" />
+                            <Image src={image} alt={item.product.name} fill sizes="88px" className="object-contain" />
                           )}
                         </div>
 

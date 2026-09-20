@@ -17,9 +17,20 @@ export function fail(status: number, message: string, details?: unknown): NextRe
 export function notConfigured(): NextResponse {
   return fail(
     503,
-    'The database is not configured yet, so this change was not saved. ' +
-    'Add the Supabase keys to .env.local and run the migration.',
+    devOr(
+      'The database is not configured yet, so this change was not saved. ' +
+        'Add the Supabase keys to .env.local and run the migration.',
+      'Something went wrong on our end. Please try again shortly.',
+    ),
   )
+}
+
+/**
+ * Setup instructions help a developer and confuse a customer. Show the first
+ * message in development and the second in production.
+ */
+export function devOr(dev: string, prod: string): string {
+  return process.env.NODE_ENV === 'production' ? prod : dev
 }
 
 /** Body wasn't valid JSON at all. */

@@ -17,9 +17,12 @@ const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 
 export default function StartScreen({
   mobile = false,
   onStart,
+  loading = false,
 }: {
   mobile?: boolean
-  onStart: () => void
+  onStart?: () => void
+  /** Covers the game while it boots: same scene, steady "LOADING" prompt, not clickable. */
+  loading?: boolean
 }) {
   const [blink, setBlink] = useState(true)
 
@@ -30,8 +33,12 @@ export default function StartScreen({
 
   return (
     <div
-      onClick={onStart}
-      style={{ position: 'absolute', inset: 0, cursor: 'pointer' }}
+      onClick={loading ? undefined : onStart}
+      style={{
+        position: 'absolute', inset: 0, cursor: loading ? 'default' : 'pointer',
+        // Above the canvas, which mounts underneath while it boots.
+        zIndex: loading ? 20 : undefined,
+      }}
     >
       <PixelCityIntro />
 
@@ -64,12 +71,12 @@ export default function StartScreen({
             fontSize: mobile ? 'clamp(7px, 2.2vw, 11px)' : 'clamp(8px, 0.95vw, 14px)',
             color: '#F7F7F5',
             letterSpacing: '0.2em',
-            opacity: blink ? 1 : 0,
+            opacity: loading || blink ? 1 : 0,
             transition: 'opacity 0.08s',
           }}
         >
           <span style={{ color: '#F7F7F5' }}>›</span>
-          {mobile ? 'TAP TO START' : 'CLICK TO START'}
+          {loading ? 'LOADING...' : mobile ? 'TAP TO START' : 'CLICK TO START'}
         </div>
       </div>
     </div>

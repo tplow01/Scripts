@@ -229,6 +229,12 @@ export class WorldScene extends Phaser.Scene {
       this.playHeathIntro();
     }
     this.saveSession();
+
+    // Tell React the world has actually painted, so the loading cover can lift
+    // onto a real frame rather than a black one.
+    this.game.events.once(Phaser.Core.Events.POST_RENDER, () => {
+      this.game.events.emit("world-ready");
+    });
   }
 
   /** Poll held directions: a finished step chains into the next while held. */

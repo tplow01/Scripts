@@ -26,7 +26,7 @@ export default async function InventoryPage() {
         mobile="/decor/phone-inventory.png"
         mobileAlt=""
       />
-      <NavBar showBack />
+      <NavBar showBack titleIsH1 />
       <main className="relative z-10 px-4 md:px-16 lg:px-[200px] pb-[64px] pt-8 md:pt-[80px] flex-1">
         <ProductGrid products={products} theme="light" columns={3} />
       </main>

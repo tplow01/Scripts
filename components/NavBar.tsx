@@ -11,6 +11,8 @@ interface NavBarProps {
   title?: string
   /** Where the title links. `null` renders it as plain text. */
   titleHref?: string | null
+  /** Render the title as the page's <h1>. Off where the page has its own heading. */
+  titleIsH1?: boolean
   /** Show the bag button top-right. Off on the policy pages. */
   showCart?: boolean
 }
@@ -23,6 +25,7 @@ export default function NavBar({
   title = 'INVENTORY',
   titleHref = '/inventory',
   showCart = true,
+  titleIsH1 = false,
 }: NavBarProps) {
   const { count, isOpen, openCart } = useCart()
 
@@ -54,11 +57,9 @@ export default function NavBar({
           </span>
         )
         const cls = 'absolute left-0 right-0 flex justify-center pointer-events-none'
-        return titleHref ? (
-          <Link href={titleHref} className={cls}>{label}</Link>
-        ) : (
-          <h1 className={cls}>{label}</h1>
-        )
+        if (!titleHref) return <h1 className={cls}>{label}</h1>
+        const link = <Link href={titleHref} className={cls}>{label}</Link>
+        return titleIsH1 ? <h1 className="contents">{link}</h1> : link
       })()}
 
       {/* Right — bag */}

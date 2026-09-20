@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import ProductCard from '@/components/ProductCard'
 import type { Product } from '@/types/product'
-import { fadeIn, stagger } from '@/lib/motion'
+import { quickFade, quickStagger } from '@/lib/motion'
 
 const CONTAINER_CLASS = {
   3: 'flex flex-wrap justify-center gap-x-3 gap-y-8 md:gap-y-[56px]',
@@ -24,8 +24,8 @@ interface ProductGridProps {
 export default function ProductGrid({ products, theme, columns }: ProductGridProps) {
   const reduced = useReducedMotion()
 
-  const container = reduced ? {} : stagger(0.08)
-  const item      = reduced ? {} : fadeIn
+  const container = reduced ? {} : quickStagger(0.03)
+  const item      = reduced ? {} : quickFade
 
   return (
     <motion.div
