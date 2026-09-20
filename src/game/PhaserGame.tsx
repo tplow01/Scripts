@@ -34,7 +34,12 @@ export default function PhaserGame({
 
     return () => {
       destroyed = true;
-      game?.destroy(true);
+      try {
+        game?.destroy(true);
+      } catch {
+        // A game torn down mid-boot can throw from its own teardown; the page
+        // is leaving anyway and a fresh game is built on return.
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

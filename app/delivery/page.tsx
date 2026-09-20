@@ -1,59 +1,93 @@
 import type { Metadata } from 'next'
 
-import PolicyPage, { Section, Undecided } from '@/components/PolicyPage'
+import PolicyPage, { Bullets, Mail, Section } from '@/components/PolicyPage'
 
 export const metadata: Metadata = {
   title: 'Delivery Information — SCR!PTS',
-  robots: { index: false, follow: false },
 }
 
-/**
- * Not a legal document — this is the page that stops "where is my order?"
- * emails. The shipping countries and the free-shipping rate below are read off
- * the actual Stripe Checkout configuration, so they are correct today; keep
- * them in step with `SHIP_TO` in app/api/checkout/session/route.ts.
- */
 export default function DeliveryPage() {
   return (
-    <PolicyPage title="Delivery" draft>
-      <Section heading="Where we ship">
-        <p>SCR!PTS currently ships to:</p>
-        <p className="text-[13px] leading-[1.9]">
-          Australia · Canada · Denmark · France · Germany · Ireland · Italy · Netherlands ·
-          New Zealand · Norway · Spain · Sweden · United Kingdom · United States
-        </p>
-        <p className="text-[13px] text-[#6F6F73]">
-          If your country is not listed, checkout will not let you select it. Adding one is a
-          change to the store settings, not a limitation of the courier.
-        </p>
-      </Section>
-
-      <Section heading="Cost">
+    <PolicyPage title="Delivery" updated="September 2026">
+      <Section heading="Order processing">
         <p>
-          <strong>Shipping is free</strong> on every order, to every country listed above.
+          Orders are typically processed within 3–5 business days after purchase.
+        </p>
+        <p>
+          During product launches, limited releases, holidays, or periods of higher order volume, processing may take longer.
+        </p>
+        <p>
+          Pre-order or made-to-order products may have different estimated shipping dates. When applicable, these estimates will be listed on the individual product page.
         </p>
       </Section>
 
-      <Section heading="How long it takes">
-        <Undecided>
-          Dispatch time and delivery estimates per region. Nothing in the system knows this — it
-          depends on who is fulfilling orders and which service they use.
-        </Undecided>
+      <Section heading="Shipping">
+        <p>
+          SCR!PTS currently ships to select countries worldwide.
+        </p>
+        <p>
+          Available shipping destinations and shipping costs will be shown during checkout.
+        </p>
+        <p>
+          Estimated delivery times begin after your order has been processed and handed to the shipping carrier.
+        </p>
+        <p>
+          Delivery times are estimates and may be affected by carrier delays, weather, customs, holidays, or other circumstances outside our control.
+        </p>
       </Section>
 
       <Section heading="Tracking">
-        <Undecided>
-          Whether tracking is provided, and how a customer receives it. The back office records an
-          order as shipped, but no tracking number is captured today.
-        </Undecided>
+        <p>
+          When tracking is available, you will receive tracking information by email once your order has shipped.
+        </p>
+        <p>
+          Please allow some time for the carrier to update tracking information after receiving your package.
+        </p>
       </Section>
 
-      <Section heading="Customs and import duties">
-        <Undecided>
-          Who pays duties on orders outside the US. Half the countries above are outside it, so
-          this will come up. Customers generally expect this stated up front rather than
-          discovered at the door.
-        </Undecided>
+      <Section heading="International orders">
+        <p>
+          International orders may be subject to customs duties, import taxes, VAT, or other fees charged by the destination country.
+        </p>
+        <p>
+          Unless specifically stated otherwise at checkout, these charges are the responsibility of the customer and are not included in the product or shipping price paid to SCR!PTS.
+        </p>
+        <p>
+          Customs processing may also cause additional delivery delays.
+        </p>
+      </Section>
+
+      <Section heading="Incorrect addresses">
+        <p>
+          Customers are responsible for providing a complete and accurate shipping address.
+        </p>
+        <p>
+          If you notice an error in your shipping information, contact us as soon as possible at <Mail />.
+        </p>
+        <p>
+          We will try to update the address if the order has not shipped yet, but we cannot guarantee changes once fulfillment has begun.
+        </p>
+      </Section>
+
+      <Section heading="Lost or damaged orders">
+        <p>
+          If your tracking shows an unusual delay, your package arrives damaged, or you believe your package has been lost in transit, contact us at <Mail /> with your order number.
+        </p>
+        <p>
+          We will review the situation and work with you and the shipping carrier to determine the appropriate next step.
+        </p>
+      </Section>
+
+      <Section heading="Shipping delays">
+        <p>
+          If we are unable to ship your order within the timeframe originally provided, we will contact you with updated information and, where required, give you the option to accept the delay or cancel the affected order for a refund.
+        </p>
+      </Section>
+
+      <Section heading="Questions">
+        <p>
+          For shipping questions, contact <Mail />.
+        </p>
       </Section>
     </PolicyPage>
   )

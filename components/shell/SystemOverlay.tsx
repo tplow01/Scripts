@@ -10,7 +10,7 @@ import { DPadGlyph } from './DPad'
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/scripts.studio/' },
-  { label: 'YouTube', href: 'https://youtube.com' },
+  { label: 'YouTube', href: 'https://www.youtube.com/@scrptsstudio' },
   { label: 'TikTok', href: 'https://www.tiktok.com/@scripts.studio' },
 ]
 

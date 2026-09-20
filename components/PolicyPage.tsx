@@ -24,19 +24,12 @@ export default function PolicyPage({
 }) {
   return (
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col">
-      <NavBar showBack backHref="/" />
+      <NavBar showBack backHref="/" title={title} titleHref={null} showCart={false} />
 
-      <main className="flex-1 px-4 md:px-16 lg:px-[200px] pt-8 md:pt-[64px] pb-[64px]">
+      <main className="flex-1 px-4 md:px-16 lg:px-[200px] pt-4 md:pt-[16px] pb-[64px]">
         <div className="mx-auto w-full max-w-[680px]">
-          <h1
-            className="text-[40px] md:text-[56px] leading-none tracking-[0.04em] uppercase"
-            style={{ fontFamily: 'var(--font-bebas)' }}
-          >
-            {title}
-          </h1>
-
           {updated && (
-            <p className="mt-[10px] text-[11px] font-bold uppercase tracking-[0.1em] text-[#6F6F73]">
+            <p className="text-center text-[11px] font-bold uppercase tracking-[0.1em] text-[#6F6F73]">
               Last updated {updated}
             </p>
           )}
@@ -85,5 +78,28 @@ export function Undecided({ children }: { children: ReactNode }) {
       </span>
       {children}
     </p>
+  )
+}
+
+/** A bulleted list inside a policy section. */
+export function Bullets({ items }: { items: string[] }) {
+  return (
+    <ul className="list-disc pl-[20px] flex flex-col gap-[4px]">
+      {items.map((i) => (
+        <li key={i}>{i}</li>
+      ))}
+    </ul>
+  )
+}
+
+export const CONTACT_EMAIL = 'info.scriptsstudio@gmail.com'
+export const PRIVACY_EMAIL = 'heathnager@gmail.com'
+
+/** Inline mailto link. */
+export function Mail({ address = CONTACT_EMAIL }: { address?: string }) {
+  return (
+    <a href={`mailto:${address}`} className="font-bold underline underline-offset-2">
+      {address}
+    </a>
   )
 }

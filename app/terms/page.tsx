@@ -1,60 +1,117 @@
 import type { Metadata } from 'next'
 
-import PolicyPage, { Section, Undecided } from '@/components/PolicyPage'
+import PolicyPage, { Bullets, Mail, Section } from '@/components/PolicyPage'
 
 export const metadata: Metadata = {
   title: 'Terms of Use — SCR!PTS',
-  robots: { index: false, follow: false },
 }
 
 export default function TermsPage() {
   return (
-    <PolicyPage title="Terms of Use" draft>
-      <Section heading="Who you are contracting with">
-        <Undecided>
-          The legal entity behind SCR!PTS, its registered address and company number. Everything
-          else on this page depends on that being settled — it is the same answer needed to
-          activate the Stripe account.
-        </Undecided>
+    <PolicyPage title="Terms of Use" updated="September 2026">
+      <Section heading="About SCR!PTS">
+        <p>
+          SCR!PTS is an independent clothing brand operated by SCR!PTS LLC, based in Colorado, United States.
+        </p>
+        <p>
+          Throughout this website, &ldquo;SCR!PTS,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; and &ldquo;our&rdquo; refer to SCR!PTS LLC and the SCR!PTS brand.
+        </p>
+        <p>
+          These Terms of Use apply to your use of our website and any purchases made through it. By accessing or using this website, you agree to these terms.
+        </p>
+      </Section>
+
+      <Section heading="Using our website">
+        <p>
+          You may use this website for personal, non-commercial purposes and to browse or purchase SCR!PTS products.
+        </p>
+        <p>
+          You agree not to misuse the website, interfere with its operation, attempt to gain unauthorized access to any part of the site, use automated purchasing tools or bots, or use SCR!PTS content for unauthorized commercial purposes.
+        </p>
+        <p>
+          We may restrict or refuse access to the website where we reasonably believe misuse, fraud, or other prohibited activity has occurred.
+        </p>
+      </Section>
+
+      <Section heading="Products">
+        <p>
+          We make reasonable efforts to accurately display our products, including their colors, materials, measurements, and details. However, colors and appearance may vary slightly depending on your device, screen, lighting, and manufacturing variations.
+        </p>
+        <p>
+          Because SCR!PTS produces limited quantities, availability is not guaranteed. An item appearing on the website does not guarantee that it will remain available.
+        </p>
+        <p>
+          We may limit quantities, cancel orders, or correct pricing or product information when necessary.
+        </p>
       </Section>
 
       <Section heading="Orders">
         <p>
-          Placing an order is an offer to buy. The contract forms when we confirm the order and
-          take payment. We may decline an order — for example if a piece is out of stock or the
-          price shown was wrong.
+          Submitting an order does not guarantee acceptance. We reserve the right to refuse or cancel an order due to inventory errors, suspected fraud, incorrect pricing, payment issues, or other reasonable circumstances.
         </p>
-        <Undecided>
-          Whether that description matches how SCR!PTS actually wants to operate, particularly the
-          right to decline.
-        </Undecided>
-      </Section>
-
-      <Section heading="Using the site">
         <p>
-          The SCR!PTS world, its artwork, characters, writing and code are owned by SCR!PTS. You
-          are welcome to play, explore and share it. You may not copy or reuse the artwork or
-          assets for your own purposes.
+          If we cancel an order after payment has been collected, the applicable amount will be refunded to the original payment method.
         </p>
-      </Section>
-
-      <Section heading="Availability">
         <p>
-          We do not promise the site is always available. Pieces are made in limited runs and can
-          sell out.
+          Orders are intended for personal use. We may limit quantities where we reasonably believe an order is being placed for unauthorized resale or other commercial purposes.
         </p>
       </Section>
 
-      <Section heading="Liability and governing law">
-        <Undecided>
-          Limitation of liability, and which jurisdiction&apos;s law applies. Genuinely worth a
-          lawyer rather than a template — it follows from where the entity is registered, and it is
-          the clause that matters if anything ever goes wrong.
-        </Undecided>
+      <Section heading="Intellectual property">
+        <p>
+          The SCR!PTS name, logos, graphics, garment designs, artwork, photography, characters, website designs, written content, and other original creative material are owned by or licensed to SCR!PTS and are protected by applicable intellectual property laws.
+        </p>
+        <p>
+          This includes the SCR!PTS digital world and original characters, including Scribbs.
+        </p>
+        <p>
+          You may not reproduce, sell, distribute, modify, or commercially use SCR!PTS content without our permission.
+        </p>
       </Section>
 
-      <Section heading="Changes">
-        <p>These terms may change. The version in force is the one published here when you order.</p>
+      <Section heading="Third-party services">
+        <p>
+          Our website may rely on third-party services for functions such as payments, hosting, databases, shipping, and other website operations.
+        </p>
+        <p>
+          We are not responsible for independent third-party websites or services that may be linked from our website.
+        </p>
+      </Section>
+
+      <Section heading="Website availability">
+        <p>
+          We try to keep the SCR!PTS website functioning properly, but we cannot guarantee uninterrupted access.
+        </p>
+        <p>
+          The website may occasionally be unavailable due to maintenance, updates, technical problems, or circumstances outside our control.
+        </p>
+      </Section>
+
+      <Section heading="Liability">
+        <p>
+          To the fullest extent permitted by applicable law, SCR!PTS will not be responsible for indirect or consequential losses resulting from use of this website.
+        </p>
+        <p>
+          Nothing in these Terms limits any consumer rights or other rights that cannot legally be excluded.
+        </p>
+      </Section>
+
+      <Section heading="Changes to these terms">
+        <p>
+          We may update these Terms from time to time as SCR!PTS, our website, or applicable requirements change.
+        </p>
+        <p>
+          The version posted on this page at the time of use will be the current version.
+        </p>
+      </Section>
+
+      <Section heading="Contact">
+        <p>
+          Questions regarding these Terms can be sent to <Mail />.
+        </p>
+        <p>
+          SCR!PTS LLC, Colorado, United States.
+        </p>
       </Section>
     </PolicyPage>
   )

@@ -69,14 +69,25 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false
     resolveStored(readStored())
       .then((resolved) => {
-        if (!cancelled && resolved.length) setItems(resolved)
+        if (cancelled || !resolved.length) return
+        // Merge, don't overwrite: anything added while the fetch was in flight
+        // (e.g. straight from the game) must survive the stored cart landing.
+        setItems((current) => {
+          const merged = [...resolved]
+          for (const c of current) {
+            const at = merged.findIndex((m) => m.variant.id === c.variant.id)
+            if (at === -1) merged.push(c)
+            else merged[at] = { ...merged[at], quantity: Math.max(merged[at].quantity, c.quantity) }
+          }
+          return merged
+        })
       })
       .catch(() => {
         // Offline, or the server is unhappy. Start empty rather than showing a
         // stale price — nothing is persisted, so the stored cart survives.
       })
       .finally(() => {
-        hydrated.current = true
+        if (!cancelled) hydrated.current = true
       })
     return () => {
       cancelled = true

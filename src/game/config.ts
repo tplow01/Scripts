@@ -22,6 +22,10 @@ export function createGameConfig(
     roundPixels: true,
     scale: {
       mode: Phaser.Scale.RESIZE,
+      // Never let the canvas collapse to 0×0. During a route change the parent
+      // can measure zero for a frame; a zero-sized render target makes WebGL
+      // throw "Framebuffer status: Incomplete Attachment" and freezes the game.
+      min: { width: 64, height: 64 },
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     scene: [BootScene, WorldScene],

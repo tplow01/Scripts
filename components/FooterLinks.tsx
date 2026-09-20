@@ -2,8 +2,8 @@ import Link from 'next/link'
 
 const SOCIALS = [
   { label: 'Instagram', href: 'https://www.instagram.com/scripts.studio/' },
-  { label: 'YouTube',   href: 'https://youtube.com' },
-  { label: 'Email',     href: 'mailto:hello@scripts.com' },
+  { label: 'YouTube',   href: 'https://www.youtube.com/@scrptsstudio' },
+  { label: 'Email',     href: 'mailto:info.scriptsstudio@gmail.com' },
   { label: 'TikTok',    href: 'https://www.tiktok.com/@scripts.studio' },
 ]
 

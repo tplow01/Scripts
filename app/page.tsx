@@ -9,6 +9,7 @@ import { KEY_TO_BTN } from "@/lib/controls";
 import StartScreen from "@/components/StartScreen";
 import DialogPrompt, { type DialogPromptHandle } from "@/components/DialogPrompt";
 import { useCart } from "@/lib/cart";
+import { music } from "@/lib/music";
 import { gameSession } from "@/lib/gameSession";
 import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
 import { useShellLayout } from "@/lib/useShellLayout";
@@ -141,13 +142,29 @@ export default function Home() {
   const layout = useShellLayout();
   const mobile = layout === null ? null : layout !== "desktop";
   const router = useRouter();
-  const { openCart, isOpen: cartIsOpen } = useCart();
+  const { openCart, isOpen: cartIsOpen, count: cartCount } = useCart();
   const [started, setStarted] = useState(false);
   const [prompt, setPrompt] = useState<ActivePrompt | null>(null);
   const [sel, setSel] = useState<"yes" | "no">("yes");
   const [speakerPos, setSpeakerPos] = useState<{ xFrac: number; yFrac: number } | null>(null);
   const [page, setPage] = useState(0); // current page of an open message prompt
   const [muted, setMuted] = useState(false);
+
+  // Music: browsers need a gesture before audio can start, so arm on the first
+  // press; pause when leaving the game world for the shop pages.
+  useEffect(() => {
+    const arm = () => music.start();
+    window.addEventListener("pointerdown", arm);
+    window.addEventListener("keydown", arm);
+    return () => {
+      window.removeEventListener("pointerdown", arm);
+      window.removeEventListener("keydown", arm);
+      music.stop();
+    };
+  }, []);
+  useEffect(() => {
+    music.setMuted(muted);
+  }, [muted]);
 
   // Set once the Phaser game exists; forwards on-screen buttons into the scene
   // with press/release semantics so a held D-pad arm keeps Scribbs walking.
@@ -168,6 +185,7 @@ export default function Home() {
     // The vinyl deck is the secret switch: first play reveals the hidden
     // basement entrance; afterwards it's just an idle line.
     if (hit.id === "vinyl") {
+      music.setTrack(music.track === "grime" ? "lofi" : "grime");
       const revealed = gameSession.revealed.has("basement-entrance");
       setSel("yes");
       setPage(0);
@@ -183,13 +201,21 @@ export default function Home() {
           }),
         );
       } else {
-        setPrompt(materialize({ variant: "message", pages: ["The record's still spinning."] }));
+        setPrompt(materialize({ variant: "message", pages: [music.track === "grime" ? "You drop the needle on something harder." : "You flip back to the mellow side."] }));
       }
       gameRef.current?.events.emit("dialog", true);
       return;
     }
-    const p = PROMPTS[hit.id] ?? PROMPTS[hit.type];
+    let p = PROMPTS[hit.id] ?? PROMPTS[hit.type];
     if (!p) return;
+    // The till knows what's in the bag: an empty one gets a nudge instead of
+    // an empty drawer; a full one rings up.
+    if (p.variant !== "message" && p.kind === "cart") {
+      p =
+        cartCount === 0
+          ? { variant: "message", speaker: "Heath", pages: ["Your bag's empty. Grab something off the racks first."] }
+          : { variant: "choice", speaker: "Heath", question: `${cartCount} ${cartCount === 1 ? "piece" : "pieces"} in your bag. Checkout?`, kind: "cart" };
+    }
     setSel("yes");
     setPage(0);
     setPrompt(materialize(p));

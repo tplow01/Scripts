@@ -433,8 +433,6 @@ export class WorldScene extends Phaser.Scene {
       this.roomObjects.push(overlay);
     }
 
-    this.addAtmosphere(roomId);
-
     // Place Scribbs at the spawn (override wins, else the room default).
     const spawn = spawnOverride ?? this.room.spawn;
     this.tileX = spawn.tileX;
@@ -552,29 +550,6 @@ export class WorldScene extends Phaser.Scene {
     img.setFlipX(!!p.flip).setDepth(isCharacter ? Math.max(depth, 3) : depth);
     this.roomObjects.push(img);
     return img;
-  }
-
-  /**
-   * Pixel-clean light pools give the boutique depth without applying a blurry
-   * post-processing filter to the artwork.
-   */
-  private addAtmosphere(roomId: string) {
-    const ts = this.room.tileSize;
-    const glow = (x: number, y: number, color: number, width: number, alpha: number) => {
-      const layers = [1, 0.72, 0.46];
-      layers.forEach((scale, i) => {
-        const light = this.add
-          .ellipse(x * ts, y * ts, width * ts * scale, width * ts * 0.46 * scale, color, alpha * (0.35 + i * 0.28))
-          .setDepth(4.6)
-          .setBlendMode(Phaser.BlendModes.ADD);
-        this.roomObjects.push(light);
-      });
-    };
-
-    if (roomId === "main") {
-      glow(8.5, 15.4, 0xff8ac7, 5.4, 0.075); // entrance / logo
-      glow(2, 13.0, 0xffb9dc, 3.6, 0.055); // till
-    }
   }
 
   /** Reveal a flag-gated secret: slide concealing covers away + draw newly-active props. */

@@ -35,8 +35,9 @@ export function DmgBtn({
         ...(pressed ? pressedStyle(DMG_PILL_SHADOW) : null),
       }} />
       <span style={{
-        fontFamily: 'sans-serif', fontWeight: 800, letterSpacing: 1.5,
-        fontSize: Math.max(8, Math.round(pillWidth * 0.2)), color: BRAND_WHITE,
+        fontFamily: 'var(--font-bebas), sans-serif', textTransform: 'uppercase',
+        letterSpacing: '0.12em',
+        fontSize: Math.max(11, Math.round(pillWidth * 0.3)), color: BRAND_WHITE,
       }}>
         {label}
       </span>
