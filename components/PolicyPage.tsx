@@ -27,7 +27,7 @@ export default function PolicyPage({
       <NavBar showBack backHref="/" title={title} titleHref={null} showCart={false} />
 
       <main className="flex-1 px-4 md:px-16 lg:px-[200px] pt-4 md:pt-[16px] pb-[64px]">
-        <div className="mx-auto w-full max-w-[680px]">
+        <div className="mx-auto w-full max-w-[680px] text-center">
           {updated && (
             <p className="text-center text-[11px] font-bold uppercase tracking-[0.1em] text-[#6F6F73]">
               Last updated {updated}
@@ -63,8 +63,8 @@ export default function PolicyPage({
 export function Section({ heading, children }: { heading: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="text-[13px] font-extrabold uppercase tracking-[0.1em] mb-[10px]">{heading}</h2>
-      <div className="flex flex-col gap-[12px] text-[14px] leading-[1.7] text-[#333]">{children}</div>
+      <h2 className="text-center text-[13px] font-extrabold uppercase tracking-[0.1em] mb-[10px]">{heading}</h2>
+      <div className="flex flex-col items-center gap-[12px] text-center text-[14px] leading-[1.7] text-[#333]">{children}</div>
     </section>
   )
 }
@@ -72,7 +72,7 @@ export function Section({ heading, children }: { heading: string; children: Reac
 /** An open question that only SCR!PTS can answer. Deliberately conspicuous. */
 export function Undecided({ children }: { children: ReactNode }) {
   return (
-    <p className="border-l-[3px] border-[#FF4FA3] bg-[#FAFAFA] px-[14px] py-[10px] text-[13px] leading-[1.6] text-[#6F6F73]">
+    <p className="border-l-[3px] border-[#FF4FA3] bg-[#FAFAFA] px-[14px] text-center py-[10px] text-[13px] leading-[1.6] text-[#6F6F73]">
       <span className="font-extrabold uppercase tracking-[0.08em] text-[#0d0d0d]">
         Needs a decision:{' '}
       </span>
@@ -84,7 +84,7 @@ export function Undecided({ children }: { children: ReactNode }) {
 /** A bulleted list inside a policy section. */
 export function Bullets({ items }: { items: string[] }) {
   return (
-    <ul className="list-disc pl-[20px] flex flex-col gap-[4px]">
+    <ul className="flex flex-col items-center gap-[4px] text-center">
       {items.map((i) => (
         <li key={i}>{i}</li>
       ))}
