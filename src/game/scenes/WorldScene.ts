@@ -13,7 +13,7 @@ import { WalkCycle, TILE_STEP_MS, TURN_MS, STRIDE_HOLD } from "@/game/art/walkCy
 import { characterFrame, isCharacterFrame, parseCharacterFrame } from "@/game/art/characters";
 import type { CharacterId, Facing } from "@/game/art/characters";
 
-const FADE_MS = 260;
+const FADE_MS = 140;
 /** Scripted walks (Heath's intro / counter slides) move faster than a patrol. */
 const SCRIPTED_STEP_MS = 130;
 /** If the welcome dialogue never closes (React hiccup), unstick the intro. */
@@ -221,7 +221,11 @@ export class WorldScene extends Phaser.Scene {
       this.facing = resume.facing;
       this.setFrame("both");
       this.syncScribbs();
-      this.cameras.main.centerOn(this.scribbs.x, this.scribbs.y);
+      // Start exactly where the camera was when we left: the follow offset
+      // (player sits low in frame) is part of that, so include it instead of
+      // gliding into place after the first frame.
+      const fo = this.cameras.main.followOffset;
+      this.cameras.main.centerOn(this.scribbs.x - fo.x, this.scribbs.y - fo.y);
     }
 
     if (playIntro) {

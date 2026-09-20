@@ -20,6 +20,12 @@ export const gameSession: {
   playing: boolean;
   pos: GamePos | null;
   /**
+   * The last frame the game drew before we navigated away (a data URL). Shown
+   * as a cover while the game re-boots on return, so coming back from the shop
+   * looks like nothing happened instead of flashing a loading screen.
+   */
+  snapshot: string | null;
+  /**
    * One-shot world flags that have been triggered this session (e.g. a revealed
    * secret entrance). In-memory like the rest of this object — a hard refresh
    * resets them, re-hiding any secrets.
@@ -28,5 +34,6 @@ export const gameSession: {
 } = {
   playing: false,
   pos: null,
+  snapshot: null,
   revealed: new Set<string>(),
 };

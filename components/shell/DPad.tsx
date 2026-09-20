@@ -53,7 +53,7 @@ export function DPadGlyph({ size, idSuffix = '', rim = false }: { size: number; 
  */
 export default function DPad({ size, hold }: { size: number; hold: (b: Btn) => HoldHandlers }) {
   return (
-    <div style={{
+    <div data-hold style={{
       position: 'relative', width: size, height: size, touchAction: 'none',
       filter: 'drop-shadow(0 5px 7px rgba(0,0,0,0.4))',
     }}>

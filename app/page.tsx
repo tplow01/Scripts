@@ -147,6 +147,9 @@ export default function Home() {
   // game instead of flashing the start screen. Safe for SSR: nothing reads
   // `started` before the layout is known (see the mobile === null guard).
   const [started, setStarted] = useState(() => gameSession.playing);
+  // Returning from the shop (as opposed to a fresh visit): cover the game with
+  // its own last frame while it re-boots, not the start/loading screen.
+  const [resuming] = useState(() => gameSession.playing);
   // True once Phaser has painted its first world frame. Until then the start
   // screen stays up (as "LOADING") so there is never a bare black wait.
   const [worldReady, setWorldReady] = useState(false);
@@ -274,16 +277,48 @@ export default function Home() {
     else closePrompt();
   }, [prompt, page, closePrompt]);
 
+  // Leave the game for a shop page. Movement is frozen the moment the player
+  // says yes (no walking around while the next page loads), and the last drawn
+  // frame is kept so coming back can show it instead of a loading screen.
+  const leaveTo = useCallback(
+    (path: string) => {
+      const game = gameRef.current;
+      if (!game) {
+        router.push(path);
+        return;
+      }
+      game.events.emit("overlay", true);
+      let gone = false;
+      const go = () => {
+        if (gone) return;
+        gone = true;
+        router.push(path);
+      };
+      // The canvas can only be read reliably right after a draw, so capture
+      // inside the next post-render, then navigate. The timer is a safety net.
+      game.events.once("postrender", () => {
+        try {
+          gameSession.snapshot = game.canvas.toDataURL("image/jpeg", 0.85);
+        } catch {
+          gameSession.snapshot = null;
+        }
+        go();
+      });
+      setTimeout(go, 250);
+    },
+    [router],
+  );
+
   const choose = useCallback(
     (choice: "yes" | "no") => {
       const kind = prompt && prompt.variant !== "message" ? prompt.kind : undefined;
       closePrompt();
       if (choice === "no" || !kind) return;
-      if (kind === "inventory") router.push("/inventory");
-      else if (kind === "basement") router.push("/basement");
+      if (kind === "inventory") leaveTo("/inventory");
+      else if (kind === "basement") leaveTo("/basement");
       else if (kind === "cart") openCart();
     },
-    [prompt, closePrompt, router, openCart],
+    [prompt, closePrompt, leaveTo, openCart],
   );
 
   // True while an open prompt is showing speech pages (vs. its Yes/No phase).
@@ -343,7 +378,23 @@ export default function Home() {
   // inherit the fixed/no-scroll shell treatment.
   useEffect(() => {
     document.body.classList.add("game-active");
-    return () => document.body.classList.remove("game-active");
+
+    // Holding a control on a phone must never raise the OS long-press UI (the
+    // text magnifier, the "save image" callout, the context menu). CSS covers
+    // most of it; these two listeners cover the rest: a non-passive touchstart
+    // on the hold controls (D-pad, A/B), and the context menu everywhere in the
+    // game. Scoped to [data-hold] so ordinary buttons keep their click.
+    const onTouchStart = (e: TouchEvent) => {
+      if ((e.target as Element | null)?.closest?.("[data-hold]")) e.preventDefault();
+    };
+    const onContextMenu = (e: Event) => e.preventDefault();
+    document.addEventListener("touchstart", onTouchStart, { passive: false });
+    document.addEventListener("contextmenu", onContextMenu);
+    return () => {
+      document.body.classList.remove("game-active");
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("contextmenu", onContextMenu);
+    };
   }, []);
 
   // Warm everything the game needs while the player is still on the start
@@ -476,9 +527,21 @@ export default function Home() {
             onAdvance={advanceMessage}
           />
         ))}
-      {!(started && worldReady) && (
-        <StartScreen mobile={mobile} loading={started} onStart={() => setStarted(true)} />
-      )}
+      {!(started && worldReady) &&
+        (resuming ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={gameSession.snapshot ?? undefined}
+            alt=""
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              zIndex: 20, background: "#16161A", pointerEvents: "none",
+              imageRendering: "pixelated",
+            }}
+          />
+        ) : (
+          <StartScreen mobile={mobile} loading={started} onStart={() => setStarted(true)} />
+        ))}
     </>
   );
 
@@ -489,7 +552,7 @@ export default function Home() {
         screen={screen}
         onPress={handlePress}
         onRelease={handleRelease}
-        onInventory={() => router.push("/inventory")}
+        onInventory={() => leaveTo("/inventory")}
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
         onOverlayChange={(open) => gameRef.current?.events.emit("overlay", open)}

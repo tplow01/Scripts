@@ -30,3 +30,18 @@ body.game-active {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
 }
+
+/* Nothing on the game screen should select, drag or callout on a long press.
+   -webkit-touch-callout and user-select are not reliably inherited, so they are
+   applied to every descendant. Stops the iOS text magnifier appearing when a
+   D-pad or A/B button is held. */
+body.game-active,
+body.game-active * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+body.game-active img,
+body.game-active svg {
+  -webkit-user-drag: none;
+}

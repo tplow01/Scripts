@@ -11,6 +11,7 @@ export default function RoundBtn({
   const [pressed, setPressed] = useState(false)
   return (
     <div
+      data-hold
       onPointerDown={(e) => { e.preventDefault(); setPressed(true); onPress(label) }}
       onPointerUp={() => setPressed(false)}
       onPointerLeave={() => setPressed(false)}
