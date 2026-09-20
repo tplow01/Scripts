@@ -38,12 +38,20 @@ export async function verifyToken(token: string): Promise<boolean> {
  * Guard for every /api/admin/* route. Returns a response to send when the
  * caller is not the admin, or `null` when the request may proceed.
  *
- * When Supabase isn't configured there is no account to authenticate against,
- * and every write path returns 503 anyway, so the guard stands aside. Reads in
- * that state serve the same seed/mock data the storefront already ships.
+ * When Supabase isn't configured there is no account to authenticate against.
+ * In development the guard stands aside and reads serve the seed/mock data; in
+ * production it fails closed (see below).
  */
 export async function requireAdmin(): Promise<NextResponse | null> {
-  if (!isDatabaseConfigured()) return null
+  if (!isDatabaseConfigured()) {
+    // Standing aside is a convenience for local development only. In
+    // production a missing or misspelled env var must not quietly publish
+    // orders and customer details, so refuse instead.
+    if (process.env.NODE_ENV === 'production') {
+      return fail(503, 'The back office is unavailable.')
+    }
+    return null
+  }
 
   const token = (await cookies()).get(ADMIN_COOKIE)?.value
   if (!token) return fail(401, 'Sign in to the back office to do that.')

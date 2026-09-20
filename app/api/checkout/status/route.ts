@@ -1,5 +1,8 @@
+import Stripe from 'stripe'
+
 import { fail, ok } from '@/lib/server/http'
 import { findOrderBySession } from '@/lib/server/orders.repo'
+import { isStripeConfigured, stripe } from '@/lib/server/stripe'
 import { isDatabaseConfigured } from '@/lib/server/supabase'
 
 export const runtime = 'nodejs'
@@ -20,7 +23,7 @@ export async function GET(req: Request) {
   if (!sessionId) return fail(400, 'Missing session_id.')
 
   const order = await findOrderBySession(sessionId)
-  if (!order) return ok({ status: 'pending' })
+  if (!order) return ok({ status: 'pending', paid: await sessionPaid(sessionId) })
 
   return ok({
     status: 'ready',
@@ -35,4 +38,22 @@ export async function GET(req: Request) {
       total: order.total,
     },
   })
+}
+
+/**
+ * Did Stripe actually take payment for this session?
+ *
+ * `true`  — paid; the order just hasn't been written yet (webhook in flight).
+ * `false` — no such session, or it was never paid. Never say "payment received".
+ * `null`  — couldn't find out (Stripe unreachable/unconfigured). Say nothing.
+ */
+async function sessionPaid(sessionId: string): Promise<boolean | null> {
+  if (!/^cs_/.test(sessionId)) return false
+  if (!isStripeConfigured()) return null
+  try {
+    const session = await stripe().checkout.sessions.retrieve(sessionId)
+    return session.payment_status === 'paid'
+  } catch (err) {
+    return err instanceof Stripe.errors.StripeInvalidRequestError ? false : null
+  }
 }

@@ -27,6 +27,9 @@ function CheckoutSuccess() {
 
   const [order, setOrder] = useState<ConfirmedOrder | null>(null)
   const [slow, setSlow] = useState(false)
+  // Did Stripe confirm payment? null = not known (yet). Only `true` may say "received".
+  const [paid, setPaid] = useState<boolean | null>(null)
+  const [gaveUp, setGaveUp] = useState(false)
   const cleared = useRef(false)
 
   useEffect(() => {
@@ -47,6 +50,9 @@ function CheckoutSuccess() {
           }
           return
         }
+        if (!stop && typeof body.paid === 'boolean') setPaid(body.paid)
+        // No such payment: polling can never change that, so stop.
+        if (body.paid === false) return
       } catch {
         // Keep polling; a dropped request says nothing about the payment.
       }
@@ -54,6 +60,7 @@ function CheckoutSuccess() {
       tries += 1
       if (tries === 6) setSlow(true)
       if (tries < 20) setTimeout(poll, 1500)
+      else if (!stop) setGaveUp(true)
     }
     void poll()
     return () => {
@@ -64,10 +71,54 @@ function CheckoutSuccess() {
   if (!sessionId) {
     return (
       <Shell>
-        <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-[#6F6F73]">
+        <h1 className="text-[13px] font-bold uppercase tracking-[0.08em] text-[#6F6F73]">
           No order to show.
+        </h1>
+        <Link href="/inventory" className={primaryBtn}>Continue shopping</Link>
+      </Shell>
+    )
+  }
+
+  // Stripe has no completed payment for this link: don't claim one.
+  if (!order && paid === false) {
+    return (
+      <Shell>
+        <h1 className="text-[44px] md:text-[56px] leading-none tracking-[0.04em] uppercase" style={{ fontFamily: 'var(--font-bebas)' }}>
+          No order found
+        </h1>
+        <p className="mt-[14px] text-[13px] leading-relaxed text-[#444] max-w-[360px]">
+          We couldn&apos;t find a completed payment for this link. If you were charged, email{' '}
+          <a href="mailto:info.scriptsstudio@gmail.com" className="font-bold underline underline-offset-2">
+            info.scriptsstudio@gmail.com
+          </a>{' '}
+          and we&apos;ll sort it out.
         </p>
         <Link href="/inventory" className={primaryBtn}>Continue shopping</Link>
+      </Shell>
+    )
+  }
+
+  // Still checking, and Stripe hasn't confirmed payment either way.
+  if (!order && paid === null) {
+    return (
+      <Shell>
+        <h1 className="text-[44px] md:text-[56px] leading-none tracking-[0.04em] uppercase" style={{ fontFamily: 'var(--font-bebas)' }}>
+          {gaveUp ? 'Order pending' : 'Checking your order'}
+        </h1>
+        <p className="mt-[14px] text-[13px] leading-relaxed text-[#444] max-w-[360px]">
+          {gaveUp ? (
+            <>
+              We couldn&apos;t confirm your order yet. If you were charged, a confirmation email is on its way.
+              Otherwise email{' '}
+              <a href="mailto:info.scriptsstudio@gmail.com" className="font-bold underline underline-offset-2">
+                info.scriptsstudio@gmail.com
+              </a>
+              .
+            </>
+          ) : (
+            'One moment…'
+          )}
+        </p>
       </Shell>
     )
   }
@@ -165,7 +216,6 @@ const primaryBtn =
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col items-center justify-center px-4 md:px-16 py-16">
-      <h1 className="sr-only">Order confirmation</h1>
       <div className="w-full max-w-[460px] flex flex-col items-center text-center gap-0">{children}</div>
     </div>
   )

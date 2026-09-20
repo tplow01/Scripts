@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useCart } from '@/lib/cart'
 import { useStripeCheckout } from '@/lib/checkout'
 import { variantTitle } from '@/lib/admin/variants'
+import { shipLine } from '@/lib/shipEstimate'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
@@ -125,11 +126,9 @@ export default function CartDrawer() {
                           <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#888] mt-[4px]">
                             {variantTitle(item.variant.optionValues)}
                           </p>
-                          {item.product.shipDate && (
-                            <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6F6F73] mt-[4px]">
-                              Ships: {item.product.shipDate}
-                            </p>
-                          )}
+                          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#6F6F73] mt-[4px]">
+                            {shipLine(item.product.shipDate)}
+                          </p>
 
                           {/* Qty + trash */}
                           <div className="flex items-center gap-[4px] mt-[12px]">
