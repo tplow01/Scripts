@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { PARALLAX_BANDS, PARALLAX_TILES, MIRROR_PERIOD, type ParallaxBand } from "@/lib/parallax";
 
-/** In-game walk cycle: standing, left-leg-forward, standing, right-leg-forward. */
-const WALK_FRAMES = ["both", "left", "both", "right"] as const;
+/** Length of one full step cycle (standing, left, standing, right). */
+const WALK_CYCLE_MS = 640;
 
 /** The parallax band art, back to front. Preloaded before the walkers appear so
  *  a slow phone never shows characters jogging on a blank pink screen. */
@@ -20,22 +20,36 @@ const LAYER_SRCS = [
  * A character jogging on the spot in the centre of the frame. The legs cycle
  * through the walk sprites while the parallax world slides past behind them, so
  * they read as "walking" without ever leaving the middle of the screen.
+ *
+ * The three poses are stacked and switched by a CSS opacity animation rather
+ * than a JS timer. That matters: while the game boots, the main thread is busy
+ * for a stretch, and a JS timer freezes with it while the CSS-driven parallax
+ * keeps sliding — legs stuck, world moving. Opacity animations run on the
+ * compositor, so the walk cycle now keeps time with everything else.
+ * `phase` (0-3) offsets the cycle so two walkers are not in lockstep.
  */
 function Walker({ character, phase = 0 }: { character: "scribbs" | "heath"; phase?: number }) {
-  const [frame, setFrame] = useState(phase % WALK_FRAMES.length);
-
-  useEffect(() => {
-    const id = setInterval(() => setFrame((f) => (f + 1) % WALK_FRAMES.length), 160);
-    return () => clearInterval(id);
-  }, []);
-
+  const pose = (name: "both" | "left" | "right", cls: string) => (
+    <img
+      key={name}
+      className={cls}
+      src={`/assets/${character}/${character}-right-${name}.png`}
+      alt=""
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        imageRendering: "pixelated",
+        animationDelay: `${-(phase / 4) * WALK_CYCLE_MS}ms`,
+      }}
+    />
+  );
   return (
-    <div style={{ height: "100%", aspectRatio: "1" }}>
-      <img
-        src={`/assets/${character}/${character}-right-${WALK_FRAMES[frame]}.png`}
-        alt=""
-        style={{ width: "100%", height: "100%", imageRendering: "pixelated" }}
-      />
+    <div style={{ position: "relative", height: "100%", aspectRatio: "1" }}>
+      {pose("both", "scripts-walk-both")}
+      {pose("left", "scripts-walk-left")}
+      {pose("right", "scripts-walk-right")}
     </div>
   );
 }
@@ -131,6 +145,13 @@ export default function PixelCityIntro() {
         @keyframes scripts-scroll { from { transform: translateX(0) } to { transform: translateX(var(--parallax-shift)) } }
         @keyframes scripts-star-flicker { 0%, 100% { opacity: 0.9 } 45% { opacity: 0.35 } 70% { opacity: 1 } }
         .scripts-parallax { animation-name: scripts-scroll; animation-timing-function: linear; animation-iteration-count: infinite; }
+        @keyframes scripts-walk-both  { 0%, 24.99% { opacity: 1 } 25%, 49.99% { opacity: 0 } 50%, 74.99% { opacity: 1 } 75%, 100% { opacity: 0 } }
+        @keyframes scripts-walk-left  { 0%, 24.99% { opacity: 0 } 25%, 49.99% { opacity: 1 } 50%, 100% { opacity: 0 } }
+        @keyframes scripts-walk-right { 0%, 74.99% { opacity: 0 } 75%, 100% { opacity: 1 } }
+        .scripts-walk-both, .scripts-walk-left, .scripts-walk-right { animation-duration: ${WALK_CYCLE_MS}ms; animation-timing-function: linear; animation-iteration-count: infinite; }
+        .scripts-walk-both  { animation-name: scripts-walk-both; }
+        .scripts-walk-left  { animation-name: scripts-walk-left; }
+        .scripts-walk-right { animation-name: scripts-walk-right; }
       `}</style>
 
       {/* Back to front: flat sky bands, star flicker, drifting clouds, ground,

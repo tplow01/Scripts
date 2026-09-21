@@ -7,6 +7,16 @@ import { motion, useReducedMotion } from 'framer-motion'
 import type { Product, Availability } from '@/types/product'
 import { deriveAvailability } from '@/lib/admin/variants'
 
+/**
+ * The card's image `sizes`, shared with the product page's main image on
+ * purpose. Next serves a different optimised file per width, so if the page
+ * asked for a different width than the card, every click would wait on a fresh
+ * image optimisation. With identical `sizes` the browser already has the file
+ * from the grid, and the product page's image is there instantly. 50vw is never
+ * smaller than the image's real size on the product page, so nothing gets softer.
+ */
+export const CARD_IMAGE_SIZES = '(min-width: 768px) 50vw, 100vw'
+
 const STATUS_LABELS: Record<Availability, string> = {
   'pre-order': 'PRE-ORDER',
   'sold-out':  'SOLD OUT',
@@ -58,7 +68,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
             src={image}
             alt={product.name}
             fill
-            sizes="(min-width: 768px) 50vw, 100vw"
+            sizes={CARD_IMAGE_SIZES}
             className={`object-contain transition-opacity duration-300 ${flipped && backImage ? 'opacity-0' : 'opacity-100'}`}
           />
         )}
@@ -67,7 +77,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
             src={backImage}
             alt={`${product.name} — back`}
             fill
-            sizes="(min-width: 768px) 50vw, 100vw"
+            sizes={CARD_IMAGE_SIZES}
             className={`absolute inset-0 object-contain transition-opacity duration-300 ${flipped ? 'opacity-100' : 'opacity-0'}`}
           />
         )}

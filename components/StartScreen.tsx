@@ -1,7 +1,6 @@
 'use client'
 
 import { Press_Start_2P } from 'next/font/google'
-import { useEffect, useState } from 'react'
 import PixelCityIntro from './PixelCityIntro'
 
 const pressStart = Press_Start_2P({ weight: '400', subsets: ['latin'], display: 'swap' })
@@ -24,13 +23,6 @@ export default function StartScreen({
   /** Covers the game while it boots: same scene, steady "LOADING" prompt, not clickable. */
   loading?: boolean
 }) {
-  const [blink, setBlink] = useState(true)
-
-  useEffect(() => {
-    const id = setInterval(() => setBlink((b) => !b), 700)
-    return () => clearInterval(id)
-  }, [])
-
   return (
     <div
       onClick={loading ? undefined : onStart}
@@ -40,6 +32,7 @@ export default function StartScreen({
         zIndex: loading ? 20 : undefined,
       }}
     >
+      <style>{`@keyframes scripts-start-blink { 0% { opacity: 1 } 50% { opacity: 0 } }`}</style>
       <PixelCityIntro />
 
       {/* Text layer. The lockup and start prompt are anchored independently as a
@@ -71,8 +64,9 @@ export default function StartScreen({
             fontSize: mobile ? 'clamp(7px, 2.2vw, 11px)' : 'clamp(8px, 0.95vw, 14px)',
             color: '#F7F7F5',
             letterSpacing: '0.2em',
-            opacity: loading || blink ? 1 : 0,
-            transition: 'opacity 0.08s',
+            // CSS-driven, not a JS timer, so it keeps blinking while the game
+            // boots and the main thread is busy (see PixelCityIntro's walkers).
+            animation: loading ? undefined : 'scripts-start-blink 1.4s steps(1, end) infinite',
           }}
         >
           <span style={{ color: '#F7F7F5' }}>›</span>

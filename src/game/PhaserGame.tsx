@@ -44,5 +44,12 @@ export default function PhaserGame({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return (
+    <div
+      ref={containerRef}
+      className="h-full w-full"
+      role="group"
+      aria-label="SCR!PTS game world. Move with the arrow keys or the on-screen buttons. The shop is also available from the Inventory button."
+    />
+  );
 }

@@ -14,16 +14,55 @@ export default function CartDrawer() {
   const reduced = useReducedMotion()
   const drawerRef = useRef<HTMLDivElement>(null)
 
-  // Escape closes; focus moves into the drawer when it opens so keyboard and
-  // screen-reader users land in it rather than behind it.
+  // Modal behaviour for keyboard and screen-reader users: focus moves into the
+  // drawer on open, Tab cycles inside it instead of leaking to the page behind,
+  // Escape closes, and focus goes back to whatever opened it once it shuts.
   useEffect(() => {
     if (!isOpen) return
+    const opener = document.activeElement as HTMLElement | null
     drawerRef.current?.focus()
+
+    const focusables = () =>
+      Array.from(
+        drawerRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      )
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeCart()
+      if (e.key === 'Escape') {
+        closeCart()
+        return
+      }
+      if (e.key !== 'Tab') return
+      const els = focusables()
+      if (!els.length) {
+        e.preventDefault()
+        return
+      }
+      const first = els[0]
+      const last = els[els.length - 1]
+      const active = document.activeElement
+      // Shift+Tab off the first item (or off the drawer itself) wraps to the
+      // last; Tab off the last wraps to the first.
+      if (e.shiftKey && (active === first || active === drawerRef.current)) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first.focus()
+      } else if (!drawerRef.current?.contains(active)) {
+        e.preventDefault()
+        first.focus()
+      }
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      // Give focus back to the opener (the Bag button). Nothing to restore when
+      // the game opened it, since no element had focus.
+      if (opener && opener !== document.body && document.contains(opener)) opener.focus()
+    }
   }, [isOpen, closeCart])
 
   useEffect(() => {
