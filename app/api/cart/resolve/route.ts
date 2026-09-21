@@ -1,6 +1,7 @@
 import { fail, ok } from '@/lib/server/http'
 import { resolveVariants } from '@/lib/server/products.repo'
 import { cartResolveSchema } from '@/lib/schemas/product'
+import { toStorefrontProduct } from '@/lib/storefront'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -35,7 +36,10 @@ export async function POST(req: Request) {
     const product = byVariantId.get(variantId)
     const variant = product?.variants.find((v) => v.id === variantId)
     if (!product || !variant) return []
-    return [{ product, variant, quantity }]
+    // Public route: strip cost, SKU, barcode, weight and the real stock
+    // count before anything leaves the server.
+    const safe = toStorefrontProduct(product)
+    return [{ product: safe, variant: safe.variants.find((v) => v.id === variantId)!, quantity }]
   })
 
   return ok({ items })

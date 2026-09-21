@@ -10,6 +10,7 @@ import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
 import type { Product, ProductVariant } from '@/types/product'
 import { quickFade, quickStagger } from '@/lib/motion'
+import { CARD_IMAGE_SIZES } from '@/components/ProductCard'
 import { useCart } from '@/lib/cart'
 import { useToast } from '@/lib/toast'
 import { deriveAvailability } from '@/lib/admin/variants'
@@ -122,12 +123,16 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
 
       {dark ? <BasementNavBar backHref="/basement" /> : <NavBar showBack backHref="/inventory" />}
 
-      <main className="relative z-10 px-4 md:px-16 lg:px-[200px] pb-[120px] flex-1">
+      {/* Below lg the edge art is one full-viewport poster, so the content sits
+          on an opaque panel: the art shows in the 140px band above it and in
+          the header, never behind the photo, title, sizes or description. On
+          desktop the panel is transparent and the art lives in the margins. */}
+      <main className={`relative z-10 mt-[140px] lg:mt-0 px-4 md:px-16 lg:px-[200px] pt-[24px] lg:pt-0 pb-[120px] flex-1 ${dark ? 'bg-[#0d0d0d]' : 'bg-white'} lg:bg-transparent`}>
         <div className="flex flex-col md:flex-row gap-[48px] lg:gap-[80px] items-start">
 
           {/* Left — image */}
           <motion.div
-            className="w-full mt-[140px] md:mt-0 md:flex-[55] min-w-0"
+            className="w-full md:flex-[55] min-w-0"
             variants={imgVariant}
             initial="hidden"
             animate="show"
@@ -147,7 +152,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
                       src={images[activeImage]}
                       alt={product.name}
                       fill
-                      sizes="(min-width: 768px) 55vw, 100vw"
+                      sizes={CARD_IMAGE_SIZES}
                       className="object-contain"
                       priority
                     />

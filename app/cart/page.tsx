@@ -61,7 +61,7 @@ export default function CartPage() {
 
             {/* Item list */}
             <motion.div
-              className="flex-1 flex flex-col divide-y divide-[#e5e5e5]"
+              className="w-full lg:w-auto flex-1 flex flex-col divide-y divide-[#e5e5e5]"
               variants={listVariants}
               initial="hidden"
               animate="show"
@@ -77,11 +77,11 @@ export default function CartPage() {
                       key={item.variant.id}
                       variants={itemVariants}
                       exit={{ opacity: 0, x: -16, transition: { duration: 0.25, ease: 'easeOut' } }}
-                      className="flex gap-[24px] py-[24px]"
+                      className="flex gap-[12px] sm:gap-[24px] py-[24px]"
                     >
                       {/* Thumbnail */}
                       <Link href={`/products/${item.product.slug}`} className="shrink-0">
-                        <div className="relative w-[100px] h-[100px] bg-[#f7f7f5] rounded overflow-hidden">
+                        <div className="relative w-[72px] h-[72px] sm:w-[100px] sm:h-[100px] bg-[#f7f7f5] rounded overflow-hidden">
                           {image && (
                             <Image src={image} alt={item.product.name} fill sizes="100px" className="object-contain" />
                           )}
@@ -103,7 +103,7 @@ export default function CartPage() {
                         </p>
 
                         {/* Qty controls */}
-                        <div className="flex items-center gap-[12px] mt-[12px]">
+                        <div className="flex flex-wrap items-center gap-x-[12px] gap-y-[8px] mt-[12px]">
                           <button
                             onClick={() => decrement(item.variant.id)}
                             className="w-[28px] h-[28px] flex items-center justify-center border border-[#0d0d0d] rounded text-[14px] font-bold hover:bg-[#0d0d0d] hover:text-white transition-colors duration-150"

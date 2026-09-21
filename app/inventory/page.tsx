@@ -4,6 +4,7 @@ import NewsletterFooter from '@/components/NewsletterFooter'
 import ProductGrid from '@/components/ProductGrid'
 import PageEdgeArt from '@/components/PageEdgeArt'
 import { listStorefrontProducts } from '@/lib/server/products.repo'
+import { toStorefrontProduct } from '@/lib/storefront'
 
 export const metadata: Metadata = {
   title: 'Inventory — SCR!PTS',
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function InventoryPage() {
-  const products = await listStorefrontProducts()
+  const products = (await listStorefrontProducts()).map(toStorefrontProduct)
 
   return (
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col">

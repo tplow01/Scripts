@@ -6,6 +6,7 @@ import {
   listBasementProducts,
   listStorefrontProducts,
 } from '@/lib/server/products.repo'
+import { toStorefrontProduct } from '@/lib/storefront'
 import ProductDetail from './ProductDetail'
 
 interface Props {
@@ -49,5 +50,5 @@ export default async function ProductPage({ params }: Props) {
     if (merged) redirect(`/products/${merged}`)
     notFound()
   }
-  return <ProductDetail product={product} dark={product.isBasement} />
+  return <ProductDetail product={toStorefrontProduct(product)} dark={product.isBasement} />
 }

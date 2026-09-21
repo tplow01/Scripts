@@ -72,31 +72,63 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const hydrated = useRef(false)
   useEffect(() => {
     let cancelled = false
-    resolveStored(readStored())
-      .then((resolved) => {
-        if (cancelled || !resolved.length) return
-        // Merge, don't overwrite: anything added while the fetch was in flight
-        // (e.g. straight from the game) must survive the stored cart landing.
-        setItems((current) => {
-          const merged = [...resolved]
-          for (const c of current) {
-            const at = merged.findIndex((m) => m.variant.id === c.variant.id)
-            if (at === -1) merged.push(c)
-            else merged[at] = { ...merged[at], quantity: Math.max(merged[at].quantity, c.quantity) }
+    let retry: ReturnType<typeof setTimeout> | undefined
+
+    const hydrate = (attempt: number) => {
+      resolveStored(readStored())
+        .then((resolved) => {
+          if (cancelled) return
+          if (resolved.length) {
+            // Merge, don't overwrite: anything added while the fetch was in
+            // flight (e.g. straight from the game) must survive the stored
+            // cart landing.
+            setItems((current) => {
+              const merged = [...resolved]
+              for (const c of current) {
+                const at = merged.findIndex((m) => m.variant.id === c.variant.id)
+                if (at === -1) merged.push(c)
+                else merged[at] = { ...merged[at], quantity: Math.max(merged[at].quantity, c.quantity) }
+              }
+              return merged
+            })
           }
-          return merged
+          // Only now is it safe to write: we know what the stored cart held.
+          hydrated.current = true
         })
-      })
-      .catch(() => {
-        // Offline, or the server is unhappy. Start empty rather than showing a
-        // stale price — nothing is persisted, so the stored cart survives.
-      })
-      .finally(() => {
-        if (!cancelled) hydrated.current = true
-      })
+        .catch(() => {
+          // Offline, or the server is unhappy. Leave `hydrated` false so the
+          // persist effect never overwrites the stored cart with a partial one
+          // (an add made now would otherwise replace everything saved). Try
+          // again shortly; if it never works, the stored cart is still intact.
+          if (!cancelled && attempt < 5) retry = setTimeout(() => hydrate(attempt + 1), 3000 * (attempt + 1))
+        })
+    }
+    hydrate(0)
+
     return () => {
       cancelled = true
+      if (retry) clearTimeout(retry)
     }
+  }, [])
+  // Another tab changed the bag. localStorage is the shared truth, so pick its
+  // version up instead of letting this tab's next write overwrite it (which is
+  // how an item added in one tab used to vanish when a second tab added
+  // something). `storage` only fires in the *other* tabs, so this cannot echo.
+  useEffect(() => {
+    let latest = 0
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== STORAGE_KEY) return
+      const ticket = ++latest
+      resolveStored(readStored())
+        .then((resolved) => {
+          if (ticket === latest) setItems(resolved)
+        })
+        .catch(() => {
+          // Keep what this tab has; the next successful sync catches up.
+        })
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
   useEffect(() => {
     if (!hydrated.current || typeof window === 'undefined') return

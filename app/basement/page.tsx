@@ -4,6 +4,7 @@ import ProductGrid from '@/components/ProductGrid'
 import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
 import { listBasementProducts } from '@/lib/server/products.repo'
+import { toStorefrontProduct } from '@/lib/storefront'
 
 export const metadata: Metadata = {
   title: 'The Basement — SCR!PTS',
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export const revalidate = 60
 
 export default async function BasementPage() {
-  const products = await listBasementProducts()
+  const products = (await listBasementProducts()).map(toStorefrontProduct)
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-[#f7f7f5] flex flex-col">
