@@ -1,7 +1,7 @@
 # Welcome email with a unique 10% code
 
 **Date:** 2026-09-20
-**Status:** Design approved in conversation, awaiting spec review.
+**Status:** Approved.
 **Look reference (local, gitignored):** `.superpowers/brainstorm/15835-1789962607/content/welcome-email-final-b-v2.html`
 
 ## Goal
@@ -21,7 +21,7 @@ When someone joins the mailing list, they immediately get a designed SCR!PTS ema
 
 ## Copy (defaults)
 
-- Headline: `You're in, {name}.`
+- Headline: `You're in.`
 - Body: `Welcome to SCR!PTS. You're on the list, which means new drops, restocks and the odd secret from the Basement land in your inbox before they land anywhere else.`
 - Offer: `Here's 10% off your first order for showing up.`
 - Code terms: `Enter at checkout · first order only · expires {expires}`
@@ -29,7 +29,7 @@ When someone joins the mailing list, they immediately get a designed SCR!PTS ema
 - List heading `What you'll get`: drop alerts before anyone else; restocks of the ones that sold out; things we only tell the list.
 - Sign-off: `Wear it loud.`
 - Footer: `SCR!PTS · A home for creative culture · scripts.studio` and `You're getting this because you joined the list. Unsubscribe`
-- `{name}` falls back to `there` when we have no name. The signup form only collects an email today, so v1 will normally say "You're in, there." **Open item:** decide whether to drop the name from the headline (recommended: `You're in.`) or add an optional name field to the form.
+- No `{name}` in v1: the signup form only collects an email, so the greeting is name-free. Only `{expires}` is filled in.
 
 ## Design
 
@@ -51,7 +51,7 @@ When someone joins the mailing list, they immediately get a designed SCR!PTS ema
 - Works in whichever Stripe mode the configured key belongs to. Test-mode codes do not work in live mode.
 
 ### 4. The email (`lib/server/emails/welcome.ts`, `defaults.ts`, `layout.ts`)
-- New `welcome` template following the existing pattern: defaults in code, overrides from `email_copy`, `{name}` and `{expires}` filled in.
+- New `welcome` template following the existing pattern: defaults in code, overrides from `email_copy`, `{expires}` filled in.
 - Table-based HTML with inline styles, as the other emails. The hero is one hosted image, `public/email/welcome-hero.gif`, referenced by absolute URL from `siteUrl()`. It shows the loading scene and the item card.
 - The code is repeated as real, copyable text in the white section, so the email works with images blocked. The hero image has descriptive alt text including the code.
 - A plain-text version is always sent.
