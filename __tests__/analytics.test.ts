@@ -10,6 +10,19 @@ describe('ANALYTICS_EVENTS', () => {
       'checkout_started', 'purchase',
     ])
   })
+
+  it('matches the migration\'s CHECK constraint exactly (update both if this ever fails)', () => {
+    // Hand-copied from supabase/migrations/0007_analytics_events.sql's
+    // `event text not null check (event in (...))` list. If you change the
+    // event list, update both this array and the migration.
+    const sqlCheckConstraintList = [
+      'click_to_start', 'inventory_shortcut', 'npc_interaction',
+      'karl_interaction', 'vinyl_interaction', 'basement_discovered',
+      'inventory_view', 'basement_view', 'product_click_inventory',
+      'product_click_basement', 'add_to_cart', 'checkout_started', 'purchase',
+    ]
+    expect(ANALYTICS_EVENTS).toEqual(sqlCheckConstraintList)
+  })
 })
 
 describe('track / getAnalyticsSessionId', () => {
