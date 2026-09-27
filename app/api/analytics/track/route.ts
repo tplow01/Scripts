@@ -10,7 +10,23 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 function clientIp(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  // x-real-ip is set by the proxy itself and can't be forged by the client.
+  const realIp = req.headers.get('x-real-ip')?.trim()
+  if (realIp) return realIp
+
+  // x-forwarded-for is a comma-separated hop chain: "client, proxy1, proxy2".
+  // On hosts that APPEND to (rather than overwrite) this header, the FIRST
+  // value is whatever the original client sent and is attacker-controlled —
+  // trusting it lets one connection manufacture unlimited distinct rate-limit
+  // keys. The LAST hop is the one added by the proxy closest to us, which is
+  // much harder for a client to forge.
+  const chain = req.headers.get('x-forwarded-for')
+  if (chain) {
+    const hops = chain.split(',').map((h) => h.trim()).filter(Boolean)
+    if (hops.length) return hops[hops.length - 1]
+  }
+
+  return 'unknown'
 }
 
 /**
