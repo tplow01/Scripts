@@ -14,6 +14,12 @@ const SRC: Record<Track, string> = {
 }
 const VOLUME = 0.3
 const FADE_MS = 900
+/**
+ * Grime's intro has no beat under it. Putting the record on should feel like
+ * the drop, not thirty seconds of dead air, so switching to it jumps straight
+ * past the intro. Lofi has no such moment and is never seeked.
+ */
+const GRIME_DROP_S = 20
 
 let audio: Partial<Record<Track, HTMLAudioElement>> = {}
 let current: Track = 'lofi'
@@ -73,6 +79,10 @@ export const music = {
   },
   setTrack(t: Track) {
     if (current === t) return
+    if (t === 'grime') {
+      const a = get('grime')
+      if (a) a.currentTime = GRIME_DROP_S
+    }
     current = t
     sync()
   },
