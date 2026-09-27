@@ -32,6 +32,9 @@ describe('track / getAnalyticsSessionId', () => {
     window.localStorage.clear()
     fetchMock.mockReset().mockResolvedValue({ ok: true })
     vi.stubGlobal('fetch', fetchMock)
+    // The module memoizes the session id in a module-level variable, so each
+    // test needs a fresh module instance to observe fresh behavior.
+    vi.resetModules()
   })
   afterEach(() => vi.unstubAllGlobals())
 
@@ -61,5 +64,46 @@ describe('track / getAnalyticsSessionId', () => {
     fetchMock.mockRejectedValue(new Error('offline'))
     const { track } = await import('@/lib/analytics')
     expect(() => track('add_to_cart')).not.toThrow()
+  })
+
+  it('returns the SAME id from repeated calls even when localStorage throws on every access', async () => {
+    const getSpy = vi.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(() => {
+      throw new Error('storage blocked')
+    })
+    const setSpy = vi.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation(() => {
+      throw new Error('storage blocked')
+    })
+    const { getAnalyticsSessionId } = await import('@/lib/analytics')
+    const first = getAnalyticsSessionId()
+    const second = getAnalyticsSessionId()
+    expect(first).toBe(second)
+    getSpy.mockRestore()
+    setSpy.mockRestore()
+  })
+
+  it('never throws even when both crypto.randomUUID and localStorage are unavailable', async () => {
+    const getSpy = vi.spyOn(window.localStorage.__proto__, 'getItem').mockImplementation(() => {
+      throw new Error('storage blocked')
+    })
+    const setSpy = vi.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation(() => {
+      throw new Error('storage blocked')
+    })
+    const originalRandomUUID = crypto.randomUUID
+    // @ts-expect-error -- simulating an environment without randomUUID
+    crypto.randomUUID = undefined
+
+    const { getAnalyticsSessionId } = await import('@/lib/analytics')
+    let first = ''
+    let second = ''
+    expect(() => {
+      first = getAnalyticsSessionId()
+      second = getAnalyticsSessionId()
+    }).not.toThrow()
+    expect(first).toBe(second)
+    expect(first.length).toBeGreaterThan(0)
+
+    crypto.randomUUID = originalRandomUUID
+    getSpy.mockRestore()
+    setSpy.mockRestore()
   })
 })
