@@ -3,6 +3,7 @@ import BasementNavBar from '@/components/BasementNavBar'
 import ProductGrid from '@/components/ProductGrid'
 import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
+import TrackPageView from '@/components/TrackPageView'
 import { listBasementProducts } from '@/lib/server/products.repo'
 import { toStorefrontProduct } from '@/lib/storefront'
 
@@ -18,6 +19,7 @@ export default async function BasementPage() {
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-[#f7f7f5] flex flex-col">
+      <TrackPageView event="basement_view" />
       <PageEdgeArt
         left="/decor/basement-left.png"
         right="/decor/basement-right.png"

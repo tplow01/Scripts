@@ -3,6 +3,7 @@ import NavBar from '@/components/NavBar'
 import NewsletterFooter from '@/components/NewsletterFooter'
 import ProductGrid from '@/components/ProductGrid'
 import PageEdgeArt from '@/components/PageEdgeArt'
+import TrackPageView from '@/components/TrackPageView'
 import { listStorefrontProducts } from '@/lib/server/products.repo'
 import { toStorefrontProduct } from '@/lib/storefront'
 
@@ -19,6 +20,7 @@ export default async function InventoryPage() {
 
   return (
     <div className="min-h-screen bg-white text-[#0d0d0d] flex flex-col">
+      <TrackPageView event="inventory_view" />
       <PageEdgeArt
         left="/decor/inventory-left.png"
         right="/decor/inventory-right.png"
