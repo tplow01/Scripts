@@ -87,6 +87,24 @@ language sql stable as $$
   group by event;
 $$;
 
+-- Postgres grants EXECUTE on every new function to PUBLIC by default, and
+-- `revoke ... from anon, authenticated` below does NOT touch that PUBLIC
+-- grant — anon/authenticated would still be able to call these functions
+-- through PUBLIC if this revoke were the only thing stopping them.
+--
+-- What actually stops anon from reading anything today is RLS: these
+-- functions are `language sql stable` (not `security definer`), so they run
+-- with the caller's own privileges, and `analytics_events` has RLS enabled
+-- with no public policies (see above) — anon gets zero rows back regardless
+-- of whether it can call the function. The revokes below are not that
+-- boundary; they are the belt to that RLS's suspenders, so a future function
+-- here that turns out to be `security definer` (which WOULD bypass RLS)
+-- doesn't also get a free pass through a forgotten PUBLIC grant.
+revoke execute on function analytics_visitors_by_day(int)      from public;
+revoke execute on function analytics_top_pages(int, int)       from public;
+revoke execute on function analytics_device_split(int)         from public;
+revoke execute on function analytics_funnel(int)                from public;
+
 grant execute on function analytics_visitors_by_day(int)      to service_role;
 grant execute on function analytics_top_pages(int, int)       to service_role;
 grant execute on function analytics_device_split(int)         to service_role;
