@@ -4,8 +4,8 @@ import { useState } from 'react'
 import Card from '@/components/admin/Card'
 import { LineChart } from '@/components/admin/charts'
 import MetricShell, { type MetricRange } from '@/components/admin/MetricShell'
-import { DEVICE_SPLIT, TOP_PAGES, TRAFFIC_30D } from '@/lib/admin/mockTraffic'
 import { useAdmin } from '@/lib/admin/store'
+import { useAnalytics } from '@/lib/admin/useAnalytics'
 import { useIsPhone } from '@/lib/admin/useIsPhone'
 import { conversionRate, delta, ordersInRange, trafficInRange, trafficPrevWindow } from '@/lib/admin/stats'
 
@@ -13,14 +13,14 @@ export default function VisitorsMetric() {
   const { state } = useAdmin()
   const [range, setRange] = useState<MetricRange>(14)
   const chartH = useIsPhone() ? 140 : 200
+  const { bundle } = useAnalytics(range)
 
-  const traffic = trafficInRange(TRAFFIC_30D, range)
+  const traffic = trafficInRange(bundle?.visitorsByDay ?? [], range)
   const visitors = traffic.reduce((s, d) => s + d.visitors, 0)
-  const prevVisitors = trafficPrevWindow(TRAFFIC_30D, range).reduce((s, d) => s + d.visitors, 0)
+  const prevVisitors = trafficPrevWindow(bundle?.visitorsByDay ?? [], range).reduce((s, d) => s + d.visitors, 0)
   const rangedOrders = ordersInRange(state.orders, range)
-  const rangeShare = TRAFFIC_30D.reduce((s, d) => s + d.visitors, 0) > 0
-    ? visitors / TRAFFIC_30D.reduce((s, d) => s + d.visitors, 0)
-    : 0
+  const topPages = bundle?.topPages ?? []
+  const deviceSplit = bundle?.deviceSplit ?? { mobile: 0, desktop: 0 }
 
   return (
     <MetricShell
@@ -52,23 +52,24 @@ export default function VisitorsMetric() {
           <p className="mt-1.5 text-[11px] text-grey">{rangedOrders.length} orders / {visitors.toLocaleString()} visitors</p>
         </Card>
         <Card title="Top pages">
+          {topPages.length === 0 && <p className="text-[12px] text-grey">No page views yet</p>}
           <ul className="space-y-2">
-            {TOP_PAGES.map((p) => (
+            {topPages.map((p) => (
               <li key={p.path} className="flex justify-between text-[13px]">
                 <span className="text-paper/90 truncate">{p.path}</span>
-                <span className="text-grey tabular-nums shrink-0 ml-3">{Math.round(p.views * rangeShare).toLocaleString()}</span>
+                <span className="text-grey tabular-nums shrink-0 ml-3">{p.views.toLocaleString()}</span>
               </li>
             ))}
           </ul>
         </Card>
         <Card title="Devices">
           <div className="flex h-2.5 rounded-full overflow-hidden bg-[#101010]">
-            <div className="bg-pink" style={{ width: `${DEVICE_SPLIT.mobile}%` }} />
-            <div className="bg-grey/60" style={{ width: `${DEVICE_SPLIT.desktop}%` }} />
+            <div className="bg-pink" style={{ width: `${deviceSplit.mobile}%` }} />
+            <div className="bg-grey/60" style={{ width: `${deviceSplit.desktop}%` }} />
           </div>
           <div className="mt-3 space-y-1.5 text-[13px]">
-            <div className="flex justify-between"><span className="text-pink">Mobile</span><span className="tabular-nums text-paper/80">{DEVICE_SPLIT.mobile}%</span></div>
-            <div className="flex justify-between"><span className="text-grey">Desktop</span><span className="tabular-nums text-paper/80">{DEVICE_SPLIT.desktop}%</span></div>
+            <div className="flex justify-between"><span className="text-pink">Mobile</span><span className="tabular-nums text-paper/80">{deviceSplit.mobile}%</span></div>
+            <div className="flex justify-between"><span className="text-grey">Desktop</span><span className="tabular-nums text-paper/80">{deviceSplit.desktop}%</span></div>
           </div>
         </Card>
       </div>

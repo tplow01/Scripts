@@ -5,9 +5,17 @@ import {
   trafficInRange, trafficPrevWindow,
 } from '@/lib/admin/stats'
 import { seedState } from '@/lib/admin/store'
-import { TRAFFIC_30D } from '@/lib/admin/mockTraffic'
 
 const orders = seedState().orders // dates 2026-07-16..2026-07-29
+
+// Local fixture standing in for the old mock traffic dataset: 30 consecutive
+// days ending 2026-07-30, with plausible visitor/page-view ratios.
+const TRAFFIC_30D: { date: string; visitors: number; pageViews: number }[] = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date('2026-07-01T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + i)
+  const visitors = 100 + i * 3
+  return { date: d.toISOString().slice(0, 10), visitors, pageViews: visitors * 2 + 20 }
+})
 
 describe('range filtering', () => {
   it('newestOrderDate finds 2026-07-29; null on empty', () => {
