@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 import type { Product, ProductVariant } from '@/types/product'
 import { ALL_PRODUCTS } from '@/lib/products'
 import { MAX_QTY, buildLegacyIndex, parseStoredCart, type StoredItem } from '@/lib/cartStorage'
+import { track } from '@/lib/analytics'
 
 const STORAGE_KEY = 'scripts-cart'
 
@@ -139,6 +140,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = useCallback(() => setIsOpen(false), [])
 
   const add = useCallback((product: Product, variant: ProductVariant) => {
+    track('add_to_cart', { productId: product.id, variantId: variant.id })
     setItems((prev) => {
       const existing = prev.find((i) => i.variant.id === variant.id)
       if (existing) {

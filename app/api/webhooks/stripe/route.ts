@@ -6,6 +6,7 @@ import { fromMinorUnits, isStripeConfigured, stripe } from '@/lib/server/stripe'
 import { sendEmail } from '@/lib/server/email'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 import { getCopy } from '@/lib/server/emailCopy.repo'
+import { recordEvent } from '@/lib/server/analytics.repo'
 
 // Node runtime, not edge: signature verification needs the raw request body.
 export const runtime = 'nodejs'
@@ -102,16 +103,30 @@ export async function POST(req: Request) {
       total: fromMinorUnits(session.amount_total ?? 0),
     })
 
-    // Only a genuinely new order earns an email. Stripe redelivers, and a
-    // retry must not tell the customer twice. Awaited rather than fired and
-    // forgotten: a serverless function can be frozen the moment it responds.
-    // sendEmail never throws — a mail failure must not cost a paid order.
+    // Only a genuinely new order earns an email or an analytics event. Stripe
+    // redelivers, and a retry must not tell the customer twice or double-count
+    // a conversion. Awaited rather than fired and forgotten: a serverless
+    // function can be frozen the moment it responds. sendEmail never throws —
+    // a mail failure must not cost a paid order, and the same rule applies to
+    // recordEvent below.
     if (created) {
       // Heath's wording from the back office; falls back to the defaults.
       const copy = await getCopy('order_confirmation')
       const result = await sendEmail(orderConfirmationEmail(order, copy))
       if (!result.sent) {
         console.error(`[order ${order.id}] confirmation not sent: ${result.reason}`)
+      }
+
+      try {
+        await recordEvent({
+          event: 'purchase',
+          sessionId: (session.metadata?.analytics_session_id as string | undefined) ?? null,
+          deviceType: null,
+          path: null,
+          meta: { orderId: order.id },
+        })
+      } catch (err) {
+        console.error(`[order ${order.id}] purchase event not recorded:`, err)
       }
     }
 
