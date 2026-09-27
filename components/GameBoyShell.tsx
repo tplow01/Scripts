@@ -274,9 +274,17 @@ export default function GameBoyShell({
   const portraitAbsSize = Math.min(0.22 * vw, 96)
   const dmgPillWidth = Math.max(38, Math.min(0.12 * vw, 48))
   return (
-    <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh' }}>
+    // paddingTop reserves the status-bar/notch area on the shell's own grey
+    // (rootStyle's background), rather than letting the LCD's own content —
+    // the game's pink sky at rest — paint underneath it. iOS Safari tints the
+    // status bar to whatever's under it, so without this the status bar reads
+    // as pink instead of shell grey.
+    <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh', paddingTop: 'env(safe-area-inset-top)' }}>
       <div style={{ height: '50%', overflow: 'hidden' }}>
-        <ScreenModule overlay={overlay} stripHeight={24} style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
+        {/* framePad puts a 14px black frame line above the screen content,
+            closing the seam between the grey cap above and the LCD below —
+            the same black the bottom bezel already uses. */}
+        <ScreenModule overlay={overlay} stripHeight={24} framePad="14px 0" style={{ width: '100%', height: '100%' }}>{screen}</ScreenModule>
       </div>
       <div style={{ flex: 1, position: 'relative' }}>
         {/* Control clusters */}
