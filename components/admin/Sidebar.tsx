@@ -17,7 +17,7 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname()
   return (
-    <aside className="hidden sm:flex w-14 lg:w-56 shrink-0 border-r border-grey/25 bg-[#101010] flex-col">
+    <aside className="hidden sm:flex sticky top-0 h-dvh w-14 lg:w-56 shrink-0 border-r border-grey/25 bg-[#101010] flex-col overflow-y-auto">
       <div className="px-3 lg:px-5 py-5 border-b border-grey/25">
         <span className="hidden lg:block text-[24px] leading-none uppercase tracking-[0.06em] text-pink" style={{ fontFamily: 'var(--font-bebas)' }}>
           SCR!PTS
