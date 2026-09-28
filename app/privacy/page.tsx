@@ -104,7 +104,7 @@ export default function PrivacyPage() {
           Our website may use cookies, local storage, or similar technologies necessary for features such as shopping, website functionality, security, preferences, and basic website operation.
         </p>
         <p>
-          If we introduce additional analytics, advertising, or tracking technologies, this Privacy Policy may be updated to reflect those practices and appropriate choices may be provided where required.
+          We track anonymous, first-party usage events (such as which pages are visited and which parts of the game and shop people use) to understand how SCR!PTS is actually used. This does not use accounts, does not use advertising or cross-site tracking, and does not collect personally identifying information. If that changes — for example, if we introduce advertising or cross-site tracking — this Privacy Policy will be updated to reflect it and appropriate choices will be provided where required.
         </p>
       </Section>
 

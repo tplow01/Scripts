@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowLeft, LayoutDashboard, Mail, Package, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, Filter, LayoutDashboard, Mail, Package, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { adminPath } from '@/lib/admin/config'
@@ -9,6 +9,7 @@ const NAV = [
   { href: adminPath(), label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: adminPath('products'), label: 'Products', icon: Package, exact: false },
   { href: adminPath('orders'), label: 'Orders', icon: ShoppingBag, exact: false },
+  { href: adminPath('funnel'), label: 'Funnel', icon: Filter, exact: false },
   { href: adminPath('emails'), label: 'Emails', icon: Mail, exact: false },
 ]
 
@@ -16,7 +17,7 @@ const NAV = [
 export default function Sidebar() {
   const pathname = usePathname()
   return (
-    <aside className="hidden sm:flex w-14 lg:w-56 shrink-0 border-r border-grey/25 bg-[#101010] flex-col">
+    <aside className="hidden sm:flex sticky top-0 h-dvh w-14 lg:w-56 shrink-0 border-r border-grey/25 bg-[#101010] flex-col overflow-y-auto">
       <div className="px-3 lg:px-5 py-5 border-b border-grey/25">
         <span className="hidden lg:block text-[24px] leading-none uppercase tracking-[0.06em] text-pink" style={{ fontFamily: 'var(--font-bebas)' }}>
           SCR!PTS

@@ -92,6 +92,12 @@ export const cartResolveSchema = z.object({
     .max(100),
 })
 
+/** POST /api/checkout/session — the cart, plus the visitor's analytics session
+ *  so a purchase can be linked back to the funnel that led to it. */
+export const checkoutSessionSchema = cartResolveSchema.extend({
+  analyticsSessionId: z.string().min(8).max(64).optional(),
+})
+
 /** POST /api/newsletter */
 export const newsletterSchema = z.object({
   email: z.string().email('Enter a valid email address'),

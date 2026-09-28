@@ -3,7 +3,7 @@ import type Stripe from 'stripe'
 import { devOr, fail, ok } from '@/lib/server/http'
 import { resolveVariants } from '@/lib/server/products.repo'
 import { CURRENCY, isStripeConfigured, stripe, toMinorUnits } from '@/lib/server/stripe'
-import { cartResolveSchema } from '@/lib/schemas/product'
+import { checkoutSessionSchema } from '@/lib/schemas/product'
 import { variantTitle } from '@/lib/admin/variants'
 
 export const runtime = 'nodejs'
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     return fail(400, 'Expected a JSON body.')
   }
 
-  const parsed = cartResolveSchema.safeParse(body)
+  const parsed = checkoutSessionSchema.safeParse(body)
   if (!parsed.success) return fail(422, 'That cart is not valid.', parsed.error.flatten())
   if (!parsed.data.items.length) return fail(422, 'Your bag is empty.')
 
@@ -97,6 +97,9 @@ export async function POST(req: Request) {
     line_items: lineItems,
     success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/cart`,
+    // Carries the visitor's analytics session id through to the webhook, so a
+    // purchase event can be linked back to the funnel that led to it.
+    metadata: parsed.data.analyticsSessionId ? { analytics_session_id: parsed.data.analyticsSessionId } : undefined,
     // No accounts in SCR!PTS, so Stripe collects the email itself.
     shipping_address_collection: { allowed_countries: SHIP_TO },
     phone_number_collection: { enabled: true },

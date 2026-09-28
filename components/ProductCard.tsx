@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
+import { track } from '@/lib/analytics'
 import type { Product, Availability } from '@/types/product'
 import { deriveAvailability } from '@/lib/admin/variants'
 
@@ -56,6 +57,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
       className="block w-full"
       onPointerEnter={() => setFlipped(true)}
       onPointerLeave={() => setFlipped(false)}
+      onClick={() => track(theme === 'light' ? 'product_click_inventory' : 'product_click_basement', { productId: product.id })}
     >
 
       <motion.div

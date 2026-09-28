@@ -13,6 +13,7 @@ import { music } from "@/lib/music";
 import { gameSession } from "@/lib/gameSession";
 import { CYBER_LOVE_PRODUCTS } from "@/lib/products";
 import { useShellLayout } from "@/lib/useShellLayout";
+import { track } from "@/lib/analytics";
 
 // In-world fixtures that open a Yes/No prompt, and what "Yes" does. Keyed by
 // interaction id first, then type — so the basement NPC routes differently from
@@ -191,11 +192,15 @@ export default function Home() {
   const interactionRef = useRef<(hit: { id: string; type: string }) => void>(() => {});
   interactionRef.current = (hit) => {
     setSpeakerPos(null);
+    if (hit.type === "npc") track('npc_interaction');
+    if (hit.id === "karl") track('karl_interaction');
     // The vinyl deck is the secret switch: first play reveals the hidden
     // basement entrance; afterwards it's just an idle line.
     if (hit.id === "vinyl") {
+      track('vinyl_interaction');
       music.setTrack(music.track === "grime" ? "lofi" : "grime");
       const revealed = gameSession.revealed.has("basement-entrance");
+      if (!revealed) track('basement_discovered');
       setSel("yes");
       setPage(0);
       if (!revealed) {
@@ -540,7 +545,7 @@ export default function Home() {
             }}
           />
         ) : (
-          <StartScreen mobile={mobile} loading={started} onStart={() => setStarted(true)} />
+          <StartScreen mobile={mobile} loading={started} onStart={() => { track('click_to_start'); setStarted(true); }} />
         ))}
     </>
   );
@@ -552,7 +557,10 @@ export default function Home() {
         screen={screen}
         onPress={handlePress}
         onRelease={handleRelease}
-        onInventory={() => leaveTo("/inventory")}
+        onInventory={() => {
+          if (!started) track('inventory_shortcut');
+          leaveTo("/inventory");
+        }}
         muted={muted}
         onToggleMute={() => setMuted((m) => !m)}
         onOverlayChange={(open) => gameRef.current?.events.emit("overlay", open)}

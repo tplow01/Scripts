@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     include: ["__tests__/**/*.test.ts"],
+    setupFiles: ["vitest.setup.ts"],
   },
   resolve: {
     alias: {
@@ -15,6 +16,7 @@ export default defineConfig({
       "@/lib": fileURLToPath(new URL("./lib", import.meta.url)),
       "@/types": fileURLToPath(new URL("./types", import.meta.url)),
       "@/components": fileURLToPath(new URL("./components", import.meta.url)),
+      "@/app": fileURLToPath(new URL("./app", import.meta.url)),
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },

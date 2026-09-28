@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 
 import type { CartItem } from '@/lib/cart'
+import { getAnalyticsSessionId, track } from '@/lib/analytics'
 
 /**
  * Hand the bag to Stripe.
@@ -19,12 +20,14 @@ export function useStripeCheckout() {
     if (busy || !items.length) return
     setBusy(true)
     setError(null)
+    track('checkout_started')
     try {
       const res = await fetch('/api/checkout/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map((i) => ({ variantId: i.variant.id, quantity: i.quantity })),
+          analyticsSessionId: getAnalyticsSessionId(),
         }),
       })
       const body = (await res.json().catch(() => null)) as
