@@ -132,6 +132,9 @@ export default function EmailEditor({
           <iframe
             title={`${spec.name} preview`}
             srcDoc={preview.html}
+            // Email HTML never needs to run anything: no scripts, no forms,
+            // no reaching into the back office that hosts it.
+            sandbox=""
             className="w-full h-[420px] border border-grey/25 bg-white rounded"
           />
         </div>
