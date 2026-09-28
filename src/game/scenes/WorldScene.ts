@@ -600,9 +600,9 @@ export class WorldScene extends Phaser.Scene {
     for (const it of this.room.interactions) {
       if (it.revealedBy === flag && propActive(it, gameSession.revealed)) {
         // A prop with no artKey is collision + interaction only; its art comes
-      // from decorations (the checkout counter).
-      if (!it.artKey) continue;
-      if (it.type === "stairs") this.placeProp(it, 0.5, false);
+        // from decorations (the checkout counter).
+        if (!it.artKey) continue;
+        if (it.type === "stairs") this.placeProp(it, 0.5, false);
         else this.placeProp(it, 2, true);
       }
     }
