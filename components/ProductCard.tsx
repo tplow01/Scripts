@@ -51,12 +51,25 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
   // sits over a card when the inventory grid fades in.
   const [flipped, setFlipped] = useState(false)
 
+  /**
+   * Only flip for pointers that actually hover (a mouse) — pointerenter also
+   * fires on touch the instant a finger lands, and animating scale/opacity
+   * mid-touch can make iOS Safari's gesture recognizer read the tap as a drag
+   * and silently swallow the click, so the product page never opens. Coarse
+   * pointers (touch) skip the animation entirely and tap straight through.
+   */
+  const flipIfHoverCapable = (next: boolean) => {
+    if (typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      setFlipped(next)
+    }
+  }
+
   return (
     <Link
       href={`/products/${product.slug}`}
       className="block w-full"
-      onPointerEnter={() => setFlipped(true)}
-      onPointerLeave={() => setFlipped(false)}
+      onPointerEnter={() => flipIfHoverCapable(true)}
+      onPointerLeave={() => flipIfHoverCapable(false)}
       onClick={() => track(theme === 'light' ? 'product_click_inventory' : 'product_click_basement', { productId: product.id })}
     >
 
