@@ -1,9 +1,10 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import BasementNavBar from '@/components/BasementNavBar'
 import ProductGrid from '@/components/ProductGrid'
 import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
 import TrackPageView from '@/components/TrackPageView'
+import DarkRouteBody from '@/components/DarkRouteBody'
 import { listBasementProducts } from '@/lib/server/products.repo'
 import { toStorefrontProduct } from '@/lib/storefront'
 
@@ -14,11 +15,20 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
+// Best-effort: a plain (non-home-screen) Safari tab paints its native
+// status-bar chrome from its own default regardless of this, so it won't
+// reliably tint that strip black here — but it's harmless, and does help in
+// Chrome/Android and if the page is ever added to the home screen.
+export const viewport: Viewport = {
+  themeColor: '#0d0d0d',
+}
+
 export default async function BasementPage() {
   const products = (await listBasementProducts()).map(toStorefrontProduct)
 
   return (
     <div className="min-h-screen bg-[#0d0d0d] text-[#f7f7f5] flex flex-col">
+      <DarkRouteBody />
       <TrackPageView event="basement_view" />
       <PageEdgeArt
         left="/decor/basement-left.png"

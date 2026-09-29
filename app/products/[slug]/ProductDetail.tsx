@@ -8,6 +8,7 @@ import BasementNavBar from '@/components/BasementNavBar'
 import FooterLinks from '@/components/FooterLinks'
 import BasementFooter from '@/components/BasementFooter'
 import PageEdgeArt from '@/components/PageEdgeArt'
+import DarkRouteBody from '@/components/DarkRouteBody'
 import type { Product, ProductVariant } from '@/types/product'
 import { quickFade, quickStagger } from '@/lib/motion'
 import { CARD_IMAGE_SIZES } from '@/components/ProductCard'
@@ -111,7 +112,7 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
 
   return (
     <div className={`min-h-screen ${bg} ${text} flex flex-col`}>
-
+      {dark && <DarkRouteBody />}
       <PageEdgeArt
         left={dark ? '/decor/basement-left.png' : '/decor/inventory-left.png'}
         right={dark ? '/decor/basement-right.png' : '/decor/inventory-right.png'}

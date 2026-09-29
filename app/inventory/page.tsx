@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import NavBar from '@/components/NavBar'
 import NewsletterFooter from '@/components/NewsletterFooter'
 import ProductGrid from '@/components/ProductGrid'
@@ -14,6 +14,14 @@ export const metadata: Metadata = {
 // Rebuild at most once a minute, so a price or stock edit in the back office
 // reaches the storefront without a deploy.
 export const revalidate = 60
+
+// Best-effort: a plain (non-home-screen) Safari tab paints its native
+// status-bar chrome from its own default regardless of this, so it won't
+// reliably tint that strip white here — but it's harmless, and does help in
+// Chrome/Android and if the page is ever added to the home screen.
+export const viewport: Viewport = {
+  themeColor: '#f7f7f5',
+}
 
 export default async function InventoryPage() {
   const products = (await listStorefrontProducts()).map(toStorefrontProduct)

@@ -29,6 +29,19 @@ body.game-active {
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* <body>'s own background is the paper default set below — it's what iOS
+   Safari's rubber-band overscroll reveals beneath any page, since a fixed
+   decoration (PageEdgeArt) or a page's own div only covers the viewport, not
+   the overscroll gap. Dark routes (the Basement, dark-themed product pages)
+   toggle this class so that gap reads as brand black instead of a mismatched
+   paper-white flash, the same way body.game-active does for the game world. */
+body.dark-route {
+  background: var(--ink);
+  color: var(--paper);
 }
 
 /* Nothing on the game screen should select, drag or callout on a long press.

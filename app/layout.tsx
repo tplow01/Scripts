@@ -52,7 +52,16 @@ export default function RootLayout({
             apple- prefixed one to honor apple-mobile-web-app-status-bar-style. */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className="bg-ink text-paper font-body antialiased">
+      {/* Most routes are white commerce pages; body's own background is what
+          iOS Safari's rubber-band overscroll reveals beneath a page's own div
+          (see globals.css). Defaulting it to white — not ink — stops that gap
+          flashing black behind Inventory/Cart/product pages. Plain white
+          (not the brand `paper` token) matches those pages' own literal
+          bg-white, so the overscroll gap is invisible rather than a visibly
+          different off-white shade. The game world and dark (Basement)
+          routes explicitly darken it back via a body class
+          (body.game-active / body.dark-route). */}
+      <body className="bg-white text-ink font-body antialiased">
         <CartProvider>
           <ToastProvider>
             {children}
