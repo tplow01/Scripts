@@ -66,6 +66,23 @@ function sync() {
   })
 }
 
+// Screen-off / app-backgrounded (phone locked, tab switched away) should mute
+// the game like leaving the room would — otherwise it keeps looping unheard
+// in the background until the player returns. `active` (not `muted`) tracks
+// this so resuming doesn't un-mute a player who muted deliberately, and so it
+// doesn't fight music.stop()/start() calls made for other reasons (inventory).
+let wasActiveBeforeHidden = false
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      wasActiveBeforeHidden = active
+      if (active) music.stop()
+    } else if (wasActiveBeforeHidden) {
+      music.start()
+    }
+  })
+}
+
 export const music = {
   /** Begin (or resume) playback. Safe to call repeatedly. */
   start() {
