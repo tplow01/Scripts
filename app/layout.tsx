@@ -9,6 +9,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SCR!PTS",
   description: "A home for creative culture — the SCR!PTS flagship world.",
+  appleWebApp: {
+    capable: true,
+    // "black-translucent" lets the page draw under the status bar instead of
+    // iOS painting it solid black — needed for GameBoyShell's own safe-area
+    // padding (shell grey) to actually show through the notch/status-bar area.
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
@@ -16,7 +23,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  viewportFit: "cover",
+  // Deliberately NOT "cover". "cover" tells iOS Safari to draw our page edge
+  // to edge under the status bar/notch — but in a plain (non-home-screen) tab
+  // Safari always paints that area opaque black regardless of page content or
+  // theme-color, so "cover" only bought us an unfixable black strip. Leaving
+  // this at the default reserves the status bar's own space and lets our
+  // shell start cleanly below it instead of fighting for it.
+  themeColor: "#6F6F73",
 };
 
 // Used by the web/commerce pages (basement, inventory, products) via --font-bebas.
@@ -33,6 +46,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={bebasNeue.variable}>
+      <head>
+        {/* Next's `appleWebApp` metadata only emits the generic
+            mobile-web-app-capable tag; iOS specifically looks for this
+            apple- prefixed one to honor apple-mobile-web-app-status-bar-style. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body className="bg-ink text-paper font-body antialiased">
         <CartProvider>
           <ToastProvider>

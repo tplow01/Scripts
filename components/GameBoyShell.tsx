@@ -273,13 +273,23 @@ export default function GameBoyShell({
   const portraitDpadSize = Math.min(0.36 * vw, 150)
   const portraitAbsSize = Math.min(0.22 * vw, 96)
   const dmgPillWidth = Math.max(38, Math.min(0.12 * vw, 48))
+  // SOCIALS/INVENTORY sit centred in the gap between the B button and the
+  // mute/? icon row, rather than at a fixed percentage — so it stays centred
+  // in that gap as portraitAbsSize (button size) scales with viewport width.
+  const deckH = (vh - 24) * 0.5
+  const bClusterBottom = deckH * 0.12 + portraitAbsSize * 1.8
+  const iconRowTop = deckH - (6 + 44)
+  const utilityTop = (bClusterBottom + iconRowTop) / 2
   return (
-    // paddingTop reserves the status-bar/notch area on the shell's own grey
-    // (rootStyle's background), rather than letting the LCD's own content —
-    // the game's pink sky at rest — paint underneath it. iOS Safari tints the
-    // status bar to whatever's under it, so without this the status bar reads
-    // as pink instead of shell grey.
-    <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh', paddingTop: 'env(safe-area-inset-top)' }}>
+    // paddingTop reserves a grey band above the LCD. A plain (non-home-screen)
+    // Safari tab always paints its real status bar solid black no matter what
+    // page content or meta tags say, so relying on env(safe-area-inset-top)
+    // to "show shell grey through" the status bar doesn't work there — it
+    // only helped in standalone/home-screen mode. Using a fixed minimum here
+    // instead guarantees a visible grey band on every device regardless of
+    // what Safari does with its own chrome above it, while max() still grows
+    // it to cover a real notch/Dynamic Island's safe area when that's taller.
+    <div className="w-screen flex flex-col" style={{ ...rootStyle, height: '100dvh', paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
       <div style={{ height: '50%', overflow: 'hidden' }}>
         {/* framePad puts a 14px black frame line above the screen content,
             closing the seam between the grey cap above and the LCD below —
@@ -298,9 +308,9 @@ export default function GameBoyShell({
           <div style={{ position: 'absolute', top: 0, right: 0 }}><RoundBtn label="A" onPress={pressPlain} size={portraitAbsSize} /></div>
           <div style={{ position: 'absolute', bottom: 0, left: 0 }}><RoundBtn label="B" onPress={pressPlain} size={portraitAbsSize} /></div>
         </div>
-        {/* SOCIALS + INVENTORY centred in the space below the clusters */}
+        {/* SOCIALS + INVENTORY centred in the gap between the B button and the mute/? row */}
         <div style={{
-          position: 'absolute', left: 0, right: 0, top: '62%',
+          position: 'absolute', left: 0, right: 0, top: utilityTop, transform: 'translateY(-50%)',
           display: 'flex', justifyContent: 'center', gap: 20,
         }}>
           <DmgBtn label={UTILITY_LABELS.social} pillWidth={dmgPillWidth} onPress={() => onUtility('social')} />
