@@ -138,6 +138,9 @@ export async function resolveVariants(
   const wanted = new Set(ids)
   const out: { product: Product; variantId: string }[] = []
   for (const product of source) {
+    // Only what's on sale can be bought or kept in a cart. Draft and archived
+    // products resolve to nothing, so carts drop them and checkout refuses them.
+    if (product.publishedStatus !== 'active') continue
     for (const variant of product.variants) {
       if (wanted.has(variant.id)) out.push({ product, variantId: variant.id })
     }
