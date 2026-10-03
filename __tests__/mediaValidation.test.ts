@@ -43,8 +43,8 @@ describe('validateImage', () => {
     if (!result.ok) expect(result.status).toBe(422)
   })
 
-  it('caps at 5 MB and lists exactly the three web image types', () => {
-    expect(MAX_IMAGE_BYTES).toBe(5 * 1024 * 1024)
+  it('caps at 10 MB and lists exactly the three web image types', () => {
+    expect(MAX_IMAGE_BYTES).toBe(10 * 1024 * 1024)
     expect([...ALLOWED_IMAGE_TYPES].sort()).toEqual(['image/jpeg', 'image/png', 'image/webp'])
   })
 })

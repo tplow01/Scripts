@@ -51,7 +51,7 @@ export default function MediaSection({ product, onChange }: SectionProps) {
           }])} />
       </div>
       <p className="text-[11px] text-grey">
-        Images are stored as soon as they are dropped (PNG, JPEG or WebP, up to 5 MB). Positions 1 and 2 are the front and back shots the shop grid uses.
+        Images are stored as soon as they are dropped (PNG, JPEG or WebP, up to 10 MB). Positions 1 and 2 are the front and back shots the shop grid uses.
       </p>
     </Section>
   )
