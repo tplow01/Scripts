@@ -38,7 +38,12 @@ export async function verifyToken(token: string): Promise<boolean> {
  */
 export function isAdminEmail(email: string | null | undefined): boolean {
   const allowed = process.env.ADMIN_EMAIL?.toLowerCase().trim()
-  if (!allowed || !email) return false
+  if (!allowed) {
+    // Loud, because to Heath this looks exactly like a wrong password.
+    console.error('[auth] ADMIN_EMAIL is not set, so nobody can sign in to the back office.')
+    return false
+  }
+  if (!email) return false
   return email.toLowerCase().trim() === allowed
 }
 
