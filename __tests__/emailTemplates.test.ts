@@ -55,6 +55,16 @@ describe.each([
     expect(mail.text).toContain('$144.00')
   })
 
+  it('says shipping is included, never "free", when the charge is zero', () => {
+    // Flat pricing: shipping is part of the price, so the receipt must not
+    // present it as a giveaway that could be withdrawn.
+    const mail = build(order({ shipping: 0 }))
+    for (const body of [mail.html, mail.text]) {
+      expect(body).toContain('Included')
+      expect(body).not.toMatch(/\bFree\b/)
+    }
+  })
+
   it('always carries a plain-text alternative', () => {
     const mail = build(order())
     expect(mail.text.length).toBeGreaterThan(80)

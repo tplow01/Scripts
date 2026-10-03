@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PurchasingPage() {
   return (
-    <PolicyPage title="Purchasing & Returns" updated="September 2026">
+    <PolicyPage title="Purchasing & Returns" updated="October 2026">
       <Section heading="Payment">
         <p>
           Payment is collected securely through the payment methods available at checkout.
@@ -17,7 +17,7 @@ export default function PurchasingPage() {
           SCR!PTS does not directly store complete credit or debit card numbers.
         </p>
         <p>
-          Prices are displayed in the currency shown at checkout. Any applicable taxes or shipping charges will be displayed before your purchase is completed.
+          Prices are shown in US dollars and include shipping and any applicable sales tax. The price you see is the price you pay, apart from import charges on international orders described in our Delivery policy.
         </p>
       </Section>
 

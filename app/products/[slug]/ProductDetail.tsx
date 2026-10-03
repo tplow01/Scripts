@@ -226,8 +226,13 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               {product.name}
             </motion.h1>
 
-            <motion.p variants={item} className="text-[22px] font-bold mb-[28px]">
+            <motion.p variants={item} className="text-[22px] font-bold mb-[6px]">
               ${(selected?.price ?? product.variants[0]?.price ?? 0).toFixed(2)}
+            </motion.p>
+
+            {/* Flat pricing: the number above is the whole price (see PRD, Payments). */}
+            <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[28px]`}>
+              Taxes and shipping included
             </motion.p>
 
             <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[12px]`}>

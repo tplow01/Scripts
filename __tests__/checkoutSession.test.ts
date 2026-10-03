@@ -61,6 +61,15 @@ describe('POST /api/checkout/session — stock across duplicate lines', () => {
     expect(line_items[0].quantity).toBe(3)
   })
 
+  it('labels the zero-cost shipping option as included, matching the flat price', async () => {
+    const res = await POST(req([{ variantId: 'v1', quantity: 1 }]))
+    expect(res.status).toBe(200)
+    const { shipping_options } = sessionsCreate.mock.calls[0][0]
+    expect(shipping_options).toHaveLength(1)
+    expect(shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0)
+    expect(shipping_options[0].shipping_rate_data.display_name).toBe('Shipping included')
+  })
+
   it('still lets backorderable variants through regardless of stock', async () => {
     resolveVariants.mockResolvedValue([{ product: product({ allowBackorder: true, stock: 0 }), variantId: 'v1' }])
     const res = await POST(req([{ variantId: 'v1', quantity: 5 }, { variantId: 'v1', quantity: 5 }]))

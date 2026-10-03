@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function DeliveryPage() {
   return (
-    <PolicyPage title="Delivery" updated="September 2026">
+    <PolicyPage title="Delivery" updated="October 2026">
       <Section heading="Order processing">
         <p>
           Orders are typically processed within 3–5 business days after purchase.
@@ -26,7 +26,7 @@ export default function DeliveryPage() {
           SCR!PTS currently ships to select countries worldwide.
         </p>
         <p>
-          Available shipping destinations and shipping costs will be shown during checkout.
+          Shipping is included in the price of every item. Available destinations are shown at checkout.
         </p>
         <p>
           Estimated delivery times begin after your order has been processed and handed to the shipping carrier.
@@ -50,7 +50,7 @@ export default function DeliveryPage() {
           International orders may be subject to customs duties, import taxes, VAT, or other fees charged by the destination country.
         </p>
         <p>
-          Unless specifically stated otherwise at checkout, these charges are the responsibility of the customer and are not included in the product or shipping price paid to SCR!PTS.
+          These charges are the responsibility of the customer and are not part of the price paid to SCR!PTS.
         </p>
         <p>
           Customs processing may also cause additional delivery delays.

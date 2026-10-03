@@ -52,7 +52,7 @@ export function orderTable(order: AdminOrder): string {
     <tr>
       <td style="padding:12px 0;font-size:13px;color:${GREY};">Shipping</td>
       <td style="padding:12px 0;font-size:13px;color:${GREY};text-align:right;">
-        ${order.shipping === 0 ? 'Free' : money(order.shipping)}
+        ${order.shipping === 0 ? 'Included' : money(order.shipping)}
       </td>
     </tr>
     <tr>
@@ -70,7 +70,7 @@ export function orderTableText(order: AdminOrder): string {
     (li) =>
       `  ${li.productName}${li.size ? ` · ${li.size}` : ''} ×${li.qty}   ${money(li.unitPrice * li.qty)}`,
   )
-  lines.push(`  Shipping   ${order.shipping === 0 ? 'Free' : money(order.shipping)}`)
+  lines.push(`  Shipping   ${order.shipping === 0 ? 'Included' : money(order.shipping)}`)
   lines.push(`  TOTAL      ${money(order.total)}`)
   return lines.join('\n')
 }

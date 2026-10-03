@@ -109,13 +109,14 @@ export async function POST(req: Request) {
     // No accounts in SCR!PTS, so Stripe collects the email itself.
     shipping_address_collection: { allowed_countries: SHIP_TO },
     phone_number_collection: { enabled: true },
-    // Free shipping for launch (matches the old SHIPPING = 0 constant).
+    // Flat pricing: shipping (and US sales tax) is part of the item price, so
+    // the only rate is zero and it is labelled as included, not free.
     shipping_options: [
       {
         shipping_rate_data: {
           type: 'fixed_amount',
           fixed_amount: { amount: 0, currency: CURRENCY },
-          display_name: 'Free shipping',
+          display_name: 'Shipping included',
         },
       },
     ],
