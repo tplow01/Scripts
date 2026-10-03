@@ -17,6 +17,7 @@ interface OrderRow {
   customer_email: string
   customer_phone: string
   address: string[] | null
+  ship_to_name: string | null
   subtotal: number | string
   shipping: number | string
   total: number | string
@@ -47,6 +48,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
       email: row.customer_email,
       phone: row.customer_phone,
       address: row.address ?? [],
+      recipient: row.ship_to_name ?? row.customer_name,
     },
     lineItems: (row.order_items ?? []).map((i) => ({
       productName: i.product_name,
@@ -70,7 +72,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
 }
 
 const SELECT = `
-  id, customer_name, customer_email, customer_phone, address, subtotal,
+  id, customer_name, customer_email, customer_phone, address, ship_to_name, subtotal,
   shipping, total, status, payment_status, placed_at, making_at, shipped_at, delivered_at,
   order_items ( product_name, size, qty, unit_price )
 `
@@ -149,7 +151,7 @@ export interface NewOrderLine {
 export interface NewOrder {
   stripeSessionId: string
   stripePaymentIntent: string | null
-  customer: { name: string; email: string; phone: string; address: string[] }
+  customer: { name: string; email: string; phone: string; address: string[]; recipient: string }
   lines: NewOrderLine[]
   subtotal: number
   shipping: number
@@ -200,6 +202,7 @@ export async function createPaidOrder(input: NewOrder): Promise<CreatedOrder> {
     customer_email: input.customer.email,
     customer_phone: input.customer.phone,
     address: input.customer.address,
+    ship_to_name: input.customer.recipient,
     subtotal: input.subtotal,
     shipping: input.shipping,
     total: input.total,

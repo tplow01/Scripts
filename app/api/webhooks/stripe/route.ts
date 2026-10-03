@@ -80,10 +80,21 @@ export async function POST(req: Request) {
 
     // WHERE THE SHIRT GOES. Checkout collects a shipping address separately
     // from the card's billing address (customer_details.address), and the two
-    // differ for a gift or a card registered at a parent's house. Ship to the
-    // collected one; fall back to billing only when nothing was collected
-    // (an old session, or a future digital drop with no address step).
-    const shipping = session.collected_information?.shipping_details
+    // differ for a gift or a card registered at a parent's house.
+    //
+    // A webhook payload is shaped by the ENDPOINT's API version (set in the
+    // Stripe dashboard), not by this SDK's: versions from 2025-03 put the
+    // collected address under collected_information, older ones at the top
+    // level as shipping_details. Read both. Fall back to billing only when
+    // neither exists (an old session, or a future digital drop with no
+    // address step), and say so in the logs.
+    type ShipTo = { name?: string | null; address?: Stripe.Address | null } | null | undefined
+    const shipping: ShipTo =
+      session.collected_information?.shipping_details ??
+      (session as unknown as { shipping_details?: ShipTo }).shipping_details
+    if (!shipping?.address) {
+      console.warn(`[stripe webhook] ${session.id}: no shipping address collected, using the billing address`)
+    }
     const a = shipping?.address ?? d?.address
     const address = [
       [a?.line1, a?.line2].filter(Boolean).join(', '),
@@ -91,12 +102,9 @@ export async function POST(req: Request) {
         .filter(Boolean)
         .join(', '),
     ].filter(Boolean)
-    // The buyer stays the customer (their email, their receipt). When the
-    // parcel is addressed to somebody else, that name leads the address so
-    // the label is right.
-    const recipient = shipping?.name?.trim()
-    const buyer = d?.name?.trim()
-    if (recipient && recipient.toLowerCase() !== (buyer ?? '').toLowerCase()) address.unshift(recipient)
+    // The buyer stays the customer (their email, their receipt). The name on
+    // the parcel is carried separately so the label is right for a gift.
+    const recipient = shipping?.name?.trim() || d?.name?.trim() || ''
 
     const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
@@ -109,6 +117,7 @@ export async function POST(req: Request) {
         email: d?.email ?? '',
         phone: d?.phone ?? '',
         address,
+        recipient,
       },
       lines,
       subtotal: fromMinorUnits(session.amount_subtotal ?? 0),

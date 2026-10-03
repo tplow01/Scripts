@@ -11,11 +11,22 @@ export type OrderStatus = 'paid' | 'making' | 'shipped' | 'delivered'
 export const ORDER_STATUSES: readonly OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
 export interface OrderCustomer {
+  /** The buyer: who paid, whose email gets the receipt. */
   name: string
   email: string
   phone: string
   /** Display lines, e.g. ['14 Mercer Street', 'London, WC2H 9QP, UK'] */
   address: string[]
+  /**
+   * The name on the parcel. Omitted (or empty) means the buyer. Set when the
+   * shipping name Stripe collected differs from the payer, i.e. a gift.
+   */
+  recipient?: string
+}
+
+/** The name to print above the address: the recipient, else the buyer. */
+export function shipToName(customer: OrderCustomer): string {
+  return customer.recipient?.trim() || customer.name
 }
 
 export interface OrderLineItem {

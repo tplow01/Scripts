@@ -65,6 +65,29 @@ describe.each([
     }
   })
 
+  it('addresses the parcel to the recipient, not the buyer, when they differ', () => {
+    const gift = order({
+      customer: {
+        name: 'Maya Okafor', email: 'maya@example.com', phone: '',
+        address: ['22 Rivington Street', 'London, EC2A 3DY, UK'],
+        recipient: 'Dev Patel',
+      },
+    })
+    const mail = build(gift)
+    // The label block: recipient directly above the street.
+    expect(mail.html).toContain('Dev Patel<br>22 Rivington Street')
+    expect(mail.text).toContain('  Dev Patel\n  22 Rivington Street')
+    // The buyer is greeted, but is not printed as the addressee.
+    expect(mail.html).not.toContain('Maya Okafor<br>')
+    expect(mail.text).not.toContain('  Maya Okafor\n')
+  })
+
+  it('addresses the parcel to the buyer when no separate recipient is recorded', () => {
+    const mail = build(order())
+    expect(mail.html).toContain('Maya Okafor<br>22 Rivington Street')
+    expect(mail.text).toContain('  Maya Okafor\n  22 Rivington Street')
+  })
+
   it('always carries a plain-text alternative', () => {
     const mail = build(order())
     expect(mail.text.length).toBeGreaterThan(80)

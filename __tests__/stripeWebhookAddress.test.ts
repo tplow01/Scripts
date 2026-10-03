@@ -92,25 +92,50 @@ describe('POST /api/webhooks/stripe — where the order ships', () => {
     expect(input.customer.email).toBe('maya@example.com')
   })
 
-  it('puts the recipient on the first address line when it is not the buyer', async () => {
-    // A gift: Maya pays, Dev receives. The label must say Dev.
+  it('carries the recipient as its own field when the parcel is for somebody else', async () => {
+    // A gift: Maya pays, Dev receives. The label must say Dev, the receipt
+    // still goes to Maya, and the address lines stay pure address.
     const input = await run(session({
       collected_information: { shipping_details: { name: 'Dev Patel', address: SHIP_TO } },
     }))
     expect(input.customer.name).toBe('Maya Okafor')
-    expect(input.customer.address[0]).toBe('Dev Patel')
-    expect(input.customer.address).toHaveLength(3)
+    expect(input.customer.recipient).toBe('Dev Patel')
+    expect(input.customer.address).toEqual(['22 Rivington Street, Flat 4', 'London, EC2A 3DY, GB'])
   })
 
-  it('falls back to the billing address only when no shipping address was collected', async () => {
+  it('records the buyer as the recipient when they ship to themselves', async () => {
+    const input = await run(session())
+    expect(input.customer.recipient).toBe('Maya Okafor')
+  })
+
+  it('reads the legacy top-level shipping_details when the endpoint renders an older API version', async () => {
+    // Webhook payloads are shaped by the endpoint's API version, not the
+    // SDK's. Pre-2025 versions put the collected address at the top level.
+    const input = await run(session({
+      collected_information: undefined,
+      shipping_details: { name: 'Dev Patel', address: SHIP_TO },
+    }))
+    expect(input.customer.recipient).toBe('Dev Patel')
+    expect(input.customer.address).toEqual(['22 Rivington Street, Flat 4', 'London, EC2A 3DY, GB'])
+  })
+
+  it('falls back to the billing address, loudly, only when no shipping address exists at all', async () => {
     // Older sessions, or a future digital drop with no address collection.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const input = await run(session({ collected_information: null }))
     expect(input.customer.address).toEqual(['1 Market St', 'San Francisco, CA 94105, US'])
+    expect(input.customer.recipient).toBe('Maya Okafor')
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toMatch(/billing/i)
+    warn.mockRestore()
   })
 
-  it('treats a session with no shipping rate as zero shipping (flat pricing sends none)', async () => {
-    const input = await run(session({ shipping_cost: null }))
-    expect(input.shipping).toBe(0)
-    expect(input.total).toBe(55)
+  it('records the shipping charge Stripe reports, and zero when no rate was sent', async () => {
+    const paid = await run(session({ shipping_cost: { amount_total: 500 } }))
+    expect(paid.shipping).toBe(5)
+    createPaidOrder.mockClear()
+    const none = await run(session({ shipping_cost: null }))
+    expect(none.shipping).toBe(0)
+    expect(none.total).toBe(55)
   })
 })
