@@ -86,6 +86,10 @@ export async function POST(req: Request) {
       price_data: {
         currency: CURRENCY,
         unit_amount: toMinorUnits(variant.price),
+        // The sticker price is the final price: wherever Stripe Tax has an
+        // active registration, it carves the tax back out of this amount
+        // instead of adding it on top, so the customer never sees a change.
+        tax_behavior: 'inclusive',
         product_data: {
           name: product.name,
           description: variantTitle(variant.optionValues) || undefined,
@@ -109,6 +113,11 @@ export async function POST(req: Request) {
     // No accounts in SCR!PTS, so Stripe collects the email itself.
     shipping_address_collection: { allowed_countries: SHIP_TO },
     phone_number_collection: { enabled: true },
+    // Tracks nexus thresholds per state from day one and, once a state has an
+    // active registration in the Stripe Tax dashboard, collects tax there
+    // (inclusively, out of the flat price above) without any code change.
+    // Needs Stripe Tax turned on for this account at dashboard.stripe.com/tax.
+    automatic_tax: { enabled: true },
     // Flat pricing: shipping (and US sales tax) is part of the item price, so
     // the only rate is zero and it is labelled as included, not free.
     shipping_options: [

@@ -70,6 +70,14 @@ describe('POST /api/checkout/session — stock across duplicate lines', () => {
     expect(shipping_options[0].shipping_rate_data.display_name).toBe('Shipping included')
   })
 
+  it('turns on automatic tax and prices inclusively, so the flat price never changes for the buyer', async () => {
+    const res = await POST(req([{ variantId: 'v1', quantity: 1 }]))
+    expect(res.status).toBe(200)
+    const { automatic_tax, line_items } = sessionsCreate.mock.calls[0][0]
+    expect(automatic_tax).toEqual({ enabled: true })
+    expect(line_items[0].price_data.tax_behavior).toBe('inclusive')
+  })
+
   it('still lets backorderable variants through regardless of stock', async () => {
     resolveVariants.mockResolvedValue([{ product: product({ allowBackorder: true, stock: 0 }), variantId: 'v1' }])
     const res = await POST(req([{ variantId: 'v1', quantity: 5 }, { variantId: 'v1', quantity: 5 }]))
