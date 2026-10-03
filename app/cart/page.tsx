@@ -151,7 +151,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between mb-[24px]">
                 <span className="text-[12px] text-[#6F6F73]">Shipping</span>
-                <span className="text-[12px] text-[#6F6F73]">Calculated at checkout</span>
+                <span className="text-[12px] text-[#6F6F73]">Included</span>
               </div>
 
               <div className="border-t border-[#e5e5e5] pt-[20px] mb-[24px] flex justify-between">
