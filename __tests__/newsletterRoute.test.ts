@@ -23,6 +23,7 @@ describe('newsletterSchema', () => {
     const ok = `${local}@${'b'.repeat(254 - 64 - 1 - 4)}.com`
     expect(ok).toHaveLength(254)
     expect(newsletterSchema.safeParse({ email: ok }).success).toBe(true)
+    expect(newsletterSchema.safeParse({ email: `a${ok}` }).success).toBe(false)
     expect(newsletterSchema.safeParse({ email: `${'a'.repeat(5000)}@x.com` }).success).toBe(false)
   })
 
