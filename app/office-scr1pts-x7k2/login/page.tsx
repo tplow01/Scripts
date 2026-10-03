@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 import { adminPath } from '@/lib/admin/config'
@@ -11,7 +10,6 @@ import { adminPath } from '@/lib/admin/config'
  * the token never touches client JavaScript.
  */
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -30,13 +28,18 @@ export default function AdminLoginPage() {
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null
         setError(body?.error?.message ?? 'Could not sign in.')
+        setBusy(false)
         return
       }
-      router.replace(adminPath())
-      router.refresh()
+      // A full document load, not a client-side replace. The admin layout and
+      // its data store stay mounted across client navigations, and they already
+      // fetched — and fell back to sample data — before this cookie existed.
+      // Reloading remounts them signed in, so the Overview opens on real data
+      // without Heath having to refresh by hand. `busy` stays true until the
+      // new page takes over.
+      window.location.assign(adminPath())
     } catch {
       setError('Could not reach the server. Check your connection and try again.')
-    } finally {
       setBusy(false)
     }
   }
