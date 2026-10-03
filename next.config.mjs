@@ -14,6 +14,8 @@ const isDev = process.env.NODE_ENV !== 'production';
  *   - img/media data: and blob:: Phaser's baked textures and the admin's
  *     image-upload previews.
  *   - vercel.live: the comment toolbar on Vercel preview deployments.
+ *   - connect *.supabase.co: the back office PUTs product images straight to
+ *     Supabase Storage (signed upload URLs), bypassing our 4.5 MB function cap.
  */
 const csp = [
   "default-src 'self'",
@@ -22,7 +24,7 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "media-src 'self' data: blob:",
-  `connect-src 'self' https://vercel.live wss://ws-us3.pusher.com${isDev ? ' ws:' : ''}`,
+  `connect-src 'self' https://vercel.live https://*.supabase.co wss://ws-us3.pusher.com${isDev ? ' ws:' : ''}`,
   "frame-src 'self' https://vercel.live",
   "worker-src 'self' blob:",
   "object-src 'none'",

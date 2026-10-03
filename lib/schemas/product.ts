@@ -105,6 +105,13 @@ export const newsletterSchema = z.object({
   source: z.string().max(64).optional(),
 })
 
+/** POST /api/admin/media — what the browser knows about a file before it uploads it. */
+export const mediaUploadSchema = z.object({
+  productId: z.string().min(1).max(64),
+  type: z.string().max(100),
+  size: z.number().int().nonnegative(),
+})
+
 export type ProductInput = z.infer<typeof productSchema>
 export type CartResolveInput = z.infer<typeof cartResolveSchema>
 
