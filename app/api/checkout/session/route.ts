@@ -41,7 +41,13 @@ export async function POST(req: Request) {
   if (!parsed.success) return fail(422, 'That cart is not valid.', parsed.error.flatten())
   if (!parsed.data.items.length) return fail(422, 'Your bag is empty.')
 
-  const wanted = parsed.data.items
+  // One entry per variant. Two lines of the same variant would otherwise each
+  // pass the stock check on their own while together overselling it.
+  const totals = new Map<string, number>()
+  for (const { variantId, quantity } of parsed.data.items) {
+    totals.set(variantId, (totals.get(variantId) ?? 0) + quantity)
+  }
+  const wanted = [...totals].map(([variantId, quantity]) => ({ variantId, quantity }))
   const found = await resolveVariants(wanted.map((i) => i.variantId))
   const byVariantId = new Map(found.map((f) => [f.variantId, f.product]))
 
