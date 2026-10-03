@@ -28,10 +28,23 @@ export async function verifyToken(token: string): Promise<boolean> {
   const { data, error } = await createClient(url, anon).auth.getUser(token)
   if (error || !data.user?.email) return false
 
+  return isAdminEmail(data.user.email)
+}
+
+/**
+ * Is this the one back-office account? Fails closed: with ADMIN_EMAIL unset,
+ * nobody is. Otherwise any account that can sign in to the Supabase project
+ * would count as the admin, and orders carry customer names and addresses.
+ */
+export function isAdminEmail(email: string | null | undefined): boolean {
   const allowed = process.env.ADMIN_EMAIL?.toLowerCase().trim()
-  // With no ADMIN_EMAIL set, any authenticated Supabase user counts — fine
-  // while there is exactly one account, and tightened by setting the variable.
-  return !allowed || data.user.email.toLowerCase() === allowed
+  if (!allowed) {
+    // Loud, because to Heath this looks exactly like a wrong password.
+    console.error('[auth] ADMIN_EMAIL is not set, so nobody can sign in to the back office.')
+    return false
+  }
+  if (!email) return false
+  return email.toLowerCase().trim() === allowed
 }
 
 /**
