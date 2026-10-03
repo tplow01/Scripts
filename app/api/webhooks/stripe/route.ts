@@ -77,13 +77,39 @@ export async function POST(req: Request) {
     })
 
     const d = session.customer_details
-    const a = d?.address
+
+    // WHERE THE SHIRT GOES. Checkout collects a shipping address separately
+    // from the card's billing address (customer_details.address), and the two
+    // differ for a gift or a card registered at a parent's house.
+    //
+    // A webhook payload is shaped by the ENDPOINT's API version (set in the
+    // Stripe dashboard), not by this SDK's: versions from 2025-03 put the
+    // collected address under collected_information, older ones at the top
+    // level as shipping_details. Read both. Fall back to billing only when
+    // neither exists (an old session, or a future digital drop with no
+    // address step), and say so in the logs.
+    type ShipTo = { name?: string | null; address?: Stripe.Address | null } | null | undefined
+    const shipping: ShipTo =
+      session.collected_information?.shipping_details ??
+      (session as unknown as { shipping_details?: ShipTo }).shipping_details
+    if (!shipping?.address) {
+      console.warn(`[stripe webhook] ${session.id}: no shipping address collected, using the billing address`)
+    }
+    const a = shipping?.address ?? d?.address
     const address = [
       [a?.line1, a?.line2].filter(Boolean).join(', '),
       [a?.city, [a?.state, a?.postal_code].filter(Boolean).join(' '), a?.country]
         .filter(Boolean)
         .join(', '),
     ].filter(Boolean)
+    // The buyer stays the customer (their email, their receipt). The name on
+    // the parcel is stored separately ONLY when it is somebody else: that is
+    // the one rule for "is this a gift", and null means "the buyer". Case and
+    // stray whitespace are not a different person.
+    const norm = (v?: string | null) => (v ?? '').trim().replace(/\s+/g, ' ')
+    const buyer = norm(d?.name)
+    const shipName = norm(shipping?.name)
+    const recipient = shipName && shipName.toLowerCase() !== buyer.toLowerCase() ? shipName : null
 
     const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
@@ -92,10 +118,11 @@ export async function POST(req: Request) {
           ? session.payment_intent
           : session.payment_intent?.id ?? null,
       customer: {
-        name: d?.name ?? '',
-        email: d?.email ?? '',
-        phone: d?.phone ?? '',
+        name: buyer,
+        email: norm(d?.email),
+        phone: norm(d?.phone),
         address,
+        recipient,
       },
       lines,
       subtotal: fromMinorUnits(session.amount_subtotal ?? 0),

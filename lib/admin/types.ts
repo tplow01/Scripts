@@ -11,11 +11,23 @@ export type OrderStatus = 'paid' | 'making' | 'shipped' | 'delivered'
 export const ORDER_STATUSES: readonly OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
 export interface OrderCustomer {
+  /** The buyer: who paid, whose email gets the receipt. */
   name: string
   email: string
   phone: string
   /** Display lines, e.g. ['14 Mercer Street', 'London, WC2H 9QP, UK'] */
   address: string[]
+  /**
+   * The name on the parcel, present ONLY when it is somebody other than the
+   * buyer (a gift). Absent means the buyer. The webhook is the single place
+   * that decides this; everything else just reads it.
+   */
+  recipient?: string
+}
+
+/** The name to print above the address: the recipient, else the buyer. */
+export function shipToName(customer: OrderCustomer): string {
+  return customer.recipient || customer.name
 }
 
 export interface OrderLineItem {
