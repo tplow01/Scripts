@@ -7,7 +7,6 @@ import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 import Card from './Card'
 import StatusBadge from './StatusBadge'
 import { formatMoney, shippingLabel } from '@/lib/money'
-import { shipToName } from '@/lib/admin/types'
 
 const STATUSES: OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
@@ -73,8 +72,8 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
             </p>
             <p className="text-[12px] text-grey mt-2 leading-relaxed">
               {/* A gift: the label carries a different name from the buyer above. */}
-              {shipToName(live.customer) !== live.customer.name && (
-                <span className="block text-paper/80">Ships to {shipToName(live.customer)}</span>
+              {live.customer.recipient && (
+                <span className="block text-paper/80">Ships to {live.customer.recipient}</span>
               )}
               {live.customer.address.map((l) => <span key={l} className="block">{l}</span>)}
             </p>

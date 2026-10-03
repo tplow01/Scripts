@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { rowToOrder } from '@/lib/server/orders.repo'
+import { shipToName } from '@/lib/admin/types'
 
 const row = (over: Record<string, unknown> = {}) => ({
   id: 'SCR-1042',
@@ -29,8 +30,10 @@ describe('rowToOrder — who the parcel is for', () => {
     expect(order.customer.recipient).toBe('Dev Patel')
   })
 
-  it('defaults the recipient to the buyer for orders written before the column existed', () => {
+  it('leaves the recipient unset when there is none, so the label falls back to the buyer', () => {
+    // Orders written before the column existed, and every self-shipped order since.
     const order = rowToOrder(row({ ship_to_name: null }))
-    expect(order.customer.recipient).toBe('Maya Okafor')
+    expect(order.customer.recipient).toBeUndefined()
+    expect(shipToName(order.customer)).toBe('Maya Okafor')
   })
 })

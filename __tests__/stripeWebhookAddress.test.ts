@@ -103,9 +103,20 @@ describe('POST /api/webhooks/stripe — where the order ships', () => {
     expect(input.customer.address).toEqual(['22 Rivington Street, Flat 4', 'London, EC2A 3DY, GB'])
   })
 
-  it('records the buyer as the recipient when they ship to themselves', async () => {
+  it('records no separate recipient when the buyer ships to themselves', async () => {
     const input = await run(session())
-    expect(input.customer.recipient).toBe('Maya Okafor')
+    expect(input.customer.recipient).toBeNull()
+  })
+
+  it('ignores case and stray whitespace when deciding the recipient is the buyer', async () => {
+    // Autofill and Stripe echoes produce cosmetic differences; they are not a gift.
+    const input = await run(session({
+      customer_details: { name: ' maya okafor ', email: ' maya@example.com', phone: '', address: BILLING },
+      collected_information: { shipping_details: { name: 'Maya  Okafor', address: SHIP_TO } },
+    }))
+    expect(input.customer.recipient).toBeNull()
+    expect(input.customer.name).toBe('maya okafor')
+    expect(input.customer.email).toBe('maya@example.com')
   })
 
   it('reads the legacy top-level shipping_details when the endpoint renders an older API version', async () => {
@@ -122,12 +133,15 @@ describe('POST /api/webhooks/stripe — where the order ships', () => {
   it('falls back to the billing address, loudly, only when no shipping address exists at all', async () => {
     // Older sessions, or a future digital drop with no address collection.
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const input = await run(session({ collected_information: null }))
-    expect(input.customer.address).toEqual(['1 Market St', 'San Francisco, CA 94105, US'])
-    expect(input.customer.recipient).toBe('Maya Okafor')
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(warn.mock.calls[0][0]).toMatch(/billing/i)
-    warn.mockRestore()
+    try {
+      const input = await run(session({ collected_information: null }))
+      expect(input.customer.address).toEqual(['1 Market St', 'San Francisco, CA 94105, US'])
+      expect(input.customer.recipient).toBeNull()
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toMatch(/billing/i)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   it('records the shipping charge Stripe reports, and zero when no rate was sent', async () => {

@@ -18,15 +18,16 @@ export interface OrderCustomer {
   /** Display lines, e.g. ['14 Mercer Street', 'London, WC2H 9QP, UK'] */
   address: string[]
   /**
-   * The name on the parcel. Omitted (or empty) means the buyer. Set when the
-   * shipping name Stripe collected differs from the payer, i.e. a gift.
+   * The name on the parcel, present ONLY when it is somebody other than the
+   * buyer (a gift). Absent means the buyer. The webhook is the single place
+   * that decides this; everything else just reads it.
    */
   recipient?: string
 }
 
 /** The name to print above the address: the recipient, else the buyer. */
 export function shipToName(customer: OrderCustomer): string {
-  return customer.recipient?.trim() || customer.name
+  return customer.recipient || customer.name
 }
 
 export interface OrderLineItem {

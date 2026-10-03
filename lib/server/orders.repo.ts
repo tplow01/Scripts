@@ -48,7 +48,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
       email: row.customer_email,
       phone: row.customer_phone,
       address: row.address ?? [],
-      recipient: row.ship_to_name ?? row.customer_name,
+      recipient: row.ship_to_name ?? undefined,
     },
     lineItems: (row.order_items ?? []).map((i) => ({
       productName: i.product_name,
@@ -151,7 +151,8 @@ export interface NewOrderLine {
 export interface NewOrder {
   stripeSessionId: string
   stripePaymentIntent: string | null
-  customer: { name: string; email: string; phone: string; address: string[]; recipient: string }
+  /** `recipient` is the name on the parcel when it is not the buyer; null otherwise. */
+  customer: { name: string; email: string; phone: string; address: string[]; recipient: string | null }
   lines: NewOrderLine[]
   subtotal: number
   shipping: number

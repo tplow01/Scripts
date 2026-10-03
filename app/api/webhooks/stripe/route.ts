@@ -103,8 +103,13 @@ export async function POST(req: Request) {
         .join(', '),
     ].filter(Boolean)
     // The buyer stays the customer (their email, their receipt). The name on
-    // the parcel is carried separately so the label is right for a gift.
-    const recipient = shipping?.name?.trim() || d?.name?.trim() || ''
+    // the parcel is stored separately ONLY when it is somebody else: that is
+    // the one rule for "is this a gift", and null means "the buyer". Case and
+    // stray whitespace are not a different person.
+    const norm = (v?: string | null) => (v ?? '').trim().replace(/\s+/g, ' ')
+    const buyer = norm(d?.name)
+    const shipName = norm(shipping?.name)
+    const recipient = shipName && shipName.toLowerCase() !== buyer.toLowerCase() ? shipName : null
 
     const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
@@ -113,9 +118,9 @@ export async function POST(req: Request) {
           ? session.payment_intent
           : session.payment_intent?.id ?? null,
       customer: {
-        name: d?.name ?? '',
-        email: d?.email ?? '',
-        phone: d?.phone ?? '',
+        name: buyer,
+        email: norm(d?.email),
+        phone: norm(d?.phone),
         address,
         recipient,
       },
