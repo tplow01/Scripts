@@ -100,7 +100,8 @@ export const checkoutSessionSchema = cartResolveSchema.extend({
 
 /** POST /api/newsletter */
 export const newsletterSchema = z.object({
-  email: z.string().email('Enter a valid email address'),
+  // 254 is the longest address SMTP can deliver to; anything longer is junk.
+  email: z.string().trim().toLowerCase().max(254).email('Enter a valid email address'),
   source: z.string().max(64).optional(),
 })
 
