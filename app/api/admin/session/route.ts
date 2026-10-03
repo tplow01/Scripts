@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-import { ADMIN_COOKIE } from '@/lib/server/auth'
+import { ADMIN_COOKIE, isAdminEmail } from '@/lib/server/auth'
 import { supabaseAnonKey, supabaseUrl } from '@/lib/server/env'
 import { fail, ok } from '@/lib/server/http'
 import { isDatabaseConfigured } from '@/lib/server/supabase'
@@ -37,6 +37,10 @@ export async function POST(req: Request) {
 
   // Deliberately vague: never reveal whether the address exists.
   if (error || !data.session) return fail(401, 'Those details did not match an account.')
+
+  // A valid Supabase login is not enough: only the back-office account gets a
+  // session cookie. Same message as a bad password, for the same reason.
+  if (!isAdminEmail(data.user?.email)) return fail(401, 'Those details did not match an account.')
 
   const res = ok({ email: data.user?.email ?? email })
   res.cookies.set(ADMIN_COOKIE, data.session.access_token, {
