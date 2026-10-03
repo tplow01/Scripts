@@ -77,13 +77,26 @@ export async function POST(req: Request) {
     })
 
     const d = session.customer_details
-    const a = d?.address
+
+    // WHERE THE SHIRT GOES. Checkout collects a shipping address separately
+    // from the card's billing address (customer_details.address), and the two
+    // differ for a gift or a card registered at a parent's house. Ship to the
+    // collected one; fall back to billing only when nothing was collected
+    // (an old session, or a future digital drop with no address step).
+    const shipping = session.collected_information?.shipping_details
+    const a = shipping?.address ?? d?.address
     const address = [
       [a?.line1, a?.line2].filter(Boolean).join(', '),
       [a?.city, [a?.state, a?.postal_code].filter(Boolean).join(' '), a?.country]
         .filter(Boolean)
         .join(', '),
     ].filter(Boolean)
+    // The buyer stays the customer (their email, their receipt). When the
+    // parcel is addressed to somebody else, that name leads the address so
+    // the label is right.
+    const recipient = shipping?.name?.trim()
+    const buyer = d?.name?.trim()
+    if (recipient && recipient.toLowerCase() !== (buyer ?? '').toLowerCase()) address.unshift(recipient)
 
     const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
