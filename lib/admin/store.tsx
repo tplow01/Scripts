@@ -47,7 +47,7 @@ export const NEW_PRODUCT_DEFAULTS = {
 } as const
 
 export const NEW_VARIANT_DEFAULTS: VariantDefaults = {
-  price: 44, compareAtPrice: null, cost: null, barcode: null,
+  price: 55, compareAtPrice: null, cost: null, barcode: null,
   trackInventory: true, allowBackorder: false, weightGrams: null,
 }
 

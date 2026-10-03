@@ -7,7 +7,7 @@ const BACK_GREEN = '/products/cutout/back-green.png'
 const BACK_BLACK = '/products/cutout/back-black.png'
 
 const SHARED = {
-  price: 44,
+  price: 55, // launch price, taxes and shipping included (PRD, Payments)
   collection: '1-800-Cyber-Love',
   status: 'pre-order' as const,
   shipDate: 'July 2026',
