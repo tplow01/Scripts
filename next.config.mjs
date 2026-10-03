@@ -50,6 +50,14 @@ const nextConfig = {
   reactStrictMode: true,
   devIndicators: false,
   poweredByHeader: false,
+  images: {
+    // Product images uploaded from the back office live in Supabase Storage
+    // (migration 0010). next/image refuses remote hosts it has not been told
+    // about, so allow the public object endpoint and nothing else there.
+    remotePatterns: [
+      { protocol: 'https', hostname: '*.supabase.co', pathname: '/storage/v1/object/public/**' },
+    ],
+  },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

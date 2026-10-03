@@ -33,7 +33,7 @@ export default function MediaSection({ product, onChange }: SectionProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {product.media.map((m, i) => (
           <div key={m.id} className="space-y-1.5">
-            <ImageDrop label={labelFor(i)} value={m.url} compact
+            <ImageDrop label={labelFor(i)} value={m.url} compact productId={product.id}
               onChange={(url) => (url ? set(product.media.map((x) => (x.id === m.id ? { ...x, url } : x))) : removeAt(i))} />
             <input className={inputCls} value={m.alt} placeholder="Alt text" aria-label={`Alt text for ${labelFor(i)}`}
               onChange={(e) => set(product.media.map((x) => (x.id === m.id ? { ...x, alt: e.target.value } : x)))} />
@@ -45,13 +45,13 @@ export default function MediaSection({ product, onChange }: SectionProps) {
             </div>
           </div>
         ))}
-        <ImageDrop label="Add" value={null} compact
+        <ImageDrop label="Add" value={null} compact productId={product.id}
           onChange={(url) => url && set([...product.media, {
             id: `${product.id}-m${Date.now()}`, url, alt: '', position: product.media.length,
           }])} />
       </div>
       <p className="text-[11px] text-grey">
-        Images are session-only object URLs — they do not survive a reload. Positions 1 and 2 are the front and back shots the shop grid uses.
+        Images are stored as soon as they are dropped (PNG, JPEG or WebP, up to 5 MB). Positions 1 and 2 are the front and back shots the shop grid uses.
       </p>
     </Section>
   )
