@@ -61,18 +61,28 @@ describe('POST /api/checkout/session — stock across duplicate lines', () => {
     expect(line_items[0].quantity).toBe(3)
   })
 
-  it('labels the zero-cost shipping option as included, matching the flat price', async () => {
-    const res = await POST(req([{ variantId: 'v1', quantity: 1 }]))
-    expect(res.status).toBe(200)
-    const { shipping_options } = sessionsCreate.mock.calls[0][0]
-    expect(shipping_options).toHaveLength(1)
-    expect(shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0)
-    expect(shipping_options[0].shipping_rate_data.display_name).toBe('Shipping included')
-  })
-
   it('still lets backorderable variants through regardless of stock', async () => {
     resolveVariants.mockResolvedValue([{ product: product({ allowBackorder: true, stock: 0 }), variantId: 'v1' }])
     const res = await POST(req([{ variantId: 'v1', quantity: 5 }, { variantId: 'v1', quantity: 5 }]))
     expect(res.status).toBe(200)
+  })
+})
+
+describe('POST /api/checkout/session — flat pricing', () => {
+  beforeEach(() => {
+    sessionsCreate.mockReset().mockResolvedValue({ url: 'https://checkout.stripe.com/session/1' })
+    resolveVariants.mockReset().mockResolvedValue([{ product: product({}), variantId: 'v1' }])
+  })
+
+  it('sends no shipping option, so Stripe shows no shipping row at all', async () => {
+    // A zero-cost rate is rendered by Stripe as "Free" next to its label,
+    // which contradicts "included". The only way to say nothing is to send
+    // nothing: the price already covers shipping.
+    const res = await POST(req([{ variantId: 'v1', quantity: 1 }]))
+    expect(res.status).toBe(200)
+    const params = sessionsCreate.mock.calls[0][0]
+    expect(params.shipping_options).toBeUndefined()
+    // The address is still collected: the shirt has to go somewhere.
+    expect(params.shipping_address_collection.allowed_countries).toContain('US')
   })
 })

@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { track } from '@/lib/analytics'
 import type { Product, Availability } from '@/types/product'
 import { deriveAvailability } from '@/lib/admin/variants'
+import { formatMoney } from '@/lib/money'
 
 /**
  * The card's image `sizes`, shared with the product page's main image on
@@ -116,7 +117,7 @@ export default function ProductCard({ product, theme }: ProductCardProps) {
           {product.name}
         </p>
         <p className={`text-[13px] font-bold ${text} leading-snug mt-[4px]`}>
-          ${price}.00
+          {formatMoney(price)}
         </p>
       </div>
 

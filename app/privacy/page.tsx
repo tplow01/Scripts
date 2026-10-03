@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           SCR!PTS is an independent clothing brand operated by SCR!PTS LLC, based in Colorado, United States.
         </p>
         <p>
-          For privacy-related questions, contact <Mail address="heathnager@gmail.com" />.
+          For privacy-related questions, contact <Mail />.
         </p>
       </Section>
 
@@ -146,7 +146,7 @@ export default function PrivacyPage() {
           You may also have the right to withdraw consent or object to certain uses of your information where applicable.
         </p>
         <p>
-          To make a privacy request, contact <Mail address="heathnager@gmail.com" />.
+          To make a privacy request, contact <Mail />.
         </p>
         <p>
           We may need to verify your identity before completing certain requests.

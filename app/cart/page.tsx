@@ -9,6 +9,7 @@ import { useCart } from '@/lib/cart'
 import { useStripeCheckout } from '@/lib/checkout'
 import { fadeUp, stagger } from '@/lib/motion'
 import { variantTitle } from '@/lib/admin/variants'
+import { formatMoney } from '@/lib/money'
 
 export default function CartPage() {
   const { items, remove, increment, decrement, total } = useCart()
@@ -99,7 +100,7 @@ export default function CartPage() {
                           {variantTitle(item.variant.optionValues)}
                         </p>
                         <p className="text-[13px] font-bold mt-[8px]">
-                          ${item.variant.price}.00
+                          {formatMoney(item.variant.price)}
                         </p>
 
                         {/* Qty controls */}
