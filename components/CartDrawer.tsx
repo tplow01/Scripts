@@ -7,6 +7,7 @@ import { useCart } from '@/lib/cart'
 import { useStripeCheckout } from '@/lib/checkout'
 import { variantTitle } from '@/lib/admin/variants'
 import { shipLine } from '@/lib/shipEstimate'
+import { formatMoney } from '@/lib/money'
 
 export default function CartDrawer() {
   const { items, remove, increment, decrement, total, count, isOpen, closeCart } = useCart()
@@ -160,7 +161,7 @@ export default function CartDrawer() {
                             <p className="text-[12px] font-extrabold uppercase tracking-[0.04em] leading-snug">
                               {item.product.name}
                             </p>
-                            <p className="text-[13px] font-bold shrink-0">${item.variant.price}.00</p>
+                            <p className="text-[13px] font-bold shrink-0">{formatMoney(item.variant.price)}</p>
                           </div>
                           <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-[#888] mt-[4px]">
                             {variantTitle(item.variant.optionValues)}

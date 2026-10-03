@@ -109,17 +109,11 @@ export async function POST(req: Request) {
     // No accounts in SCR!PTS, so Stripe collects the email itself.
     shipping_address_collection: { allowed_countries: SHIP_TO },
     phone_number_collection: { enabled: true },
-    // Flat pricing: shipping (and US sales tax) is part of the item price, so
-    // the only rate is zero and it is labelled as included, not free.
-    shipping_options: [
-      {
-        shipping_rate_data: {
-          type: 'fixed_amount',
-          fixed_amount: { amount: 0, currency: CURRENCY },
-          display_name: 'Shipping included',
-        },
-      },
-    ],
+    // Flat pricing: shipping (and US sales tax) is part of the item price.
+    // Deliberately NO shipping_options: a zero-cost rate is rendered by
+    // Stripe as "Free" beside its label, which contradicts "included". With
+    // no rate, Checkout shows no shipping row, and the webhook already
+    // treats a missing shipping_cost as zero.
   })
 
   if (!session.url) return fail(502, 'Stripe did not return a checkout URL.')

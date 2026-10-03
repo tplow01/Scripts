@@ -6,6 +6,7 @@ import { useAdmin } from '@/lib/admin/store'
 import type { AdminOrder, OrderStatus } from '@/lib/admin/types'
 import Card from './Card'
 import StatusBadge from './StatusBadge'
+import { formatMoney, shippingLabel } from '@/lib/money'
 
 const STATUSES: OrderStatus[] = ['paid', 'making', 'shipped', 'delivered']
 
@@ -91,9 +92,9 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
               })}
             </ul>
             <div className="border-t border-grey/20 mt-3.5 pt-3 space-y-1.5 text-[12px]">
-              <div className="flex justify-between text-grey"><span>Subtotal</span><span className="tabular-nums">${live.subtotal}</span></div>
-              <div className="flex justify-between text-grey"><span>Shipping</span><span className="tabular-nums">{live.shipping === 0 ? 'Free' : `$${live.shipping}`}</span></div>
-              <div className="flex justify-between text-paper font-bold text-[13px]"><span>Total</span><span className="tabular-nums">${live.total}</span></div>
+              <div className="flex justify-between text-grey"><span>Subtotal</span><span className="tabular-nums">{formatMoney(live.subtotal)}</span></div>
+              <div className="flex justify-between text-grey"><span>Shipping</span><span className="tabular-nums">{shippingLabel(live.shipping)}</span></div>
+              <div className="flex justify-between text-paper font-bold text-[13px]"><span>Total</span><span className="tabular-nums">{formatMoney(live.total)}</span></div>
             </div>
           </Card>
 

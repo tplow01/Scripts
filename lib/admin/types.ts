@@ -40,7 +40,7 @@ export interface AdminOrder {
   customer: OrderCustomer
   lineItems: OrderLineItem[]
   subtotal: number
-  shipping: number // 0 = free
+  shipping: number // 0 = included in the price (flat pricing)
   total: number // subtotal + shipping
   date: string // 'YYYY-MM-DD' (sort key)
   status: OrderStatus
