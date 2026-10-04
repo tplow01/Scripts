@@ -108,15 +108,30 @@ describe('POST /api/webhooks/stripe — where the order ships', () => {
     expect(input.customer.recipient).toBeNull()
   })
 
-  it('ignores case and stray whitespace when deciding the recipient is the buyer', async () => {
-    // Autofill and Stripe echoes produce cosmetic differences; they are not a gift.
+  it('treats case and stray whitespace as the same person, and keeps the delivery form spelling', async () => {
+    // Autofill and Stripe echoes produce cosmetic differences; they are not a
+    // gift. The card often carries a shouted or lowercased name, while the
+    // delivery form is what the customer typed for the label, so when both
+    // name the same person the label and the greeting use the typed one.
     const input = await run(session({
       customer_details: { name: ' maya okafor ', email: ' maya@example.com', phone: '', address: BILLING },
       collected_information: { shipping_details: { name: 'Maya  Okafor', address: SHIP_TO } },
     }))
     expect(input.customer.recipient).toBeNull()
-    expect(input.customer.name).toBe('maya okafor')
+    expect(input.customer.name).toBe('Maya Okafor')
     expect(input.customer.email).toBe('maya@example.com')
+  })
+
+  it('falls back to the delivery name when the card carries none, instead of a blank buyer', async () => {
+    // Wallets and Link can complete Checkout without a cardholder name. The
+    // only name collected is then the shipping one, and it belongs to the
+    // buyer, not to a gift recipient.
+    const input = await run(session({
+      customer_details: { name: null, email: 'maya@example.com', phone: '', address: BILLING },
+      collected_information: { shipping_details: { name: 'Maya Okafor', address: SHIP_TO } },
+    }))
+    expect(input.customer.name).toBe('Maya Okafor')
+    expect(input.customer.recipient).toBeNull()
   })
 
   it('reads the legacy top-level shipping_details when the endpoint renders an older API version', async () => {

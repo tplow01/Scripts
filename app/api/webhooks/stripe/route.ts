@@ -106,10 +106,20 @@ export async function POST(req: Request) {
     // the parcel is stored separately ONLY when it is somebody else: that is
     // the one rule for "is this a gift", and null means "the buyer". Case and
     // stray whitespace are not a different person.
+    //
+    // Two things about the card name: wallets and Link can complete Checkout
+    // without one, and when it is there the card often shouts or lowercases
+    // it. The delivery form is what the customer typed for the label, so when
+    // both name the same person (or the card has no name at all) the typed
+    // one is the buyer's name everywhere. The card name only stands on its
+    // own when the parcel is for somebody else.
     const norm = (v?: string | null) => (v ?? '').trim().replace(/\s+/g, ' ')
-    const buyer = norm(d?.name)
+    const cardName = norm(d?.name)
     const shipName = norm(shipping?.name)
-    const recipient = shipName && shipName.toLowerCase() !== buyer.toLowerCase() ? shipName : null
+    const samePerson =
+      !cardName || !shipName || cardName.toLowerCase() === shipName.toLowerCase()
+    const buyer = samePerson && shipName ? shipName : cardName
+    const recipient = samePerson ? null : shipName
 
     const { order, created } = await createPaidOrder({
       stripeSessionId: session.id,
