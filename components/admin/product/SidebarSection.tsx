@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Section, inputCls, labelCls, type SectionProps } from './ProductForm'
 import { deriveAvailability } from '@/lib/admin/variants'
+import { PLACEMENTS, placementOf, withPlacement, type Placement } from '@/lib/admin/placement'
 import { useAdmin } from '@/lib/admin/store'
 import type { PublishedStatus } from '@/types/product'
 
@@ -40,6 +41,16 @@ export default function SidebarSection({ product, onChange }: SectionProps) {
           <option value="active">Active</option>
           <option value="archived">Archived</option>
         </select>
+      </div>
+      <div>
+        <label className={labelCls} htmlFor="p-placement">Placement</label>
+        <select id="p-placement" className={inputCls} value={placementOf(product)}
+          onChange={(e) => onChange(withPlacement(product, e.target.value as Placement))}>
+          {PLACEMENTS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+        </select>
+        <p className="mt-1 text-[11px] text-grey">
+          Main floor shows on the store page and in search engines. Basement shows only in the Basement room and is never indexed.
+        </p>
       </div>
       <div>
         <span className={labelCls}>Availability</span>
