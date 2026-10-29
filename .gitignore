@@ -16,4 +16,3 @@ next-env.d.ts
 # Claude Code local state and git worktrees
 .claude/
 .vercel
-.env*
