@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <PolicyPage title="Privacy Policy" updated="September 2026">
+    <PolicyPage title="Privacy Policy" updated="October 2026">
       <Section heading="Overview">
         <p>
           SCR!PTS respects your privacy. This Privacy Policy explains the types of information we may collect when you use our website, why we collect it, and how that information may be used.

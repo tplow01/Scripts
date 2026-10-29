@@ -3,6 +3,7 @@ import type { OutgoingEmail } from '@/lib/server/email'
 
 import { fill, mergeCopy, type Copy } from './defaults'
 import { escapeHtml, orderTable, orderTableText, shell } from './layout'
+import { shipToName } from '@/lib/admin/types'
 
 const INK = '#0D0D0D'
 const GREY = '#6F6F73'
@@ -31,7 +32,7 @@ export function orderShippedEmail(order: AdminOrder, stored?: Copy | null): Outg
       address.length
         ? `<p style="margin:0 0 6px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:${GREY};">${escapeHtml(COPY.addressLabel)}</p>
            <p style="margin:0 0 24px;font-size:13px;line-height:1.7;color:${INK};">
-             ${escapeHtml(order.customer.name)}<br>${address.map(escapeHtml).join('<br>')}
+             ${escapeHtml(shipToName(order.customer))}<br>${address.map(escapeHtml).join('<br>')}
            </p>`
         : ''
     }
@@ -48,7 +49,7 @@ export function orderShippedEmail(order: AdminOrder, stored?: Copy | null): Outg
     orderTableText(order),
     '',
     ...(address.length
-      ? [`${COPY.addressLabel}:`, `  ${order.customer.name}`, ...address.map((l) => `  ${l}`), '']
+      ? [`${COPY.addressLabel}:`, `  ${shipToName(order.customer)}`, ...address.map((l) => `  ${l}`), '']
       : []),
     COPY.closing,
     '',

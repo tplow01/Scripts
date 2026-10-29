@@ -70,7 +70,13 @@ export default function OrderDrawer({ order, onClose }: { order: AdminOrder; onC
               <span className="text-grey"> · </span>
               <a href={`tel:${live.customer.phone.replace(/[^+\d]/g, '')}`} className="text-paper/70 hover:text-paper">{live.customer.phone}</a>
             </p>
-            <p className="text-[12px] text-grey mt-2 leading-relaxed">{live.customer.address.map((l) => <span key={l} className="block">{l}</span>)}</p>
+            <p className="text-[12px] text-grey mt-2 leading-relaxed">
+              {/* A gift: the label carries a different name from the buyer above. */}
+              {live.customer.recipient && (
+                <span className="block text-paper/80">Ships to {live.customer.recipient}</span>
+              )}
+              {live.customer.address.map((l) => <span key={l} className="block">{l}</span>)}
+            </p>
           </Card>
 
           <Card title="Items">
