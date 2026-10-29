@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
-import { ALL_PRODUCTS } from '@/lib/products'
+import { ALL_PRODUCTS, LAUNCH_PRICE } from '@/lib/products'
 import type { Product } from '@/types/product'
 import { reconcileVariants, type VariantDefaults } from './variants'
 import { isMigrated, migrateProducts, type LegacyProduct } from './migrate'
@@ -47,7 +47,7 @@ export const NEW_PRODUCT_DEFAULTS = {
 } as const
 
 export const NEW_VARIANT_DEFAULTS: VariantDefaults = {
-  price: 44, compareAtPrice: null, cost: null, barcode: null,
+  price: LAUNCH_PRICE, compareAtPrice: null, cost: null, barcode: null,
   trackInventory: true, allowBackorder: false, weightGrams: null,
 }
 

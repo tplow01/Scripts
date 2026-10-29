@@ -93,7 +93,6 @@ export function Bullets({ items }: { items: string[] }) {
 }
 
 export const CONTACT_EMAIL = 'info.scriptsstudio@gmail.com'
-export const PRIVACY_EMAIL = 'heathnager@gmail.com'
 
 /** Inline mailto link. */
 export function Mail({ address = CONTACT_EMAIL }: { address?: string }) {

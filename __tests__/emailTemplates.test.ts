@@ -58,11 +58,34 @@ describe.each([
   it('says shipping is included, never "free", when the charge is zero', () => {
     // Flat pricing: shipping is part of the price, so the receipt must not
     // present it as a giveaway that could be withdrawn.
-    const mail = build(order({ shipping: 0 }))
+    const mail = build(order()) // fixture ships at zero
     for (const body of [mail.html, mail.text]) {
       expect(body).toContain('Included')
-      expect(body).not.toMatch(/\bFree\b/)
+      expect(body).not.toMatch(/\bfree\b/i)
     }
+  })
+
+  it('addresses the parcel to the recipient, not the buyer, when they differ', () => {
+    const gift = order({
+      customer: {
+        name: 'Maya Okafor', email: 'maya@example.com', phone: '',
+        address: ['22 Rivington Street', 'London, EC2A 3DY, UK'],
+        recipient: 'Dev Patel',
+      },
+    })
+    const mail = build(gift)
+    // The label block: recipient directly above the street.
+    expect(mail.html).toContain('Dev Patel<br>22 Rivington Street')
+    expect(mail.text).toContain('  Dev Patel\n  22 Rivington Street')
+    // The buyer is greeted, but is not printed as the addressee.
+    expect(mail.html).not.toContain('Maya Okafor<br>')
+    expect(mail.text).not.toContain('  Maya Okafor\n')
+  })
+
+  it('addresses the parcel to the buyer when no separate recipient is recorded', () => {
+    const mail = build(order())
+    expect(mail.html).toContain('Maya Okafor<br>22 Rivington Street')
+    expect(mail.text).toContain('  Maya Okafor\n  22 Rivington Street')
   })
 
   it('always carries a plain-text alternative', () => {

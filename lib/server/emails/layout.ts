@@ -1,4 +1,5 @@
 import type { AdminOrder } from '@/lib/admin/types'
+import { formatMoney, shippingLabel } from '@/lib/money'
 
 /**
  * Shared shell for order emails.
@@ -28,7 +29,7 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;')
 }
 
-export const money = (n: number): string => `$${n.toFixed(2)}`
+export const money = formatMoney
 
 /** The line-items + totals block, shared by both emails. */
 export function orderTable(order: AdminOrder): string {
@@ -52,7 +53,7 @@ export function orderTable(order: AdminOrder): string {
     <tr>
       <td style="padding:12px 0;font-size:13px;color:${GREY};">Shipping</td>
       <td style="padding:12px 0;font-size:13px;color:${GREY};text-align:right;">
-        ${order.shipping === 0 ? 'Included' : money(order.shipping)}
+        ${shippingLabel(order.shipping)}
       </td>
     </tr>
     <tr>
@@ -70,7 +71,7 @@ export function orderTableText(order: AdminOrder): string {
     (li) =>
       `  ${li.productName}${li.size ? ` · ${li.size}` : ''} ×${li.qty}   ${money(li.unitPrice * li.qty)}`,
   )
-  lines.push(`  Shipping   ${order.shipping === 0 ? 'Included' : money(order.shipping)}`)
+  lines.push(`  Shipping   ${shippingLabel(order.shipping)}`)
   lines.push(`  TOTAL      ${money(order.total)}`)
   return lines.join('\n')
 }

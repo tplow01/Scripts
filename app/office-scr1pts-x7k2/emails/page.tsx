@@ -7,6 +7,8 @@ import { TEMPLATES, type EmailTemplateId } from '@/lib/server/emails/defaults'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 import { orderShippedEmail } from '@/lib/server/emails/orderShipped'
 import { orderDeliveredEmail } from '@/lib/server/emails/orderDelivered'
+import { orderMoney } from '@/lib/admin/mockOrders'
+import { LAUNCH_PRICE } from '@/lib/products'
 
 export const metadata: Metadata = {
   title: 'Emails — SCR!PTS',
@@ -29,13 +31,10 @@ const SAMPLE: AdminOrder = {
     phone: '+1 415 555 0123',
     address: ['22 Rivington Street', 'London, EC2A 3DY, UK'],
   },
-  lineItems: [
-    { productName: '"ANXIETY" — White', size: 'M', qty: 2, unitPrice: 44 },
-    { productName: '"LOVE" — Army Green', size: 'L', qty: 1, unitPrice: 44 },
-  ],
-  subtotal: 132,
-  shipping: 0,
-  total: 132,
+  ...orderMoney([
+    { productName: '"ANXIETY" — White', size: 'M', qty: 2, unitPrice: LAUNCH_PRICE },
+    { productName: '"LOVE" — Army Green', size: 'L', qty: 1, unitPrice: LAUNCH_PRICE },
+  ]),
   date: '2026-09-06',
   status: 'paid',
   paymentStatus: 'paid',

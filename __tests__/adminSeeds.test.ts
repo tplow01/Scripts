@@ -3,6 +3,7 @@ import { ADMIN_SLUG, adminPath } from '@/lib/admin/config'
 import { MOCK_ORDERS } from '@/lib/admin/mockOrders'
 import { ALL_PRODUCTS, BASEMENT_PRODUCTS, CYBER_LOVE_PRODUCTS, LEGACY_SLUG_REDIRECTS, colorwayLabel, siblingColorways } from '@/lib/products'
 import { deriveAvailability, totalStock } from '@/lib/admin/variants'
+import { NEW_VARIANT_DEFAULTS } from '@/lib/admin/store'
 
 describe('admin config', () => {
   it('slug and adminPath unchanged', () => {
@@ -100,5 +101,22 @@ describe('split catalog', () => {
   it('reads the colourway label off the product name', () => {
     const green = ALL_PRODUCTS.find((p) => p.slug === 'anxiety-green')!
     expect(colorwayLabel(green)).toBe('Army Green')
+  })
+})
+
+describe('launch price', () => {
+  // Flat price decided 2026-10-02: one price per shirt, taxes and shipping
+  // included. The seed is what a re-seed writes and what the dev fallback
+  // serves, so it must not drift from the decision.
+  const LAUNCH_PRICE = 55
+
+  it('prices every seed variant, inventory and Basement alike, at the launch price', () => {
+    const variants = ALL_PRODUCTS.flatMap((p) => p.variants)
+    expect(variants.length).toBeGreaterThan(0)
+    for (const v of variants) expect(v.price).toBe(LAUNCH_PRICE)
+  })
+
+  it('starts a newly created admin variant at the launch price', () => {
+    expect(NEW_VARIANT_DEFAULTS.price).toBe(LAUNCH_PRICE)
   })
 })
