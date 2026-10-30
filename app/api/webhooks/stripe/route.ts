@@ -4,6 +4,7 @@ import { fail, ok } from '@/lib/server/http'
 import { createPaidOrder, type NewOrderLine } from '@/lib/server/orders.repo'
 import { fromMinorUnits, isStripeConfigured, stripe } from '@/lib/server/stripe'
 import { sendEmail } from '@/lib/server/email'
+import { newOrderStaffEmail, staffAddress } from '@/lib/server/emails/newOrderStaff'
 import { orderConfirmationEmail } from '@/lib/server/emails/orderConfirmation'
 import { getCopy } from '@/lib/server/emailCopy.repo'
 import { recordEvent } from '@/lib/server/analytics.repo'
@@ -152,6 +153,18 @@ export async function POST(req: Request) {
       const result = await sendEmail(orderConfirmationEmail(order, copy))
       if (!result.sent) {
         console.error(`[order ${order.id}] confirmation not sent: ${result.reason}`)
+      }
+
+      // The staff copy. Heath fulfils by hand on Tapstitch, so the studio
+      // inbox hears about every new order with what to make and where to send
+      // it. Same rules as the customer's mail: once per order, awaited, and a
+      // failure is logged, never fatal.
+      const staff = staffAddress()
+      if (staff) {
+        const staffResult = await sendEmail(newOrderStaffEmail(order, staff))
+        if (!staffResult.sent) {
+          console.error(`[order ${order.id}] staff copy not sent: ${staffResult.reason}`)
+        }
       }
 
       try {
