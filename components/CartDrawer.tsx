@@ -211,7 +211,7 @@ export default function CartDrawer() {
                   <span className="text-[22px] font-extrabold">${total.toFixed(2)}</span>
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#888] mb-[20px]">
-                  Taxes and shipping included
+                  Shipping included · Sales tax added at checkout where it applies
                 </p>
                 <motion.button
                   whileTap={reduced ? {} : { scale: 0.98 }}

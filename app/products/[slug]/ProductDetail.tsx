@@ -230,9 +230,9 @@ export default function ProductDetail({ product, dark = false }: { product: Prod
               ${(selected?.price ?? product.variants[0]?.price ?? 0).toFixed(2)}
             </motion.p>
 
-            {/* Flat pricing: the number above is the whole price (see PRD, Payments). */}
+            {/* Flat pricing: shipping is inside the number above; sales tax, where a state is registered, is added at checkout (see PRD, Payments). */}
             <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[28px]`}>
-              Taxes and shipping included
+              Shipping included · Sales tax added at checkout where it applies
             </motion.p>
 
             <motion.p variants={item} className={`text-[11px] font-bold tracking-[0.1em] uppercase ${textMuted} mb-[12px]`}>
