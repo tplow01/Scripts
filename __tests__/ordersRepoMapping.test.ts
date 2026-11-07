@@ -37,3 +37,16 @@ describe('rowToOrder — who the parcel is for', () => {
     expect(shipToName(order.customer)).toBe('Maya Okafor')
   })
 })
+
+describe('rowToOrder — sales tax', () => {
+  it('carries the tax Stripe collected, as a number', () => {
+    const order = rowToOrder(row({ tax: '4.95', total: '59.95' }))
+    expect(order.tax).toBe(4.95)
+    expect(order.total).toBe(59.95)
+  })
+
+  it('reads no tax as zero, for orders from before the column existed', () => {
+    expect(rowToOrder(row({ tax: null })).tax).toBe(0)
+    expect(rowToOrder(row()).tax).toBe(0)
+  })
+})

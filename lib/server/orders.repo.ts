@@ -20,6 +20,8 @@ interface OrderRow {
   ship_to_name: string | null
   subtotal: number | string
   shipping: number | string
+  /** Missing on rows read before migration 0012 has run; null never, since the column defaults to 0. */
+  tax?: number | string | null
   total: number | string
   status: OrderStatus
   payment_status: 'paid' | 'refunded'
@@ -58,6 +60,7 @@ export function rowToOrder(row: OrderRow): AdminOrder {
     })),
     subtotal: num(row.subtotal),
     shipping: num(row.shipping),
+    tax: num(row.tax ?? 0),
     total: num(row.total),
     date: dayOf(row.placed_at),
     status: row.status,
@@ -71,11 +74,9 @@ export function rowToOrder(row: OrderRow): AdminOrder {
   }
 }
 
-const SELECT = `
-  id, customer_name, customer_email, customer_phone, address, ship_to_name, subtotal,
-  shipping, total, status, payment_status, placed_at, making_at, shipped_at, delivered_at,
-  order_items ( product_name, size, qty, unit_price )
-`
+// Every column of the order rather than a list, so a read never names a
+// column that a pending migration has not added yet (see `tax` below).
+const SELECT = `*, order_items ( product_name, size, qty, unit_price )`
 
 export async function listOrders(): Promise<AdminOrder[]> {
   if (!isDatabaseConfigured()) return MOCK_ORDERS
@@ -156,6 +157,8 @@ export interface NewOrder {
   lines: NewOrderLine[]
   subtotal: number
   shipping: number
+  /** What Stripe Tax added on top at checkout; 0 until the first state is registered. */
+  tax: number
   total: number
 }
 
@@ -206,6 +209,12 @@ export async function createPaidOrder(input: NewOrder): Promise<CreatedOrder> {
     ship_to_name: input.customer.recipient,
     subtotal: input.subtotal,
     shipping: input.shipping,
+    // Named only when there is tax to record. Every order until the first
+    // Stripe Tax registration carries zero, and leaving the column out then
+    // means a deploy that lands before migration 0012 still records orders.
+    // Once a state is registered the column has to exist: the insert then
+    // fails loudly (Stripe retries) rather than quietly dropping the amount.
+    ...(input.tax > 0 ? { tax: input.tax } : {}),
     total: input.total,
     status: 'paid',
     payment_status: 'paid',

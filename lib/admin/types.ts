@@ -53,7 +53,13 @@ export interface AdminOrder {
   lineItems: OrderLineItem[]
   subtotal: number
   shipping: number // 0 = included in the price (flat pricing)
-  total: number // subtotal + shipping
+  /**
+   * US sales tax that Stripe Tax added on top at checkout, in a state where
+   * SCR!PTS is registered. Absent or 0 everywhere else, which is every order
+   * until the first registration. Shown only when it is more than zero.
+   */
+  tax?: number
+  total: number // subtotal + shipping + tax
   date: string // 'YYYY-MM-DD' (sort key)
   status: OrderStatus
   paymentStatus: 'paid' | 'refunded'

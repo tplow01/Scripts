@@ -138,6 +138,9 @@ export async function POST(req: Request) {
       lines,
       subtotal: fromMinorUnits(session.amount_subtotal ?? 0),
       shipping: fromMinorUnits(session.shipping_cost?.amount_total ?? 0),
+      // What Stripe Tax added on top of the price (tax_behavior 'exclusive'):
+      // zero until the first state is registered, that state's tax after.
+      tax: fromMinorUnits(session.total_details?.amount_tax ?? 0),
       total: fromMinorUnits(session.amount_total ?? 0),
     })
 
