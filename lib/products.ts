@@ -7,8 +7,9 @@ const BACK_GREEN = '/products/cutout/back-green.png'
 const BACK_BLACK = '/products/cutout/back-black.png'
 
 /**
- * The flat launch price of every shirt, taxes and shipping included (PRD,
- * Payments). The live database is the price authority; this is what a re-seed
+ * The flat launch price of every shirt, shipping included (PRD, Payments).
+ * Sales tax, where a state is registered, is added on top at checkout.
+ * The live database is the price authority; this is what a re-seed
  * writes, what the dev fallback serves, and what a new admin variant starts at.
  */
 export const LAUNCH_PRICE = 55

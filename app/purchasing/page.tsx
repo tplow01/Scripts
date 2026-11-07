@@ -17,7 +17,7 @@ export default function PurchasingPage() {
           SCR!PTS does not directly store complete credit or debit card numbers.
         </p>
         <p>
-          Prices are shown in US dollars and include shipping and any applicable US sales tax. The price you see is the price you pay, apart from import charges on international orders described in our Delivery policy.
+          Prices are shown in US dollars and include shipping. Where SCR!PTS is registered to collect US sales tax, the tax for your delivery address is calculated and added at checkout, so the amount you pay is the price shown plus any applicable sales tax. Import charges on international orders are described in our Delivery policy.
         </p>
       </Section>
 
