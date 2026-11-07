@@ -33,6 +33,7 @@ export const money = formatMoney
 
 /** The line-items + totals block, shared by both emails. */
 export function orderTable(order: AdminOrder): string {
+  const tax = order.tax ?? 0
   const rows = order.lineItems
     .map(
       (li) => `
@@ -56,6 +57,16 @@ export function orderTable(order: AdminOrder): string {
         ${shippingLabel(order.shipping)}
       </td>
     </tr>
+    ${
+      tax > 0
+        ? `<tr>
+      <td style="padding:12px 0;font-size:13px;color:${GREY};">Sales tax</td>
+      <td style="padding:12px 0;font-size:13px;color:${GREY};text-align:right;">
+        ${money(tax)}
+      </td>
+    </tr>`
+        : ''
+    }
     <tr>
       <td style="padding:12px 0;border-top:2px solid ${INK};font-size:14px;font-weight:bold;color:${INK};text-transform:uppercase;letter-spacing:0.04em;">Total</td>
       <td style="padding:12px 0;border-top:2px solid ${INK};font-size:16px;font-weight:bold;color:${INK};text-align:right;">
@@ -72,6 +83,10 @@ export function orderTableText(order: AdminOrder): string {
       `  ${li.productName}${li.size ? ` · ${li.size}` : ''} ×${li.qty}   ${money(li.unitPrice * li.qty)}`,
   )
   lines.push(`  Shipping   ${shippingLabel(order.shipping)}`)
+  // Only when something was charged: a "$0.00" tax row would raise the
+  // question of why there is one.
+  const tax = order.tax ?? 0
+  if (tax > 0) lines.push(`  Sales tax  ${money(tax)}`)
   lines.push(`  TOTAL      ${money(order.total)}`)
   return lines.join('\n')
 }

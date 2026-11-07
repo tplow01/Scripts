@@ -104,3 +104,14 @@ describe('staffAddress', () => {
     expect(staffAddress()).toBeNull()
   })
 })
+
+describe('newOrderStaffEmail — sales tax', () => {
+  it('shows the tax line and the taxed total, so Heath sees what the buyer actually paid', () => {
+    const email = newOrderStaffEmail(order({ subtotal: 165, shipping: 0, tax: 14.85, total: 179.85 }), 'orders@scripts.studio')
+    expect(email.subject).toContain('$179.85')
+    for (const body of [email.html, email.text]) {
+      expect(body).toContain('Sales tax')
+      expect(body).toContain('$14.85')
+    }
+  })
+})

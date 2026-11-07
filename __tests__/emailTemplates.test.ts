@@ -65,6 +65,28 @@ describe.each([
     }
   })
 
+  it('adds a sales tax line when tax was charged, so the receipt adds up', () => {
+    // Exclusive pricing: a buyer in a registered state pays $55 plus tax.
+    const mail = build(order({
+      lineItems: [{ productName: '"ANXIETY" — White', size: 'M', qty: 1, unitPrice: 55 }],
+      subtotal: 55, shipping: 0, tax: 4.95, total: 59.95,
+    }))
+    for (const body of [mail.html, mail.text]) {
+      expect(body).toContain('Sales tax')
+      expect(body).toContain('$4.95')
+      expect(body).toContain('$59.95')
+    }
+  })
+
+  it('shows no tax line at all when none was charged', () => {
+    // Every order until the first state is registered. A "$0.00" tax row
+    // would only raise the question of why there is one.
+    for (const mail of [build(order()), build(order({ tax: 0 }))]) {
+      expect(mail.html).not.toContain('Sales tax')
+      expect(mail.text).not.toContain('Sales tax')
+    }
+  })
+
   it('addresses the parcel to the recipient, not the buyer, when they differ', () => {
     const gift = order({
       customer: {
